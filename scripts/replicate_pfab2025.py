@@ -23,6 +23,12 @@ Policies:
   test set and earlier slices) with the same hyper-parameters, and set a new threshold with the same
   cross-validation method on that data.
 
+Note on the threshold: in the authors' code the fold thresholds are stored for the last point of the
+Bayesian optimisation, not for the best one (the stored best score is reset before every point), so
+the logged threshold does not belong to the final model. We therefore report both: (a) the paper
+exactly, with the logged threshold, and (b) the threshold method applied correctly to the final model.
+Retraining (c) uses the method of (b), so (b) vs (c) differs only in retraining.
+
 Assumption (limitation): every joint gets its manual-inspection label later, also the released ones.
 
 Usage: python scripts/replicate_pfab2025.py RUNS_CSV [data/dataset.csv]
@@ -110,8 +116,12 @@ def scores(m, t, X, y):
 def run(model, p, seed, X, y):
     X_hp, y_hp, X_test, y_test, slices = split(X, y, seed)
     out = {"seed": seed, "logged_threshold": float(p["SetThreshold"])}
-    # train once (the paper)
     m = fit(model, p, seed, X_hp, y_hp)
+    # (a) exactly as in the paper: train once, the threshold the authors logged
+    tp = float(p["SetThreshold"])
+    out["paper_exact_test"] = scores(m, tp, X_test, y_test)
+    out["paper_exact"] = [scores(m, tp, Xs, ys) for Xs, ys in slices]
+    # (b) train once, threshold from the cross-validation of this model (see note on the threshold)
     t = cv_threshold(model, p, seed, X_hp, y_hp)
     out["threshold_once"] = t
     out["test"] = scores(m, t, X_test, y_test)
@@ -142,7 +152,7 @@ def main(runs_csv, path="data/dataset.csv"):
                           "slices_slip": [float(1 - p[f"RecallEval{i}"]) for i in range(5)],
                           "slices_volume_reduction": [float(p[f"VolumeReductionEval{i} "]) for i in range(5)]}
             result[model].append(r)
-            print(model, r["seed"], "once", [round(s["slip"], 3) for s in r["train_once"]],
+            print(model, r["seed"], "exact", [round(s["slip"], 3) for s in r["paper_exact"]], "once", [round(s["slip"], 3) for s in r["train_once"]],
                   "retrain", [round(s["slip"], 3) for s in r["retrain"]],
                   "paper", [round(s, 3) for s in r["paper"]["slices_slip"]], flush=True)
             Path("results").mkdir(exist_ok=True)
