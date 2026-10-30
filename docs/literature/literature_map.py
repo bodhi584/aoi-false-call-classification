@@ -10,7 +10,7 @@ LEVELS = [
     ("AOI in electronics assembly", "camera + fixed limits check every solder joint", "[2], [3]"),
     ("False calls of AOI", "most flagged boards are good; manual re-inspection", "[4], [5]"),
     ("Second check with supervised machine learning", "classifiers on AOI measurements", "[6]–[10]"),
-    ("Evaluation in time order", "imbalanced classes, recall, specificity, drift", "[8], [11]–[14]"),
+    ("Evaluation in time order", "imbalanced classes, recall, specificity, drift", "[8], [11]–[15]"),
 ]
 COLORS = ["#E9EDF3", "#DCE4F0", "#CBD9EC", "#B7CBE6", "#2F6DB5"]
 

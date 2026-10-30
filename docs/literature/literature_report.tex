@@ -56,11 +56,11 @@ Date of submission: 03.11.2026\par
 % ---------------- Abstract ----------------
 \section*{Abstract}
 \addcontentsline{toc}{section}{Abstract}
-Electronics manufacturers aim at zero defects, so every assembled circuit board is checked by automated optical inspection (AOI). AOI compares camera measurements of each solder joint with fixed limits and sends every flagged board to a manual inspection station. Most of these alarms are false calls: in the public Siemens production data used in our project, 97.8\,\% of the flagged boards have no real defect. Manual re-inspection of good boards costs operator time, and Siemens is working on the same problem in its Erlangen electronics factory today.
+Electronics manufacturers aim at zero defects, and after soldering the circuit boards are checked by automated optical inspection (AOI). AOI compares camera measurements of each solder joint with fixed limits and sends every flagged board to a manual inspection station. Most of these alarms are false calls: in the public Siemens production data used in our project, 97.8\,\% of the flagged boards have no real defect. Manual re-inspection of good boards costs operator time, and Siemens is working on the same problem in its Erlangen electronics factory today.
 
-This report reviews 14 sources, from the general to the specific: zero-defect manufacturing and AOI in electronics assembly, the false-call problem and the Siemens data set, earlier studies that use supervised machine learning as a second check of AOI results, and methods to evaluate a classifier on imbalanced classes and on production data that change over time. The literature shows that classifiers such as random forests and neural networks can recognise false calls from AOI measurements. However, most studies use small or unpublished data and standard metrics, and they do not test the models in time order. One study on the same Siemens data shows that models that meet a 1\,\% missed-defect goal on a random test set miss 5--15\,\% of the defects on later production days.
+This report reviews 15 sources, from the general to the specific: zero-defect manufacturing and AOI in electronics assembly, the false-call problem and the Siemens data set, earlier studies that use supervised machine learning as a second check of AOI results, and methods to evaluate a classifier on imbalanced classes and on production data that change over time. The literature shows that classifiers such as random forests and neural networks can recognise false calls from AOI measurements. However, most studies use small or unpublished data and standard metrics, and they do not test the models in time order. One study on the same Siemens data shows that models that meet a 1\,\% missed-defect goal on a random test set miss 5--15\,\% of the defects on later production days.
 
-From this review we take the methods for our project (binary classification with logistic regression, random forest and a neural network; recall and specificity; a decision threshold for 99\,\% recall; evaluation day by day in time order) and the gap that our project addresses: evaluation in time order with a fixed minimum recall for true defects.
+From this review we take the methods for our project (binary classification with logistic regression, random forest and a neural network; recall and specificity; a decision threshold for 99\,\% recall; evaluation day by day in time order) and the gap that our project addresses: the only study that tests in time order trains its models once; we evaluate the second check day by day as it would run on the line, trained once or retrained every week, with a fixed minimum recall of 99\,\% for true defects.
 
 \newpage
 \tableofcontents
@@ -71,7 +71,7 @@ From this review we take the methods for our project (binary classification with
 % ---------------- Introduction ----------------
 \pagenumbering{arabic}
 \section{Introduction}
-Quality control is a core task of production management. In electronics assembly, components are soldered onto printed circuit boards by surface-mount technology (SMT), and one bad solder joint can make a whole product fail. Automated optical inspection is therefore placed after soldering. AOI is fast and checks every joint, but it is tuned to miss no defect, so it raises many false alarms (false calls). Each alarm is checked again by an operator at a manual inspection station. This report reviews the literature on this problem as the basis of our case study.
+Zero-defect manufacturing relies on detecting defects before a product leaves the factory \cite{psarommatis2020}. In electronics assembly, components are soldered onto printed circuit boards by surface-mount technology (SMT), and automated optical inspection is placed after soldering \cite{ebayyeh2020}. AOI compares the camera measurements of each solder joint with fixed limits; every flagged board goes to a manual inspection station, where an operator decides whether it is a true defect or a false call \cite{pfab2024}. Many flagged boards are false calls, which creates a large manual workload \cite{pfab2024,thielen2020}. This report reviews the literature on this problem as the basis of our case study.
 
 \subsection{Objectives}
 \begin{itemize}
@@ -82,7 +82,7 @@ Quality control is a core task of production management. In electronics assembly
 \end{itemize}
 
 \subsection{Scope of the review}
-The review covers 14 sources published between 2001 and 2026: peer-reviewed journal and conference papers, one data article, one preprint and one industry press release. It is limited to AOI of solder joints in SMT assembly and to tabular AOI measurements; image-based defect detection with deep learning is outside the scope, because our project starts after the AOI machine has already made its measurements.
+The review covers 15 sources published between 2001 and 2026: peer-reviewed journal and conference papers, one data article, one preprint and one industry press release. It is limited to AOI of solder joints in SMT assembly and to tabular AOI measurements; image-based defect detection with deep learning is outside the scope, because our project starts after the AOI machine has already made its measurements.
 
 % ---------------- Materials and Methods ----------------
 \section{Materials and Methods}
@@ -114,7 +114,7 @@ The authors review 280 articles on zero-defect manufacturing published between 1
 \relevance{AOI and the manual inspection station belong to the \textit{detection} strategy. Our second check makes detection cheaper (fewer manual checks of good boards) without letting more defects pass.}
 
 \source{A review and analysis of automatic optical inspection and quality monitoring methods in electronics industry}{A.~A.~R.~M.~Abu Ebayyeh and A.~Mousavi (2020), IEEE Access}{\cite{ebayyeh2020}}
-This review describes AOI systems in electronics production, including printed circuit boards: the hardware (cameras and lighting) and the software steps (pre-processing, feature extraction, classification). AOI replaces human visual inspection, which is slow and suffers from fatigue. The review also shows a trend from fixed rules towards machine learning in the classification step.
+This review describes AOI systems in electronics production, including printed circuit boards: the hardware (cameras and lighting) and the software steps (pre-processing, feature extraction, classification). AOI replaces human visual inspection, which is slow and suffers from fatigue. The review also covers recent work that uses machine learning, including deep learning, in the classification step.
 \relevance{It explains where our input comes from: AOI measures each solder joint and classifies it with fixed limits; our classifier works on these measurements after the AOI.}
 
 \source{Short review on machine learning optimization methods in surface mounted electronics assembly technologies}{P.~Martinek et al. (2023), ISSE}{\cite{martinek2023}}
@@ -152,7 +152,7 @@ The paper introduces scikit-learn, an open-source Python library with a consiste
 \relevance{All three classifiers of our project, and the data preparation, come from scikit-learn, so every step uses standard, documented code.}
 
 \source{Random forests}{L.~Breiman (2001), Machine Learning}{\cite{breiman2001}}
-A random forest is a set of decision trees. Each tree is trained on a random sample of the data and uses a random subset of the input features at each split; the trees then vote. The method is accurate on tabular data, needs little tuning and gives a measure of feature importance.
+A random forest is a set of decision trees. Each tree is trained on a random sample of the data and uses a random subset of the input features at each split; the trees then vote. The paper shows that random forests reach an accuracy comparable to boosting, are robust to noise in the data and give a measure of variable importance.
 \relevance{The random forest performed well in \cite{thielen2020} and was the best model in \cite{pfab2025} and is one of our three classifiers; its feature importance is used later in our project.}
 
 % --- 2.2.4
@@ -168,11 +168,15 @@ The paper explains how a classifier that gives a score is turned into a decision
 
 \source{A survey on concept drift adaptation}{J.~Gama et al. (2014), ACM Computing Surveys}{\cite{gama2014}}
 This survey describes learning when the data change over time (concept drift). It covers drift detection, how much past data to keep (memory) and how to update models, and it describes evaluation in time order, where the model is always tested on data that come after its training data.
-\relevance{It is the basis of our day-by-day simulation (walk-forward evaluation): each production day is classified by a model trained only on earlier days.}
+\relevance{It is the basis of our day-by-day simulation: each production day is classified by a model trained only on earlier days.}
 
 \source{Learning under concept drift: a review}{J.~Lu et al. (2019), IEEE Trans.\ Knowledge and Data Engineering}{\cite{lu2019}}
 The review defines types of drift (sudden, gradual, incremental and recurring) and groups adaptation methods, from simple retraining on a recent window of data to ensembles and online updates.
 \relevance{It supports our comparison of ``train once'' and ``retrain every week'' and our planned experiment with different training windows.}
+
+\source{Out-of-sample tests of forecasting accuracy: an analysis and review}{L.~J.~Tashman (2000), Int.\ J.\ Forecasting}{\cite{tashman2000}}
+The review compares ways to test a model on data that come in time order. It recommends tests with a rolling origin: the model is fitted on all data up to a point in time, tested on the next period, and then the origin moves forward, so that every test uses only data from the future of the training data.
+\relevance{This rolling-origin scheme is what we call walk-forward evaluation: the training window moves forward one production day at a time.}
 
 \subsection{Summary of the reviewed works}
 Table~\ref{tab:summary} compares the four studies that work directly on AOI false calls. Table~\ref{tab:methods} lists the methods of our project and the sources they come from.
@@ -185,10 +189,10 @@ Table~\ref{tab:summary} compares the four studies that work directly on AOI fals
 \toprule
  & Data & Classifiers & Test split & Success criterion \\
 \midrule
-Thielen et al.\ \cite{thielen2020} & small, not public & kNN, neural network, random forest & not stated & no extra slip \\
-Albayari et al.\ \cite{albayari2026} & Siemens AG & XGBoost, random forest, DNN, kNN & several train--test splits & balance of recall and precision \\
-Pfab \& Rothering \cite{pfab2025} & Siemens, public \cite{pfab2024} & kNN, random forest, XGBoost, AutoML & random test set + 5 later time slices & $\geq$40\,\% fewer checks, $\leq$1\,\% slip \\
-\textbf{Our project} & Siemens, public \cite{pfab2024} & logistic regression, random forest, neural network & \textbf{day by day in time order} & \textbf{recall $\geq$99\,\%, specificity $\geq$20\,\%} \\
+Thielen et al.\ \cite{thielen2020} & not public & kNN, neural network, random forest & not stated & no extra slip \\
+Albayari et al.\ \cite{albayari2026} & Siemens AG & XGBoost, random forest, DNN, kNN & several train--test splits & standard metrics (recall, precision) \\
+Pfab \& Rothering \cite{pfab2025} & Siemens, public \cite{pfab2024} & kNN, random forest, XGBoost, AutoML & random test set + 5 later time slices, trained once & $\geq$40\,\% fewer checks, $\leq$1\,\% slip \\
+\textbf{Our project} & Siemens, public \cite{pfab2024} & logistic regression, random forest, neural network & \textbf{day by day in time order, trained once vs.\ retrained weekly} & \textbf{recall $\geq$99\,\%, specificity $\geq$20\,\%} \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -205,8 +209,9 @@ Binary classification: true defect or false call & the manual inspection label h
 Logistic regression, random forest, neural network (scikit-learn) & simple baseline plus the two model types that worked best in earlier studies & \cite{pedregosa2011,breiman2001,thielen2020,albayari2026} \\
 Class weighting & true defects are rare & \cite{he2009} \\
 Recall and specificity as KPIs & accuracy is misleading for rare classes & \cite{he2009,fawcett2006} \\
-Threshold for 99\,\% recall, set on separate days & a missed defect is costly; no tuning on test data & \cite{fawcett2006,pfab2025} \\
-Day-by-day evaluation in time order & production data change over time & \cite{gama2014,pfab2025} \\
+Threshold for 99\,\% recall, set on separate days & at most 1\,\% missed defects is the shop-floor requirement used in \cite{pfab2025}; no tuning on test data & \cite{fawcett2006,pfab2025} \\
+Target specificity $\geq$20\,\% & below the 40\,\% goals of \cite{pfab2025,siemens2026}, because in time order our baseline reaches only 1.8--6.4\,\% & \cite{pfab2025,siemens2026} \\
+Day-by-day evaluation in time order (walk-forward) & production data change over time & \cite{gama2014,tashman2000,pfab2025} \\
 Train once vs.\ retrain every week & adaptation to drift & \cite{lu2019,gama2014} \\
 \bottomrule
 \end{tabularx}
@@ -216,9 +221,11 @@ Train once vs.\ retrain every week & adaptation to drift & \cite{lu2019,gama2014
 \section{Conclusion}
 The literature leads from a general goal to a specific question. Zero-defect manufacturing needs reliable defect detection \cite{psarommatis2020}; in electronics assembly this is done by AOI \cite{ebayyeh2020,martinek2023}, which raises many false calls that operators must check by hand \cite{pfab2024}, a problem that industry is still working on today \cite{siemens2026}.
 
-Earlier studies show that supervised machine learning can recognise false calls from AOI measurements, with random forests, neural networks and gradient boosting as the strongest models \cite{thielen2020,albayari2026}. The literature also shows three weaknesses: the data are often small or not public; models are not tested in time order, so past and future data can be mixed; and success is measured with standard metrics instead of a fixed goal for missed defects \cite{pfab2025}. When the same models are tested on later production days, the share of missed defects rises from about 1\,\% to 5--15\,\% \cite{pfab2025}, which agrees with the drift literature \cite{gama2014,lu2019}.
+Earlier studies show that supervised machine learning can recognise false calls from AOI measurements, with random forests, neural networks and gradient boosting among the best models \cite{thielen2020,albayari2026,pfab2025}. The literature also shows three weaknesses: the data are often small or not public; models are not tested in time order, so past and future data can be mixed; and success is measured with standard metrics instead of a fixed goal for missed defects \cite{pfab2025}. When the same models are tested on later production days, the share of missed defects rises from about 1\,\% to 5--15\,\% \cite{pfab2025}, which agrees with the drift literature \cite{gama2014,lu2019}.
 
-\textbf{Research gap addressed by our project:} a second check of AOI results that is evaluated as it would run on the line, day by day in time order on the public Siemens data, with a fixed minimum recall of 99\,\% for true defects and specificity as the measure of saved manual inspections \cite{he2009,fawcett2006}. Our first baseline already confirms the gap: at 99\,\% recall, the same three classifiers reach a specificity of 14--18\,\% with a random split but only 1.8--6.4\,\% in time order (results in our GitHub repository). The next steps of the project, such as thresholds per inspection type and different retraining windows, build directly on the sources reviewed here.
+Pfab and Rothering \cite{pfab2025} train their models only once, on the first half of the data, and show that they fail on later days. How well the second check works when it is retrained regularly, as it would be on the line, is not reported in the reviewed literature.
+
+\textbf{Research gap addressed by our project:} a second check of AOI results that is evaluated as it would run on the line: day by day in time order on the public Siemens data (walk-forward evaluation \cite{tashman2000,gama2014}), trained once or retrained every week \cite{lu2019}, with a fixed minimum recall of 99\,\% for true defects and specificity as the measure of saved manual inspections \cite{he2009,fawcett2006}. Our first baseline already confirms the gap: at 99\,\% recall, the same three classifiers reach a specificity of 14--18\,\% with a random split but only 1.8--6.4\,\% in time order (results in our GitHub repository). The next steps of the project, such as thresholds per inspection type and different retraining windows, build directly on the sources reviewed here.
 
 % ---------------- References ----------------
 \begin{thebibliography}{99}
@@ -266,6 +273,9 @@ J.~Gama, I.~\v{Z}liobait\.{e}, A.~Bifet, M.~Pechenizkiy, and A.~Bouchachia, ``A 
 
 \bibitem{lu2019}
 J.~Lu, A.~Liu, F.~Dong, F.~Gu, J.~Gama, and G.~Zhang, ``Learning under concept drift: a review,'' \textit{IEEE Trans.\ Knowledge and Data Engineering}, vol.~31, no.~12, pp.~2346--2363, Dec.~2019, doi:~10.1109/TKDE.2018.2876857.
+
+\bibitem{tashman2000}
+L.~J.~Tashman, ``Out-of-sample tests of forecasting accuracy: an analysis and review,'' \textit{Int.\ J.\ Forecasting}, vol.~16, no.~4, pp.~437--450, 2000, doi:~10.1016/S0169-2070(00)00065-0.
 
 \end{thebibliography}
 
