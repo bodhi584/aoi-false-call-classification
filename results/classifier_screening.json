@@ -30,5 +30,77 @@
     "fit_seconds": 2.6,
     "specificity_pct_at_100pct_recall": 0.0,
     "specificity_pct_at_99pct_recall": 3.5
+  },
+  "k_nearest_neighbours": {
+    "family": "instance",
+    "note": "k=15; trained on a 50,000-row subsample: prediction cost grows with training size",
+    "joint_auroc": 0.732,
+    "fit_seconds": 0.2,
+    "specificity_pct_at_100pct_recall": 0.0,
+    "specificity_pct_at_99pct_recall": 0.0
+  },
+  "rbf_svm_subsample": {
+    "family": "kernel",
+    "note": "trained on a 20,000-row subsample only: full data infeasible (quadratic cost)",
+    "joint_auroc": 0.797,
+    "fit_seconds": 47.6,
+    "specificity_pct_at_100pct_recall": 1.1,
+    "specificity_pct_at_99pct_recall": 2.6
+  },
+  "decision_tree": {
+    "family": "tree",
+    "note": "",
+    "joint_auroc": 0.782,
+    "fit_seconds": 3.9,
+    "specificity_pct_at_100pct_recall": 0.0,
+    "specificity_pct_at_99pct_recall": 0.0
+  },
+  "random_forest": {
+    "family": "tree_ensemble",
+    "note": "",
+    "joint_auroc": 0.885,
+    "fit_seconds": 17.9,
+    "specificity_pct_at_100pct_recall": 2.7,
+    "specificity_pct_at_99pct_recall": 6.4
+  },
+  "extra_trees": {
+    "family": "tree_ensemble",
+    "note": "",
+    "joint_auroc": 0.877,
+    "fit_seconds": 16.7,
+    "specificity_pct_at_100pct_recall": 1.2,
+    "specificity_pct_at_99pct_recall": 1.8
+  },
+  "hist_gradient_boosting": {
+    "family": "boosting",
+    "note": "scikit-learn's LightGBM-style GBDT",
+    "joint_auroc": 0.878,
+    "fit_seconds": 17.8,
+    "specificity_pct_at_100pct_recall": 1.1,
+    "specificity_pct_at_99pct_recall": 2.5
+  },
+  "adaboost": {
+    "family": "boosting",
+    "note": "",
+    "joint_auroc": 0.851,
+    "fit_seconds": 108.0,
+    "specificity_pct_at_100pct_recall": 1.0,
+    "specificity_pct_at_99pct_recall": 1.5
+  },
+  "mlp_1_hidden_layer": {
+    "family": "neural",
+    "note": "10 neurons",
+    "joint_auroc": 0.872,
+    "fit_seconds": 27.4,
+    "specificity_pct_at_100pct_recall": 0.1,
+    "specificity_pct_at_99pct_recall": 1.8
+  },
+  "mlp_2_hidden_layers": {
+    "family": "neural",
+    "note": "64+32 neurons",
+    "joint_auroc": 0.865,
+    "fit_seconds": 53.1,
+    "specificity_pct_at_100pct_recall": 0.0,
+    "specificity_pct_at_99pct_recall": 0.6
   }
 }

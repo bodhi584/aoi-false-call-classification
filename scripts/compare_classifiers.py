@@ -78,7 +78,7 @@ def evaluate(train, test, make):
     p = score(clf, to_X(test))
     b = board_scores(test, p)
     out = {"joint_auroc": round(roc_auc_score(test["class"], p), 3), "fit_seconds": round(fit_s, 1)}
-    for keep in (1.0, 0.99):
+    for keep in (1.0, 0.99, 0.95):
         thr = threshold_for(b.score.values, b.defective.values, 1 - keep)
         out[f"specificity_pct_at_{int(keep * 100)}pct_recall"] = round(
             100 * ((b.defective == 0) & (b.score < thr)).sum() / (b.defective == 0).sum(), 1)
