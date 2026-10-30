@@ -18,14 +18,14 @@ from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import (AdaBoostClassifier, ExtraTreesClassifier, HistGradientBoostingClassifier,
                               RandomForestClassifier)
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
-from sklearn.svm import LinearSVC, SVC
+from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -51,9 +51,9 @@ def ordinal():
 CANDIDATES = [
     ("linear", "logistic_regression", lambda: make_pipeline(scaled(), LogisticRegression(max_iter=1000, class_weight="balanced")), ""),
     ("linear", "linear_discriminant_analysis", lambda: make_pipeline(scaled(), LinearDiscriminantAnalysis()), ""),
-    ("linear", "linear_svm", lambda: make_pipeline(scaled(), LinearSVC(class_weight="balanced", dual=False, max_iter=5000)), "decision_function score"),
+    ("linear", "linear_svm", lambda: make_pipeline(scaled(), SGDClassifier(loss="hinge", class_weight="balanced", random_state=0)), "hinge loss, trained by SGD; decision_function score"),
     ("probabilistic", "gaussian_naive_bayes", lambda: make_pipeline(scaled(), GaussianNB()), ""),
-    ("instance", "k_nearest_neighbours", lambda: make_pipeline(scaled(), KNeighborsClassifier(n_neighbors=15, n_jobs=-1)), "k=15"),
+    ("instance", "k_nearest_neighbours", None, "k=15; trained on a 50,000-row subsample: prediction cost grows with training size"),
     ("kernel", "rbf_svm_subsample", None, "trained on a 20,000-row subsample only: full data infeasible (quadratic cost)"),
     ("tree", "decision_tree", lambda: make_pipeline(ordinal(), DecisionTreeClassifier(min_samples_leaf=20, class_weight="balanced", random_state=0)), ""),
     ("tree_ensemble", "random_forest", lambda: make_pipeline(ordinal(), RandomForestClassifier(n_estimators=100, min_samples_leaf=5, class_weight="balanced_subsample", n_jobs=-1, random_state=0)), ""),
@@ -89,9 +89,17 @@ def main(path="data/dataset.csv"):
     df = load(path)
     cut = df["day"].quantile(0.7)
     train, test = df[df.day <= cut], df[df.day > cut]
+    out = Path("results/classifier_screening.json")
+    done = json.loads(out.read_text()) if out.exists() else {}
     res = {}
     for family, name, make, note in CANDIDATES:
-        if name == "rbf_svm_subsample":
+        if name in done:
+            res[name] = done[name]
+            continue
+        if name == "k_nearest_neighbours":
+            sub = train.sample(50000, random_state=0)
+            r = evaluate(sub, test, lambda: make_pipeline(scaled(), KNeighborsClassifier(n_neighbors=15, n_jobs=-1)))
+        elif name == "rbf_svm_subsample":
             sub = train.sample(20000, random_state=0)
             make = lambda: make_pipeline(scaled(), SVC(class_weight="balanced", probability=True, random_state=0))  # noqa: E731
             r = evaluate(sub, test, make)
