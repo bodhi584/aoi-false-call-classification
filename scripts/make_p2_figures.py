@@ -75,6 +75,35 @@ def replication():
     fig.savefig("docs/img/replication_pfab2025.png", dpi=200)
 
 
+def reproduction():
+    """Baseline only: results logged by Pfab & Rothering (2025) vs. our reimplementation, per later period."""
+    r = json.loads(Path("results/replication_pfab2025.json").read_text())
+    fig, axs = plt.subplots(1, 2, figsize=(10, 4.2), sharey=True)
+    x = np.arange(1, 6)
+    w = 0.38
+    for ax, (m, name) in zip(axs, [("BRFC", "Balanced random forest"), ("RFC", "Random forest")]):
+        v = r[m]
+        paper = 100 * np.array([z["paper"]["slices_slip"] for z in v])
+        ours = 100 * np.array([[s["slip"] for s in z["paper_exact"]] for z in v])
+        b1 = ax.bar(x - w / 2, paper.mean(0), w, yerr=paper.std(0, ddof=1), capsize=3, color=GREY,
+                    label=f"[8], run logs (mean {paper.mean():.1f} %)")
+        b2 = ax.bar(x + w / 2, ours.mean(0), w, yerr=ours.std(0, ddof=1), capsize=3, color=BLUE,
+                    label=f"Our code (mean {ours.mean():.1f} %)")
+        ax.bar_label(b1, [f"{t:.1f}" for t in paper.mean(0)], fontsize=7, padding=2)
+        ax.bar_label(b2, [f"{t:.1f}" for t in ours.mean(0)], fontsize=7, padding=2)
+        ax.axhline(1, color=RED, ls="--", lw=1)
+        ax.set_title(f"{name}, 10 seeds", fontsize=10)
+        ax.set_xticks(x, [f"Period {i}" for i in x], fontsize=8)
+        ax.legend(frameon=False, fontsize=8, loc="upper left")
+        ax.spines[["top", "right"]].set_visible(False)
+    axs[0].set_ylabel("Missed true defects (%)\ndashed line = 1 %", fontsize=9)
+    axs[0].set_ylim(0, 22)
+    fig.suptitle("Baseline: our reimplementation vs. the run logs of Pfab & Rothering (2025), mean ± SD", fontsize=10)
+    fig.tight_layout()
+    fig.savefig("docs/img/reproduction_pfab2025.png", dpi=200)
+
+
 if __name__ == "__main__":
     data_drift()
     replication()
+    reproduction()
