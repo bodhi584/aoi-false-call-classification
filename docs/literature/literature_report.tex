@@ -170,7 +170,8 @@ The review explains why accuracy is misleading when one class is rare, presents 
 \relevance{We report slip (1 $-$ recall) and volume reduction (specificity) instead of accuracy, as \cite{pfab2025} does.}
 
 % --- 2.2.5
-\subsubsection{Why models fail over time: drift}
+\subsubsection{Why models fail over time: drift and the threshold}
+Pfab and Rothering name two causes for the failure on later periods \cite{pfab2025}: drift and the method for setting the threshold. The sources below cover drift; why a threshold set once cannot keep a 1\,\% bound is explained by \cite{tong2018} in Section~2.2.6.
 
 \source{A survey on concept drift adaptation}{J.~Gama et al. (2014), ACM Computing Surveys}{\cite{gama2014}}
 Concept drift is a change of the joint distribution $p(X, y)$ over time. The survey groups adaptation into memory (which data to keep or forget), change detection and learning; one learning mode is ``retraining that discards the current model and builds a new model from scratch''. A fixed sliding window that periodically retrains on the latest examples is ``often used as a baseline''.

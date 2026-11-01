@@ -16,7 +16,7 @@ LEVELS = [
     ("Second check with supervised machine learning", "works on a test set, fails on later days", "[5]–[7]"),
     ("Classifiers for tabular data", "which family works best; the two models of [7]", "[8]–[10]"),
     ("Evaluation with rare true defects", "recall and specificity instead of accuracy", "[11]"),
-    ("Why models fail over time: drift", "definition, a manufacturing case", "[12], [13]"),
+    ("Why models fail over time: drift and threshold", "data change over time; a threshold set once cannot hold 1 %", "[12]–[14]"),
     ("Methods: threshold and retraining", "the two next steps named in [7]", "[14]–[18]"),
 ]
 COLORS = ["#EEF1F6", "#E5EAF2", "#DAE2EE", "#CED9EA", "#C1D0E5", "#B3C6E0", "#9DB6D8", "#2F6DB5"]
