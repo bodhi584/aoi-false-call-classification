@@ -87,7 +87,7 @@ def reproduction():
         paper = 100 * np.array([[z["paper"]["test_slip"]] + list(z["paper"]["slices_slip"]) for z in v])
         ours = 100 * np.array([[z["paper_exact_test"]["slip"]] + [s["slip"] for s in z["paper_exact"]] for z in v])
         b1 = ax.bar(x - w / 2, paper.mean(0), w, yerr=paper.std(0, ddof=1), capsize=3, color=GREY,
-                    label=f"[8], run logs (later periods: {paper[:, 1:].mean():.1f} %)")
+                    label=f"[7], run logs (later periods: {paper[:, 1:].mean():.1f} %)")
         b2 = ax.bar(x + w / 2, ours.mean(0), w, yerr=ours.std(0, ddof=1), capsize=3, color=BLUE,
                     label=f"Our code (later periods: {ours[:, 1:].mean():.1f} %)")
         ax.bar_label(b1, [f"{t:.1f}" for t in paper.mean(0)], fontsize=7, padding=2)

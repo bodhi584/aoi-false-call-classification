@@ -11,13 +11,13 @@ from matplotlib.patches import Polygon
 
 LEVELS = [
     ("Zero-defect manufacturing", "detect, repair, predict, prevent defects", "[1]"),
-    ("AOI in electronics assembly", "camera + fixed limits check every solder joint", "[2], [3]"),
-    ("False calls of AOI", "most flagged boards are good; manual re-inspection", "[4], [5]"),
-    ("Second check with supervised machine learning", "works on a test set, fails on later days", "[6]–[8]"),
-    ("Classifiers for tabular data", "which families exist and how they compare", "[9]–[18]"),
-    ("Evaluation with rare true defects", "recall, specificity, threshold", "[19], [20]"),
-    ("Why models fail over time: drift", "theory, manufacturing cases", "[21]–[27]"),
-    ("Methods: threshold and retraining", "the two next steps named in [8]", "[28]–[36]"),
+    ("AOI in electronics assembly", "camera + fixed limits check every solder joint", "[2]"),
+    ("False calls of AOI", "most flagged boards are good; manual re-inspection", "[3], [4]"),
+    ("Second check with supervised machine learning", "works on a test set, fails on later days", "[5]–[7]"),
+    ("Classifiers for tabular data", "which family works best; the two models of [7]", "[8]–[10]"),
+    ("Evaluation with rare true defects", "recall and specificity instead of accuracy", "[11]"),
+    ("Why models fail over time: drift", "definition, a manufacturing case", "[12], [13]"),
+    ("Methods: threshold and retraining", "the two next steps named in [7]", "[14]–[18]"),
 ]
 COLORS = ["#EEF1F6", "#E5EAF2", "#DAE2EE", "#CED9EA", "#C1D0E5", "#B3C6E0", "#9DB6D8", "#2F6DB5"]
 
@@ -39,7 +39,7 @@ def literature_map():
     ax.annotate("", xy=(8.9, 0.5), xytext=(8.9, 6.7), arrowprops=dict(arrowstyle="-|>", color="#555F6D", lw=1.5))
     ax.text(9.1, 6.6, "general", fontsize=9, color="#555F6D", va="top")
     ax.text(9.1, 0.55, "specific\n(our\nproject)", fontsize=9, color="#2F6DB5", va="bottom", fontweight="bold")
-    ax.text(0.0, 0.05, "Our simulation: threshold and retraining strategies as variables, compared with [8].",
+    ax.text(0.0, 0.05, "Our simulation: threshold and retraining strategies as variables, compared with [7].",
             fontsize=9, color="#A12A2A")
     fig.tight_layout()
     fig.savefig("docs/img/literature_map.png", dpi=200)
