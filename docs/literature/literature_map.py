@@ -39,7 +39,7 @@ def literature_map():
     ax.annotate("", xy=(8.9, 0.5), xytext=(8.9, 6.7), arrowprops=dict(arrowstyle="-|>", color="#555F6D", lw=1.5))
     ax.text(9.1, 6.6, "general", fontsize=9, color="#555F6D", va="top")
     ax.text(9.1, 0.55, "specific\n(our\nproject)", fontsize=9, color="#2F6DB5", va="bottom", fontweight="bold")
-    ax.text(0.0, 0.05, "Our simulation: threshold and retraining strategies as switches, compared with [8].",
+    ax.text(0.0, 0.05, "Our simulation: threshold and retraining strategies as variables, compared with [8].",
             fontsize=9, color="#A12A2A")
     fig.tight_layout()
     fig.savefig("docs/img/literature_map.png", dpi=200)

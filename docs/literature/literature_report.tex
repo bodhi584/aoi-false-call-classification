@@ -60,7 +60,7 @@ In electronics assembly, automated optical inspection (AOI) checks every solder 
 
 This report reviews 36 sources, from the general to the specific. Earlier studies show that classifiers such as random forests can recognise false calls from AOI measurements. On the same Siemens data, however, models that meet the targets on a test set from the same period (at most 1\,\% missed defects, at least 40\,\% fewer manual checks) miss 5--15\,\% of the true defects on every later production period. The literature on dataset shift and concept drift, cases from manufacturing, and the authors of the data and of the study themselves point to drift, a change of the data over time, as the cause; an unstable method for setting the decision threshold adds to it. The standard remedy in the drift literature is to retrain the model regularly on recent data. In related applications, a binary fraud classifier with less than 1\,\% positives and a quality model on a semiconductor materials line, regular retraining reduced the loss in performance. For the second check of AOI results, this remedy has not been tested in the literature we reviewed.
 
-Our project therefore repeats the experiment of Pfab and Rothering on the same data with the same models and methods, and addresses the two causes they name, one at a time: the threshold is set correctly for the final model, and the model is retrained during production. The deliverable is a simulation of the second check in production, with retraining and the threshold strategy as switches; its results are compared with the published result, and the targets of the original study (at most 1\,\% missed true defects, at least 40\,\% fewer manual checks) serve as reference lines.
+Our project therefore repeats the experiment of Pfab and Rothering on the same data with the same models and methods, and addresses the two causes they name, one at a time: the threshold is set correctly for the final model, and the model is retrained during production. The deliverable is a simulation of the second check in production, with retraining and the threshold strategy as its variables; its results are compared with the published result, and the targets of the original study (at most 1\,\% missed true defects, at least 40\,\% fewer manual checks) serve as reference lines.
 
 \newpage
 \tableofcontents
@@ -281,7 +281,7 @@ On five years of data from a semiconductor materials line, a random forest that 
 \relevance{A manufacturing case in which retraining works; the frequency is the main setting. Differences: regression instead of classification, and a preprint.}
 
 \subsection{Summary of the reviewed works}
-Table~\ref{tab:summary} compares the studies on AOI false calls. Table~\ref{tab:families} summarises the classifier families. Table~\ref{tab:chain} shows the chain of evidence behind our project, Table~\ref{tab:switches} maps the methods from the literature to the switches of our simulation, and Table~\ref{tab:methods} lists the methods of our project and their sources.
+Table~\ref{tab:summary} compares the studies on AOI false calls. Table~\ref{tab:families} summarises the classifier families. Table~\ref{tab:chain} shows the chain of evidence behind our project, Table~\ref{tab:switches} maps the methods from the literature to the variables of our simulation, and Table~\ref{tab:methods} lists the methods of our project and their sources.
 
 \begin{table}[h]
 \centering\small
@@ -336,11 +336,11 @@ Claim & Evidence & Sources \\
 
 \begin{table}[h]
 \centering\small
-\caption{From the literature to the switches of our simulation (the two next steps named in \cite{pfab2025}).}
+\caption{From the literature to the variables of our simulation (the two next steps named in \cite{pfab2025}).}
 \label{tab:switches}
 \begin{tabularx}{\textwidth}{@{}p{2.3cm}p{5.6cm}Lp{2.4cm}@{}}
 \toprule
-Switch & Option & What it does & Sources \\
+Variable & Option & What it does & Sources \\
 \midrule
 Threshold & as in \cite{pfab2025} & mean of the five cross-validation thresholds & \cite{pfab2025} \\
  & order statistic with confidence & 1\,\% bound held with probability $1-\delta$; needs enough left-out true defects & \cite{tong2018} \\
@@ -363,8 +363,8 @@ Method & Reason & Sources \\
 \midrule
 Binary classification of each flagged joint & the manual inspection label has two classes & \cite{pfab2024,pfab2025} \\
 Same data split, models, hyper-parameters and threshold method as \cite{pfab2025} & one-to-one comparison & \cite{pfab2025,breiman2001,chen2004} \\
-Threshold strategy as a switch & first next step named in \cite{pfab2025} & \cite{pfab2025,tong2018,saerens2002,lipton2018} \\
-Retraining strategy as a switch, evaluated with a rolling origin & second next step named in \cite{pfab2025} & \cite{gama2014,widmer1996,gama2004,bifet2007,tashman2000,dalpozzolo2018,gao2026} \\
+Threshold strategy as a variable of the simulation & first next step named in \cite{pfab2025} & \cite{pfab2025,tong2018,saerens2002,lipton2018} \\
+Retraining strategy as a variable of the simulation, evaluated with a rolling origin & second next step named in \cite{pfab2025} & \cite{gama2014,widmer1996,gama2004,bifet2007,tashman2000,dalpozzolo2018,gao2026} \\
 Slip and volume reduction; reference lines $\leq$1\,\% and $\geq$40\,\% & business metrics and targets of \cite{pfab2025} & \cite{pfab2025,he2009,fawcett2006} \\
 Ten random seeds, mean $\pm$ SD & as in \cite{pfab2025} & \cite{pfab2025} \\
 Extension: more model families & choice of family matters less than often assumed & \cite{mcelfresh2023,grinsztajn2022} \\
@@ -380,7 +380,7 @@ On the same public data that our project uses, however, Pfab and Rothering \cite
 
 The standard remedy for drift is to retrain the model regularly on recent data \cite{gama2014,lu2019,kadlec2011}. It has helped in a binary classification task with rare positives \cite{dalpozzolo2018} and on a semiconductor materials line, where the retraining frequency mattered most \cite{gao2026}. For the second check of AOI results, the reviewed literature does not report whether it works.
 
-\textbf{Position of our project.} In their discussion, Pfab and Rothering name as ``potential next steps to stabilize the modeling'' the ``improving [of] the method for setting the threshold and handling the distribution drifts within the dataset'' \cite{pfab2025}, without testing either. Our project focuses on exactly these two steps. We do not propose a new method. We test whether the standard remedies work for this real problem: we repeat the experiment of \cite{pfab2025} one-to-one, on the same data, with the same models, hyper-parameters and threshold method, and change one factor at a time for the two causes named in \cite{pfab2025}: first the threshold, set correctly for the final model, then retraining before each later production period. The question is: how do missed defects and released false calls change when the second check runs in production with retraining and threshold re-setting, compared with training once? The project delivers a production simulation in which retraining and the threshold strategy can be switched, and every result is shown next to the published result of \cite{pfab2025}; its targets (at most 1\,\% missed true defects, at least 40\,\% fewer manual checks) serve as reference lines. Whatever the result, it answers a question that the original study left open. Before the experiment, we will check the data for drift with the definitions of \cite{moreno2012}; the results, and the extension to retraining frequency and further model families, follow in the final report.
+\textbf{Position of our project.} In their discussion, Pfab and Rothering name as ``potential next steps to stabilize the modeling'' the ``improving [of] the method for setting the threshold and handling the distribution drifts within the dataset'' \cite{pfab2025}, without testing either. Our project focuses on exactly these two steps. We do not propose a new method. We test whether the standard remedies work for this real problem: we repeat the experiment of \cite{pfab2025} one-to-one, on the same data, with the same models, hyper-parameters and threshold method, and change one factor at a time for the two causes named in \cite{pfab2025}: first the threshold, set correctly for the final model, then retraining before each later production period. The question is: how do missed defects and released false calls change when the second check runs in production with retraining and threshold re-setting, compared with training once? The project delivers a production simulation in which retraining and the threshold strategy are the variables, and every result is shown next to the published result of \cite{pfab2025}; its targets (at most 1\,\% missed true defects, at least 40\,\% fewer manual checks) serve as reference lines. Whatever the result, it answers a question that the original study left open. Before the experiment, we will check the data for drift with the definitions of \cite{moreno2012}; the results, and the extension to retraining frequency and further model families, follow in the final report.
 
 % ---------------- References ----------------
 \begin{thebibliography}{99}
