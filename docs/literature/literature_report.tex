@@ -111,6 +111,7 @@ The review covers 18 sources published between 2001 and 2026: peer-reviewed jour
 \subsection{Structure of the report}
 Section~2 describes how the sources were found and summarises them from the general to the specific: from zero-defect manufacturing and AOI (2.2.1), through the Siemens data and earlier false-call studies (2.2.2), classifiers and evaluation (2.2.3, 2.2.4), to the reasons why models fail over time (2.2.5) and the methods for the two next steps named in the core study (2.2.6, 2.2.7). Section~2.3 compares the works in tables. Section~3 discusses what the literature shows and what it leaves open, and Section~4 concludes with the position of our project.
 
+\clearpage
 % ---------------- Materials and Methods ----------------
 \section{Materials and Methods}
 
@@ -252,7 +253,37 @@ On five years of data from a semiconductor materials line, a random forest that 
 \relevance{A manufacturing case in which retraining works; the frequency is the main setting. Differences: regression instead of classification, and a preprint.}
 
 \subsection{Summary of the reviewed works}
-Table~\ref{tab:summary} compares the studies on AOI false calls, and Table~\ref{tab:drift} compares the studies on drift and retraining. Table~\ref{tab:chain} shows the chain of evidence behind our project, Table~\ref{tab:switches} maps the methods from the literature to the variables of our simulation, and Table~\ref{tab:methods} lists the methods of our project and their sources.
+Table~\ref{tab:overview} lists all 18 sources with their type and their use in our project. Table~\ref{tab:summary} compares the studies on AOI false calls, and Table~\ref{tab:drift} compares the studies on drift and retraining. Table~\ref{tab:chain} shows the chain of evidence behind our project, Table~\ref{tab:switches} maps the methods from the literature to the variables of our simulation, and Table~\ref{tab:methods} lists the methods of our project and their sources.
+
+\begin{table}[h]
+\centering\small
+\caption{Overview of the 18 reviewed sources and their use in our project.}
+\label{tab:overview}
+\begin{tabularx}{\textwidth}{@{}p{1.0cm}p{3.0cm}p{1.0cm}L@{}}
+\toprule
+Source & Type & Year & Use in our project \\
+\midrule
+\cite{psarommatis2020} & journal review & 2020 & goal: detect defects before the product leaves the factory \\
+\cite{ebayyeh2020} & journal review & 2020 & how AOI works; where our input comes from \\
+\cite{siemens2026} & press release & 2026 & the problem is current; 40\,\% target \\
+\cite{pfab2024} & data article & 2024 & our data set; drift named by its authors \\
+\cite{thielen2020} & conference paper & 2020 & second check after AOI works (not public data) \\
+\cite{albayari2026} & conference paper & 2026 & second check on Siemens data, random splits \\
+\cite{pfab2025} & preprint & 2025 & core paper: our baseline and its two next steps \\
+\cite{grinsztajn2022} & conference paper & 2022 & tree ensembles are strong on tabular data \\
+\cite{breiman2001} & journal article & 2001 & random forest, model 1 of the DOE \\
+\cite{chen2004} & technical report & 2004 & balanced random forest, model 2 of the DOE \\
+\cite{he2009} & journal review & 2009 & recall and specificity instead of accuracy \\
+\cite{gama2014} & journal survey & 2014 & definition of drift; retraining windows (factor C) \\
+\cite{bauer2025} & journal article & 2025 & drift lowers a quality classifier in manufacturing \\
+\cite{tong2018} & journal article & 2018 & threshold with a safety margin (factor A) \\
+\cite{saerens2002} & journal article & 2002 & threshold re-set per period (factor A) \\
+\cite{gama2004} & conference paper & 2004 & retraining on detected drift (factor B) \\
+\cite{dalpozzolo2018} & journal article & 2018 & daily retraining helps with rare positives \\
+\cite{gao2026} & preprint & 2026 & retraining frequency matters most (factor B) \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \begin{table}[h]
 \centering\small
@@ -343,6 +374,7 @@ Ten random seeds as replicates, mean $\pm$ SD & as in \cite{pfab2025} & \cite{pf
 \end{tabularx}
 \end{table}
 
+\clearpage
 % ---------------- Discussion ----------------
 \section{Discussion}
 
@@ -358,6 +390,7 @@ For the second check of AOI results, no reviewed study tests a remedy against th
 \subsection{Limitations of the reviewed sources}
 Two of the central sources are preprints \cite{pfab2025,gao2026}; for \cite{pfab2025}, the published code and run logs allow us to check the results ourselves. The industrial targets of Siemens \cite{siemens2026} are targets, not measured results. The manufacturing evidence for retraining \cite{gao2026} concerns regression, not classification, and the drift experiment of \cite{bauer2025} works on images. The labels of the Siemens data come from operators and may contain errors \cite{pfab2024}. Finally, all evidence for the AOI case comes from one production line; whether the findings transfer to other lines is not known.
 
+\clearpage
 % ---------------- Conclusion ----------------
 \section{Conclusion}
 The literature leads from a general goal to one specific question. Zero-defect manufacturing needs reliable defect detection \cite{psarommatis2020}; in electronics assembly this is done by AOI \cite{ebayyeh2020}, which raises many false calls that operators check by hand \cite{pfab2024}, a problem that industry is still working on \cite{siemens2026}. Supervised classifiers after the AOI can recognise false calls \cite{thielen2020,albayari2026}, and on tabular data like the AOI measurements tree ensembles are the strongest family \cite{grinsztajn2022}.
@@ -368,6 +401,7 @@ The standard remedy for drift is to retrain the model regularly on recent data \
 
 \textbf{Position of our project.} In their discussion, Pfab and Rothering name as ``potential next steps to stabilize the modeling'' the ``improving [of] the method for setting the threshold and handling the distribution drifts within the dataset'' \cite{pfab2025}, without testing either. Our project focuses on exactly these two steps. We do not propose a new method; we test whether the standard remedies work for this real problem. First, we reimplemented the method of \cite{pfab2025} with our own code, on the same data, with the same split, models, hyper-parameters and threshold method; while doing so we corrected one point: the threshold is taken from the best model of the tuning, not from the last model tried. This reimplementation is our baseline. Second, a design of experiments varies the threshold method (as in \cite{pfab2025} corrected, a safety margin \cite{tong2018}, re-set per period \cite{saerens2002}), the retraining schedule (never, per period, weekly, every 3 days, daily, on drift \cite{gama2004}), the retraining data (all data so far or a recent window \cite{gama2014}) and the model (random forest or balanced random forest), each setting with the ten seeds of \cite{pfab2025}. The question is: how do missed true defects and released false calls on later production periods change when threshold and retraining change, compared with training once? Every result is shown next to the published result of \cite{pfab2025}; its targets (at most 1\,\% missed true defects, at least 40\,\% fewer manual checks) serve as reference lines. In the end, the simulation becomes a small software tool in which threshold and retraining are settings. Whatever the result, it answers a question that the original study left open.
 
+\clearpage
 % ---------------- References ----------------
 \begin{thebibliography}{99}
 \addcontentsline{toc}{section}{References}
