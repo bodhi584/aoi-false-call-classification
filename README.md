@@ -18,6 +18,17 @@ Yu Han (team lead) · Melisa Subasi · Meron Hagos · Alejandro Rivas
 | Open-access papers we cite | [`docs/papers/`](docs/papers/) |
 | Earlier: P1 proposal and slides | [`docs/proposal.pdf`](docs/proposal.pdf) · [`docs/slides_revised_topic.pdf`](docs/slides_revised_topic.pdf) |
 
+### P2 requirements → where to find them
+
+| Course requirement (P2) | File |
+|---|---|
+| **Core code** | [`scripts/replicate_pfab2025.py`](scripts/replicate_pfab2025.py) (163 lines): split, models, threshold, retraining |
+| **Baseline simulation** | result [`results/replication_pfab2025.json`](results/replication_pfab2025.json) · figure [`docs/img/reproduction_pfab2025.png`](docs/img/reproduction_pfab2025.png) · figure code [`scripts/make_p2_figures.py`](scripts/make_p2_figures.py) · section [5](#5-baseline-our-code-shows-the-same-problem-as-7) below |
+| **Test plan** | [`docs/test_plan.md`](docs/test_plan.md) (design of experiments + code tests) |
+| **Report** | [`docs/literature_report.pdf`](docs/literature_report.pdf) (bibliography report, 18 sources; LaTeX source in [`docs/literature/`](docs/literature/)) |
+| Presentation | [`docs/slides_p2.pdf`](docs/slides_p2.pdf) |
+| Unit tests and CI | [`tests/`](tests/) · [CI runs](https://github.com/bodhi584/aoi-false-call-classification/actions/workflows/ci.yml) |
+
 Progress and milestones: [`PROGRESS.md`](PROGRESS.md). Numbers in brackets, such as [7], refer to the bibliography report.
 
 ---
@@ -26,13 +37,13 @@ Progress and milestones: [`PROGRESS.md`](PROGRESS.md). Numbers in brackets, such
 
 | | |
 |---|---|
-| **Literature** | 18 sources. A machine-learning second check removes false calls on a test set, but on later production days it misses 5–15 % of true defects [7]. |
-| **Our question** | [7] names two causes, drift and an unstable threshold, and tests neither. Methods for both exist; they become the two variables of our simulation. |
-| **Data** | Same public Siemens data as [7]. They change over time: among flagged boards, true defects rose from 1–2 % per week to 3–6 % in the last 4 weeks. |
-| **Code** | We reimplemented the method of [7] with our own code, then corrected the threshold and added retraining. |
-| **Baseline** | Our code shows the same problem as [7]: 1–2 % missed true defects on the test set, 5–14 % on the 5 later periods. |
-| **Test plan** | Design of experiments: threshold 3 · retraining 6 · retraining data 2 · model 2 → 72 settings × 10 seeds. |
-| **Next (P3)** | Run the design of experiments. The simulation software follows in P4–P5. |
+| **Literature** ([report](docs/literature_report.pdf)) | 18 sources. A machine-learning second check removes false calls on a test set, but on later production days it misses 5–15 % of true defects [7]. |
+| **Our question** ([section 2](#2-our-question)) | [7] names two causes, drift and an unstable threshold, and tests neither. Methods for both exist; they become the two variables of our simulation. |
+| **Data** ([notebook](notebooks/data_understanding.ipynb), [facts](results/data_facts.json)) | Same public Siemens data as [7]. They change over time: among flagged boards, true defects rose from 1–2 % per week to 3–6 % in the last 4 weeks. |
+| **Code** ([core code](scripts/replicate_pfab2025.py)) | We reimplemented the method of [7] with our own code, then corrected the threshold and added retraining. |
+| **Baseline** ([result](results/replication_pfab2025.json), [figure](docs/img/reproduction_pfab2025.png)) | Our code shows the same problem as [7]: 1–2 % missed true defects on the test set, 5–14 % on the 5 later periods. |
+| **Test plan** ([test plan](docs/test_plan.md)) | Design of experiments: threshold 3 · retraining 6 · retraining data 2 · model 2 → 72 settings × 10 seeds. |
+| **Next (P3)** ([progress](PROGRESS.md)) | Run the design of experiments. The simulation software follows in P4–P5. |
 
 ## 1. The problem
 
@@ -81,7 +92,9 @@ In the end, the system becomes a small web tool for the simulation, with thresho
 | Balanced random forest | 0.7 % / 1.5 % | 7.5 % / 7.5 % |
 | Random forest | 0.7 % / 1.9 % | 11.3 % / 9.1 % |
 
-The pattern is the same: low on the test set, several times higher on later periods. The small gaps are checked in P3. Result file: [`results/replication_pfab2025.json`](results/replication_pfab2025.json).
+The pattern is the same: low on the test set, several times higher on later periods. The small gaps are checked in P3.
+
+Result file: [`results/replication_pfab2025.json`](results/replication_pfab2025.json), keys `paper_exact_test` and `paper_exact` (the baseline: trained once, threshold logged by [7]) and `paper` (the run logs of [7]). The same file already holds the first runs with the corrected threshold (`test`, `train_once`) and with retraining before each period (`retrain`); they are evaluated in P3.
 
 ## 6. Test plan (design of experiments)
 
@@ -105,7 +118,8 @@ pip install -r requirements.txt pytest
 python -m pytest -q                          # unit tests (synthetic data)
 python scripts/download_data.py              # Siemens data, about 330 MB
 python scripts/data_facts.py                 # results/data_facts.json
-python scripts/replicate_pfab2025.py RUNS_CSV  # baseline; RUNS_CSV = run log of [7] from gitlab.com/research9841542/FCR_1
+python scripts/replicate_pfab2025.py runs.csv  # baseline; runs.csv = run log of [7]:
+                                             # src/fcr_case_study/notebooks/runs/runs.csv in gitlab.com/research9841542/FCR_1
 python scripts/make_p2_figures.py            # P2 figures in docs/img/
 ```
 
