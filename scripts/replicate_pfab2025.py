@@ -1,4 +1,4 @@
-"""One-to-one replication of Pfab & Rothering (2025), with one change: retraining.
+"""Our reimplementation of Pfab & Rothering (2025): threshold corrected, retraining added.
 
 Reference: K. Pfab and M. Rothering, "Towards improved research methodologies for industrial AI:
 a case study of false call reduction", arXiv:2506.14521, 2025. Their source code
