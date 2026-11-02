@@ -1,0 +1,158 @@
+{
+  "logistic_regression": [
+    {
+      "origin_day": 40,
+      "joint_auroc": 0.605,
+      "fit_seconds": 6.1,
+      "specificity_pct_at_100pct_recall": 12.1,
+      "specificity_pct_at_99pct_recall": 15.4,
+      "specificity_pct_at_95pct_recall": 43.2
+    },
+    {
+      "origin_day": 60,
+      "joint_auroc": 0.866,
+      "fit_seconds": 22.2,
+      "specificity_pct_at_100pct_recall": 17.4,
+      "specificity_pct_at_99pct_recall": 17.4,
+      "specificity_pct_at_95pct_recall": 29.2
+    },
+    {
+      "origin_day": 80,
+      "joint_auroc": 0.87,
+      "fit_seconds": 25.8,
+      "specificity_pct_at_100pct_recall": 28.6,
+      "specificity_pct_at_99pct_recall": 28.6,
+      "specificity_pct_at_95pct_recall": 55.7
+    }
+  ],
+  "gaussian_naive_bayes": [
+    {
+      "origin_day": 40,
+      "joint_auroc": 0.429,
+      "fit_seconds": 0.6,
+      "specificity_pct_at_100pct_recall": 0.0,
+      "specificity_pct_at_99pct_recall": 0.0,
+      "specificity_pct_at_95pct_recall": 25.7
+    },
+    {
+      "origin_day": 60,
+      "joint_auroc": 0.679,
+      "fit_seconds": 1.6,
+      "specificity_pct_at_100pct_recall": 0.0,
+      "specificity_pct_at_99pct_recall": 0.0,
+      "specificity_pct_at_95pct_recall": 0.0
+    },
+    {
+      "origin_day": 80,
+      "joint_auroc": 0.698,
+      "fit_seconds": 1.4,
+      "specificity_pct_at_100pct_recall": 23.1,
+      "specificity_pct_at_99pct_recall": 23.1,
+      "specificity_pct_at_95pct_recall": 23.1
+    }
+  ],
+  "random_forest": [
+    {
+      "origin_day": 40,
+      "joint_auroc": 0.595,
+      "fit_seconds": 3.7,
+      "specificity_pct_at_100pct_recall": 12.4,
+      "specificity_pct_at_99pct_recall": 36.6,
+      "specificity_pct_at_95pct_recall": 48.2
+    },
+    {
+      "origin_day": 60,
+      "joint_auroc": 0.939,
+      "fit_seconds": 9.1,
+      "specificity_pct_at_100pct_recall": 11.0,
+      "specificity_pct_at_99pct_recall": 11.0,
+      "specificity_pct_at_95pct_recall": 20.5
+    },
+    {
+      "origin_day": 80,
+      "joint_auroc": 0.87,
+      "fit_seconds": 10.0,
+      "specificity_pct_at_100pct_recall": 29.0,
+      "specificity_pct_at_99pct_recall": 29.0,
+      "specificity_pct_at_95pct_recall": 46.5
+    }
+  ],
+  "extra_trees": [
+    {
+      "origin_day": 40,
+      "joint_auroc": 0.657,
+      "fit_seconds": 3.2,
+      "specificity_pct_at_100pct_recall": 6.0,
+      "specificity_pct_at_99pct_recall": 16.9,
+      "specificity_pct_at_95pct_recall": 42.5
+    },
+    {
+      "origin_day": 60,
+      "joint_auroc": 0.928,
+      "fit_seconds": 7.3,
+      "specificity_pct_at_100pct_recall": 4.2,
+      "specificity_pct_at_99pct_recall": 4.2,
+      "specificity_pct_at_95pct_recall": 10.4
+    },
+    {
+      "origin_day": 80,
+      "joint_auroc": 0.846,
+      "fit_seconds": 9.7,
+      "specificity_pct_at_100pct_recall": 20.5,
+      "specificity_pct_at_99pct_recall": 20.5,
+      "specificity_pct_at_95pct_recall": 52.1
+    }
+  ],
+  "hist_gradient_boosting": [
+    {
+      "origin_day": 40,
+      "joint_auroc": 0.714,
+      "fit_seconds": 5.9,
+      "specificity_pct_at_100pct_recall": 1.7,
+      "specificity_pct_at_99pct_recall": 13.1,
+      "specificity_pct_at_95pct_recall": 47.5
+    },
+    {
+      "origin_day": 60,
+      "joint_auroc": 0.927,
+      "fit_seconds": 17.3,
+      "specificity_pct_at_100pct_recall": 2.8,
+      "specificity_pct_at_99pct_recall": 2.8,
+      "specificity_pct_at_95pct_recall": 10.2
+    },
+    {
+      "origin_day": 80,
+      "joint_auroc": 0.873,
+      "fit_seconds": 19.0,
+      "specificity_pct_at_100pct_recall": 27.0,
+      "specificity_pct_at_99pct_recall": 27.0,
+      "specificity_pct_at_95pct_recall": 59.8
+    }
+  ],
+  "mlp_1_hidden_layer": [
+    {
+      "origin_day": 40,
+      "joint_auroc": 0.566,
+      "fit_seconds": 4.2,
+      "specificity_pct_at_100pct_recall": 5.8,
+      "specificity_pct_at_99pct_recall": 24.9,
+      "specificity_pct_at_95pct_recall": 45.6
+    },
+    {
+      "origin_day": 60,
+      "joint_auroc": 0.837,
+      "fit_seconds": 14.4,
+      "specificity_pct_at_100pct_recall": 7.1,
+      "specificity_pct_at_99pct_recall": 7.1,
+      "specificity_pct_at_95pct_recall": 13.2
+    },
+    {
+      "origin_day": 80,
+      "joint_auroc": 0.857,
+      "fit_seconds": 18.9,
+      "specificity_pct_at_100pct_recall": 25.5,
+      "specificity_pct_at_99pct_recall": 25.5,
+      "specificity_pct_at_95pct_recall": 57.3
+    }
+  ]
+}
