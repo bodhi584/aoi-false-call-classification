@@ -4,192 +4,130 @@
 
 [![CI](https://github.com/bodhi584/aoi-false-call-classification/actions/workflows/ci.yml/badge.svg)](https://github.com/bodhi584/aoi-false-call-classification/actions/workflows/ci.yml)
 
-Case Study *Intelligent Systems in Production* · Technische Hochschule Deggendorf (THD) · Team 1 · guided by Dr. Hamidreza Heidari
+Case Study *Intelligent Systems in Production* · Technische Hochschule Deggendorf (THD) · Team 1 · guided by Prof. Dr.-Ing. Hamidreza Heidari
 Yu Han (team lead) · Melisa Subasi · Meron Hagos · Alejandro Rivas
 
-📄 One-page proposal: [`docs/proposal.pdf`](docs/proposal.pdf) ([Word](docs/proposal.docx)) · slides: [`docs/slides_revised_topic.pdf`](docs/slides_revised_topic.pdf) · progress and milestones: [`PROGRESS.md`](PROGRESS.md)
+## 📥 Download (P2, 3 Nov 2026)
 
-Based on the lecture example **“Siemens – Quality Control and Defect Detection”** (lecture slides, p. 18).
+| Document | File |
+|---|---|
+| **P2 slides** | [`docs/slides_p2.pdf`](docs/slides_p2.pdf) · [PowerPoint with speaker notes](docs/slides_p2.pptx) |
+| **Bibliography report** (18 sources) | [`docs/literature_report.pdf`](docs/literature_report.pdf) |
+| **Test plan** (design of experiments) | [`docs/test_plan.md`](docs/test_plan.md) |
+| **Data understanding** | [`notebooks/data_understanding.ipynb`](notebooks/data_understanding.ipynb) |
+| Open-access papers we cite | [`docs/papers/`](docs/papers/) |
+| Earlier: P1 proposal and slides | [`docs/proposal.pdf`](docs/proposal.pdf) · [`docs/slides_revised_topic.pdf`](docs/slides_revised_topic.pdf) |
 
-**Aim:** this project aims to reduce false calls after automated optical inspection (AOI): a binary classifier decides for each AOI alarm whether it is a true defect or a false call, while at most 1 % of true defects are classified as false call (recall ≥ 99 %).
-
-**Key motivation:** fewer manual re-inspections of false calls (operator time, throughput), while true defects are still caught. Every number on this page comes from a cited source or from a result file in [`results/`](results/).
+Progress and milestones: [`PROGRESS.md`](PROGRESS.md). Numbers in brackets, such as [7], refer to the bibliography report.
 
 ---
 
-## 1. The industrial problem
-
-After soldering, an **automated optical inspection (AOI)** machine checks every board with a camera. It measures each solder joint (height, offset, polarity, …) and compares each value with fixed limits. If one value is outside its limit, the board goes to a **manual inspection station**, where an operator checks it.
-
-**Most of these alarms are false.** In the Siemens production data used here, about **98 %** of the flagged boards are fine (*false calls*); only about 2 % have a real defect ([`results/data_facts.json`](results/data_facts.json)). The data authors from Siemens describe this as “a major manual labour effort” (Pfab et al. 2024).
-
-**It is a current problem, not a past one:**
-
-| Date | Source | What it says |
-|---|---|---|
-| 21 Oct 2026 | Siemens press release with NVIDIA | AI second check of AOI results at the **Siemens electronics factory in Erlangen**: when the AOI flags a possible defect, AI decides “whether it represents a real defect or a false call”. Project targets: about **40 % fewer false calls**, **reduced manual verification**. |
-| 19 Oct 2026 | Siemens (C. Neike), Erlangen, reported by technology.org | Factories in high-wage countries need **7–9 % more productivity every year**; Siemens invests €500 million in the Erlangen site as a showcase for AI in manufacturing. |
-| 2024 | Pfab et al., Siemens AG, *Data in Brief* | Siemens publishes 132 days of AOI data from a real line so that false-call reduction can be studied on real data. |
-
-> **Why this problem and not image-based defect detection?** The AOI machine is already the computer-vision system and stays on the line. The open problem is the step after it: too many false alarms go to people. This is the step Siemens is working on now.
-
-## 2. Key factors
-
-| Factor | Why it matters |
-|---|---|
-| False-call rate | Each false call costs operator time at the manual station |
-| Missed defects | A released defective board reaches the customer; this must stay very low |
-| Drift over time | Material batches, machine settings and products change; a model trained last month may no longer fit |
-| Class imbalance | Only about 1 % of flagged joints are real defects |
-| Label quality | Labels come from operators and may contain errors (Pfab et al. 2024) |
-
-## 3. Input → System → Output
-
-![AOI alarm → binary classification → true defect or false call](docs/img/system.png)
+## P2 in short
 
 | | |
 |---|---|
-| **Input** | AOI alarm (one flagged board): measurements of each flagged solder joint (about 70 values), inspection type, component type, AOI error code |
-| **System** | Binary classification (supervised machine learning) trained on past manual-inspection results; classification threshold set for a recall of at least 99 % on true defects |
-| **Output** | Per board: is the AOI alarm real? **True defect** (→ manual inspection, repair) or **false call** (→ skip manual inspection) |
-| **Impact** | Less manual inspection work (cost, throughput) without lowering quality |
+| **Literature** | 18 sources. A machine-learning second check removes false calls on a test set, but on later production days it misses 5–15 % of true defects [7]. |
+| **Our question** | [7] names two causes, drift and an unstable threshold, and tests neither. Methods for both exist; they become the two variables of our simulation. |
+| **Data** | Same public Siemens data as [7]. They change over time: among flagged boards, true defects rose from 1–2 % per week to 3–6 % in the last 4 weeks. |
+| **Code** | We reimplemented the method of [7] with our own code, then corrected the threshold and added retraining. |
+| **Baseline** | Our code shows the same problem as [7]: 1–2 % missed true defects on the test set, 5–14 % on the 5 later periods. |
+| **Test plan** | Design of experiments: threshold 3 · retraining 6 · retraining data 2 · model 2 → 72 settings × 10 seeds. |
+| **Next (P3)** | Run the design of experiments. The simulation software follows in P4–P5. |
 
-> **Why these labels?** They are produced every day at the manual station anyway, so no extra labelling is needed in a factory.
+## 1. The problem
 
-## 4. Methodology
+After soldering, an **automated optical inspection (AOI)** machine measures every solder joint and compares each value with fixed limits. Every flagged board goes to a **manual inspection station**. Most alarms are false: in the Siemens data, about 99 % of the flagged joints and 97.8 % of the flagged boards are **false calls** [4], [7] ([`results/data_facts.json`](results/data_facts.json)). Siemens is working on this today: an AI second check in its Erlangen factory targets 40 % fewer false calls [3].
 
-We follow **CRISP-DM** (Cross-Industry Standard Process for Data Mining; Chapman et al. 2000), the standard process for industrial data projects:
+## 2. Our question
 
-| CRISP-DM phase | What we do |
-|---|---|
-| Business understanding | False-call problem, KPIs and limits (sections 1, 2, 7) |
-| Data understanding | Siemens AOI data: structure, imbalance, drift ([`results/data_facts.json`](results/data_facts.json)) |
-| Data preparation | Group joints into boards, encode categories, split strictly by time |
-| Modelling | Three standard models (scikit-learn): logistic regression (baseline), random forest, neural network with one hidden layer (lecture p. 12, 17) |
-| Evaluation | **Day-by-day simulation** of the line (section 6): precision, recall, defective boards released, manual inspections saved |
-| Deployment | Demo video and run instructions (P5) |
+![Literature from general to specific](docs/img/literature_map.png)
 
-**Day-by-day simulation.** The recorded days are played back in time order. On each day every flagged board is classified by a model trained only on earlier days, exactly as on the real line. We compare training once with retraining every week. Code: [`aoi_classification/simulation.py`](aoi_classification/simulation.py); step by step: [`model_training.ipynb`](model_training.ipynb).
+Pfab & Rothering [7] built a second check on the same data. Trained once, it misses about 1 % of true defects on a test set from the same period, but 5–15 % on all five later periods. They name two causes and leave both open:
 
-> **Why a day-by-day simulation instead of a random train/test split?** A random split mixes future and past. It looks much better than reality on this data (section 6), so it would overstate what a factory gets.
+> “… potential next steps to stabilize the modeling by improving the method for setting the threshold and handling the distribution drifts within the dataset.” ([7], Sec. VII)
 
-## 5. Data
+| Variable | Option 1 | Option 2 | Option 3 |
+|---|---|---|---|
+| Threshold | set once, as in [7] | safety margin for 1 % [14] | re-set per period [15] |
+| Retraining | never, as in [7] | fixed schedule [12], [17], [18] | when drift is detected [16] |
+
+## 3. Input → system → output
 
 | | |
 |---|---|
-| Source | Pfab, Eichler, Mallandur, Rothering (2024), Siemens AG, *Data in Brief* 53, 110110 |
-| Repository | Mendeley Data, DOI [10.17632/99jzmh9658.2](https://data.mendeley.com/datasets/99jzmh9658/2) |
-| Content | 440,274 flagged solder joints on 39,742 boards, 5 inspection types, about 70 AOI measurements, 4 categorical fields (e.g. component type, error code); label: false call / true defect |
-| Period | 132 days of one production line of Siemens AG in Bavaria (101 days with records) |
-| Drift | A classifier can tell the first 30 % of days from the last 30 % from the measurements alone with AUROC 0.974: the line changes strongly over time |
+| **Input** (as in [7]) | Siemens AOI data in time order [4]: one row per flagged solder joint, about 70 AOI measurements, label from the manual station |
+| **System** (our code) | [`scripts/replicate_pfab2025.py`](scripts/replicate_pfab2025.py): (1) **reimplemented** the method of [7] (same split, models, logged hyper-parameters, threshold method; their code was read, not copied); (2) **corrected** the threshold: it should come from the best of all training runs; [7] uses the threshold of the last run; (3) **added** retraining before each of the 5 later periods |
+| **Output** (as in [7]) | Missed true defects (%) and false calls released (%), per period |
+
+In the end, the system becomes a small web tool for the simulation, with threshold and retraining as settings.
+
+## 4. Data
+
+| | |
+|---|---|
+| Source | Pfab, Eichler, Mallandur, Rothering (2024), Siemens AG, *Data in Brief* 53, 110110 [4] |
+| Content | 440,274 flagged solder joints on 39,742 boards, 132 days, one SMT line |
+| Drift | Defective boards 0.8–2.3 % per week, then 3.2–6.3 % in the last 4 weeks; early and late days can be told apart from the measurements alone (AUROC 0.974) |
 | Licence | CC BY-NC 3.0, owned by Siemens AG: **not stored here**; [`scripts/download_data.py`](scripts/download_data.py) downloads it and checks the checksum |
 
-## 6. First results
+![Data change over time](docs/img/data_drift.png)
 
-**Baseline** ([`scripts/run_baseline.py`](scripts/run_baseline.py), [`results/baseline.json`](results/baseline.json)): each model is trained on the first 70 % of the records and tested on the rest (time order), compared with a random split. The number is the **specificity** (share of false calls correctly classified as false call, i.e. manual inspections that could be skipped) at 99 % **recall** (99 % of defective boards still classified as true defect); positive class = true defect.
+## 5. Baseline: our code shows the same problem as [7]
 
-| Model | Random 70/30 split (as often done in papers) | **Time order (as on the real line)** |
+![Baseline: our reimplementation vs. the run logs of [7]](docs/img/reproduction_pfab2025.png)
+
+| Model (10 seeds) | Missed true defects, test set: [7] / ours | Later periods: [7] / ours |
 |---|---|---|
-| Logistic regression (baseline) | 14.2 % | **2.1 %** |
-| Random forest | 18.4 % | **6.4 %** |
-| Neural network (one hidden layer) | 16.2 % | **1.8 %** |
+| Balanced random forest | 0.7 % / 1.5 % | 7.5 % / 7.5 % |
+| Random forest | 0.7 % / 1.9 % | 11.3 % / 9.1 % |
 
-These rates are read from the test period itself, so they are an upper bound.
+The pattern is the same: low on the test set, several times higher on later periods. The small gaps are checked in P3. Result file: [`results/replication_pfab2025.json`](results/replication_pfab2025.json).
 
-![Baseline](docs/img/baseline.png)
+## 6. Test plan (design of experiments)
 
-**Day-by-day simulation** ([`scripts/run_simulation.py`](scripts/run_simulation.py), [`results/simulation.json`](results/simulation.json)): second half of the records (39 production days, 17,366 flagged boards), thresholds set on past days only.
+| Factor | n | Level 1 | Level 2 | Level 3 | Level 4 | Level 5 | Level 6 |
+|---|---|---|---|---|---|---|---|
+| A · Threshold | 3 | as in [7], corrected | safety margin [14] | re-set per period [15] | | | |
+| B · Retraining | 6 | never, as in [7] | per period | weekly | every 3 days | daily | on drift [16] |
+| C · Retraining data | 2 | all data so far | recent window [12] | | | | |
+| D · Model | 2 | random forest | balanced random forest | | | | |
 
-| Model | Training | Specificity: false calls correctly classified (manual inspections saved) | True defects missed (1 − recall) |
-|---|---|---|---|
-| Logistic regression | once | 15.0 % (2,523) | **3.38 %** (20 of 592) |
-| Logistic regression | every week | 11.6 % (1,949) | **2.20 %** (13 of 592) |
-| Random forest | once | 9.9 % (1,658) | **2.20 %** (13 of 592) |
-| Random forest | every week | 13.1 % (2,203) | **3.55 %** (21 of 592) |
-| Neural network | once | 11.9 % (1,996) | **3.21 %** (19 of 592) |
-| Neural network | every week | 6.5 % (1,098) | **3.72 %** (22 of 592) |
+**Held constant:** data and split, features, hyper-parameters of [7], recall target 99 %. **Responses:** missed true defects (%) and false calls released (%) per later period, with the reference lines of [7] (≤ 1 %, ≥ 40 %). **Design:** 3 × 6 × 2 × 2 = 72 settings, each with 10 seeds. Details and code tests: [`docs/test_plan.md`](docs/test_plan.md).
 
-![Day-by-day simulation](docs/img/results.png)
+## 7. Run it
 
-**What this shows:** all three models save manual inspections (specificity 6.5–15.0 %), but none keeps 99 % recall on later days (96.3–97.8 %), because the line changes over time. Handling these changes is the main challenge for the next milestones.
-
-## What we deliver
-
-A **software prototype**, not a product installed in a factory:
-
-| Deliverable | What it is |
-|---|---|
-| **Classifier** | A Python package (`aoi_classification/`): train on past manual-inspection results, classify each flagged board (true defect or false call), simulate the line day by day |
-| **Notebook** | [`model_training.ipynb`](model_training.ipynb): the three models step by step, with precision, recall and the confusion matrix |
-| **Evidence** | Result files for every reported number, tests on every push, demo video, final report |
-
-In a factory the classifier would run between the AOI machine and the manual inspection station; connecting it to a real line is not part of the course project. 
-
-## 7. Goals and KPIs
-
-| KPI | Baseline (time order) | Target (12 Jan) |
-|---|---|---|
-| Recall (true defects classified as true defect) | 96.3–97.8 % (day-by-day simulation) | **≥ 99 %** |
-| Specificity (false calls classified as false call = manual inspections saved) | 6.4 % (best model at 99 % recall, time order) | **≥ 20 %** |
-
-Targets are fixed now, before the main experiments.
-
-## 8. Conditions and limitations
-
-- One Siemens production line, five inspection types, 132 days.
-- Measurements are anonymised (scaled to 0–1, no physical names), so explanations can name a feature but not its physical meaning.
-- Labels come from operators and may contain errors.
-- No images: the classifier works on AOI measurements, not on camera images.
-- Data licence is non-commercial (course use only); no personal data.
-- Main risk: the line changes over time, so the 1 % limit may not hold on later days. Fallback: report what works, what does not, and why.
-
-## Future work
-
-The next step after the course is a real line with an industry partner: (1) an electronics plant shares AOI and manual-inspection records under a data agreement; (2) an interface reads each board's AOI result from the machine or MES (for example via the IPC-CFX standard or a vendor export) and sends the classification to the repair station; (3) **shadow mode**: the classifier runs next to the operators and only logs its decisions; (4) the plant's quality engineers compare the logs and approve go-live, starting with one inspection type.
-
-## 9. Timeline
-
-![Timeline](docs/img/gantt.png)
-
-Milestones follow the course requirements for the Software & Simulation track; details in [`PROGRESS.md`](PROGRESS.md). Tasks and owners are tracked as [issues](../../issues); how to work on them: [`CONTRIBUTING.md`](CONTRIBUTING.md).
-
-## 10. Run it
-
-Runs on **Windows, macOS and Linux** (Python 3.11 or newer, no graphics card). The tests run on all three systems on every push.
+Windows, macOS or Linux, Python 3.11 or newer, no graphics card.
 
 ```bash
 git clone https://github.com/bodhi584/aoi-false-call-classification
 cd aoi-false-call-classification
 pip install -r requirements.txt pytest
-python -m pytest -q                  # unit tests (synthetic data)
-python scripts/download_data.py      # Siemens data, about 330 MB
-python scripts/run_baseline.py       # results/baseline.json
-python scripts/data_facts.py         # results/data_facts.json (size, false-call share, drift)
-python scripts/run_simulation.py     # results/simulation*.json / .csv (about 10 min)
-python scripts/make_figures.py       # docs/img/*.png
-jupyter notebook model_training.ipynb  # the same steps, one by one
+python -m pytest -q                          # unit tests (synthetic data)
+python scripts/download_data.py              # Siemens data, about 330 MB
+python scripts/data_facts.py                 # results/data_facts.json
+python scripts/replicate_pfab2025.py RUNS_CSV  # baseline; RUNS_CSV = run log of [7] from gitlab.com/research9841542/FCR_1
+python scripts/make_p2_figures.py            # P2 figures in docs/img/
 ```
 
-## 11. Repository
+## 8. Repository
 
 ```
-aoi_classification/   data loading, binary classifier (model + threshold), day-by-day simulation — explained step by step in docs/code_walkthrough.md
-scripts/              data download, data facts, baseline, simulation, figures
-model_training.ipynb  step-by-step notebook (load, train, threshold, evaluate, simulate)
-tests/                unit tests (run automatically on every push)
-results/              result files of every run shown on this page
-docs/                 proposal, slides, figures
+scripts/              core code (replicate_pfab2025.py), data download, data facts, figures, classifier screening
+notebooks/            data understanding
+results/              result files of every number shown here
+docs/                 slides, bibliography report, test plan, figures, papers
+docs/literature/      LaTeX source of the report and the literature parts
+aoi_classification/   P1 package (earlier plan), kept for reference; docs/code_walkthrough.md
+model_training.ipynb  P1 notebook, kept for reference
+tests/                unit tests, run on every push
 ```
 
 ## References
 
-- Pfab, K., Eichler, R., Mallandur, A., Rothering, M. (2024). Data of automated optical inspection of surface-mounted technology electronic production. *Data in Brief* 53, 110110. doi:10.1016/j.dib.2024.110110
-- Siemens (21 Oct 2026). *Siemens and NVIDIA advance AI-powered PCB inspection from digital twin to factory.* Press release. https://news.siemens.com/en-us/siemens-nvidia-pcba-digital-twin-factory/
-- technology.org (20 Oct 2026). *Siemens aims to raise factory automation to 80 % with AI.* https://www.technology.org/2026/10/20/siemens-ai-factory-automation-80-percent-erlangen-neike/
-- Albayari, J., Patra, P., Patel, D., Santos, D. (2025). Enhancing false call detection in automated optical inspection using XGBoost classifier and XAI algorithms. *FAIM 2025*, Springer. doi:10.1007/978-3-032-05610-8_51
-- Schmitt, J., Bönig, J., Borggräfe, T., Beitinger, G., Deuse, J. (2020). Predictive model-based quality inspection using machine learning and edge cloud computing. *Advanced Engineering Informatics* 45, 101101.
-- Chapman, P. et al. (2000). *CRISP-DM 1.0: Step-by-step data mining guide.* SPSS.
-- Lecture slides, Case Study Intelligent Systems in Production, p. 18 (Siemens – Quality Control and Defect Detection).
+All 18 sources with summaries: [`docs/literature_report.pdf`](docs/literature_report.pdf). Key ones:
+
+- [4] Pfab, K., Eichler, R., Mallandur, A., Rothering, M. (2024). Data of automated optical inspection of surface-mounted technology electronic production. *Data in Brief* 53, 110110. doi:10.1016/j.dib.2024.110110
+- [7] Pfab, K., Rothering, M. (2025). Towards improved research methodologies for industrial AI: a case study of false call reduction. arXiv:2506.14521. Code and run logs: gitlab.com/research9841542/FCR_1
 
 ## License
 

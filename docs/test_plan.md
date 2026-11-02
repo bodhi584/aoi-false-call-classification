@@ -1,28 +1,45 @@
 # Test plan
 
-Team 1 · Binary classification of AOI alarms into true defects and false calls · issue #34 · author: Melisa Subasi
+Team 1 · Binary classification of AOI alarms into true defects and false calls · issue #34 · author: Melisa Subasi · updated for P2 (2 Nov 2026)
+
+Numbers in brackets, such as [7], refer to the bibliography report ([`literature_report.pdf`](literature_report.pdf)). [7] is the core paper: Pfab & Rothering (2025).
 
 ## 1. What we test
 
-1. **Data:** the Siemens AOI data are correct and in time order.
-2. **Classifier and threshold:** the three models run, and the threshold keeps at least 99 % of true defects.
-3. **Day-by-day simulation:** each day is classified with a model that only knows earlier days.
-4. **KPIs:** recall of at least 99 % and specificity of at least 20 %.
+1. **Experiments:** do the two next steps named in [7], a better threshold and retraining, lower the missed true defects on later production periods? This is the design of experiments in section 2.
+2. **Code tests:** is each run correct? Data, split, threshold and retraining are checked by automatic tests (section 4).
 
 We do not test a real AOI machine or camera images. They are not part of the project.
 
-Terms: *true defect* is the positive class. *Recall* is the share of true defects that are classified as true defect. *Specificity* is the share of false calls that are classified as false call, which means manual inspections saved.
+Terms: *true defect* is the positive class. *Missed true defects* = 1 − recall (called *slip* in [7]). *False calls released* = specificity, the share of false calls that skip the manual station (called *volume reduction* in [7]).
 
-## 2. How the tests run
+## 2. Design of experiments
+
+The baseline is our reimplementation of [7] (`scripts/replicate_pfab2025.py`): trained once, threshold as in [7]. Every setting is compared with this baseline and with the published result of [7].
+
+| Factor | n | Level 1 | Level 2 | Level 3 | Level 4 | Level 5 | Level 6 |
+|---|---|---|---|---|---|---|---|
+| A · Threshold | 3 | as in [7], corrected | safety margin [14] | re-set per period [15] | | | |
+| B · Retraining | 6 | never, as in [7] | per period | weekly | every 3 days | daily | on drift [16] |
+| C · Retraining data | 2 | all data so far | recent window [12] | | | | |
+| D · Model | 2 | random forest | balanced random forest | | | | |
+
+- **A** and **B** are the two next steps named in [7]. **C** only matters when B is not *never*. **D** keeps the two models of [7], so every result can be compared with the paper.
+- **Held constant:** the Siemens data and the split of [7] (first half 80/20 stratified, second half 5 periods in time order), the input features, the hyper-parameters logged by [7], the recall target of 99 % used to set the threshold.
+- **Nuisance factor:** the random seed. Each setting is replicated with the 10 seeds of [7].
+- **Responses:** missed true defects (%) and false calls released (%) for each of the 5 later periods, mean ± SD over the seeds. Reference lines from [7]: missed true defects ≤ 1 %, false calls released ≥ 40 %.
+- **Design:** full factorial 3 × 6 × 2 × 2 = 72 settings × 10 seeds = 720 runs (with B = never, C has no effect, so fewer runs are needed).
+- **Order:** first one factor at a time against the baseline (A, then B), then the full design.
+
+## 3. How the code tests run
 
 - **Unit tests** use a small set of made-up data, because the real data are not in the repository. They run on every push, on Windows, macOS and Linux, with Python 3.11 and 3.12 (CI). File: `tests/test_classification.py`.
 - **Data checks** run on the real data after `scripts/download_data.py`.
-- **Simulation run:** `scripts/run_replay.py` on the real data (about 10 minutes). It writes `results/replay.json`.
-- **KPI check:** at each milestone, we read the KPIs from the files in `results/`.
+- **Reproduction check:** `scripts/replicate_pfab2025.py` on the real data writes `results/replication_pfab2025.json`; its baseline is compared with the run logs of [7].
 
 Status: **exists** = the test is in the repository now. **planned** = we add it in issue #39 (due 24 Nov).
 
-## 3. Tests
+## 4. Code tests
 
 ### Data
 
@@ -36,61 +53,55 @@ Status: **exists** = the test is in the repository now. **planned** = we add it 
 | D6 | We have the right data file | `scripts/download_data.py` checks the SHA-256 of `dataset.csv` and `mapping.json` | Checksums match, or the script stops | exists (in the script) |
 | D7 | Our data facts are right | Run `scripts/data_facts.py` and compare with `results/data_facts.json` | 440,274 joints and 39,742 boards | planned |
 
-### Classifier and threshold
+### Core code (reimplementation of [7])
 
 | ID | What | How | Pass criterion | Status |
 |---|---|---|---|---|
-| C1 | The threshold rule works | `threshold_for` on a small example with `max_miss = 0` | No true defect is released; the expected number of false calls is released | exists |
-| C2 | The rule works for 1 % | Made-up scores of 200 defective boards, `max_miss = 0.01` | At most 2 defective boards are released | planned |
-| C3 | Recall is at least 99 % on the calibration days | After `fit`, classify the held-back calibration days | Recall ≥ 99 % | planned |
-| C4 | The classifier finds false calls and keeps true defects | Train and classify made-up data with a clear signal | More than 30 % of false calls and fewer than 20 % of true defects are classified as false call | exists |
-| C5 | All three models run | Train each model on made-up data | Output has `score`, `defective`, `predicted_false_call` | exists |
-| C6 | Bad training data gives a clear error | Set all labels to 0 and call `fit` | `ValueError` | exists |
-| C7 | Same seed gives the same result | Train the same model twice with the same seed | Same scores | planned |
+| R1 | Same split as [7] | Split made-up data with a seed | First half 80/20 stratified; second half 5 periods in time order; no row in two parts | planned |
+| R2 | Threshold keeps 99 % recall on its own data | 5-fold threshold on made-up scores | Recall ≥ 99 % in each fold | planned |
+| R3 | Threshold belongs to the final model (corrected) | Fit the final model, then set the threshold | Threshold is computed from the final model, not from the last tuning step | planned |
+| R4 | Retraining only uses earlier data | Record the rows used before each period | All rows come before the period | planned |
+| R5 | Baseline reproduces [7] | Compare `results/replication_pfab2025.json` with the run logs of [7] | Same pattern; balanced RF on later periods 7.5 % in both (done); open gaps listed in section 5 | exists (manual) |
 
-C3 tests the rule on the calibration days. Whether 99 % also holds on later days is the KPI K1.
+### P1 package (earlier plan, kept for reference)
 
-### Day-by-day simulation
+The tests C1, C4, C5, C6 and S1 in `tests/test_classification.py` test the P1 package `aoi_classification/`. They keep running in CI; in P3 the tests move to the core code (R1–R4).
 
-| ID | What | How | Pass criterion | Status |
-|---|---|---|---|---|
-| S1 | The model only knows earlier days | In `replay`, compare the training day with the classified day | `trained_on_day <= day` in every row | exists |
-| S2 | The calibration days come before the classified day | Record the days that `fit` receives in a replay of made-up data | All days are before the classified day | planned |
-| S3 | The simulation goes on when a window has too few defects | Made-up data with no defects in one window | No error; the old classifier is kept | planned |
-| S4 | The full run works on the real data | Run `scripts/run_replay.py` | No error; all six runs have the same number of boards | planned |
-
-### KPIs and limits
+## 5. Responses and checks
 
 | ID | What | How | Pass criterion | Status |
 |---|---|---|---|---|
-| K1 | Recall | 100 % minus `defects_released_pct` in `results/replay.json` | ≥ 99 % | open (now 96.3–97.8 %) |
-| K2 | Specificity | `false_calls_released_pct` in `results/replay.json` | ≥ 20 % | open (now 6.5–15.0 %, at a lower recall) |
-| K3 | Time order, not random split | Check how each number in the report was made | Every KPI comes from the time-order test | exists (`results/baseline.json` shows both) |
+| K1 | Missed true defects per later period | From the result files, mean ± SD over 10 seeds | Lower than the baseline; reference line 1 % | baseline: 5–14 % |
+| K2 | False calls released per later period | From the result files, mean ± SD over 10 seeds | Shown next to the baseline; reference line 40 % | baseline: 55.8 % (RF), 57.9 % (balanced RF) |
+| K3 | Time order, not random split | Check how each number in the report was made | Every later-period number uses only earlier data for training | exists |
 | K4 | Every number has a source | Compare each number in the report with a file in `results/` | No number without a file | manual check at each milestone |
-| K5 | The limits are written down | Read the README and the report | They name: one production line, 132 days, labels that may be wrong, anonymised data, non-commercial licence, and a line that changes over time | manual check at each milestone |
+| K5 | The limits are written down | Read the README and the report | They name: one production line, 132 days, labels that may be wrong, anonymised data, non-commercial licence, a line that changes over time | manual check at each milestone |
 
-If K1 or K2 is not reached at the end, we report what works, what does not, and why. That is a result, not a failed test. The test is that we measure it correctly.
+Open gaps of the baseline (checked in P3): random forest on later periods 9.1 % (ours) vs. 11.3 % ([7]); test set 1.5–1.9 % (ours) vs. 0.7 % ([7]).
 
-## 4. Risks and their tests
+If a setting does not reach the reference lines, we report what works, what does not, and why. That is a result, not a failed test. The test is that we measure it correctly.
 
-| Risk (proposal) | Test or check |
+## 6. Risks and their tests
+
+| Risk | Test or check |
 |---|---|
-| The line changes over time, so 99 % recall may not hold later | S1, S2, K1, and the weekly retraining test (#38) |
-| Labels from operators may be wrong | D1, K5, and the error analysis in the report |
-| Only about 1 % of the joints are true defects | We use recall and specificity, not accuracy (C2, C3, K1, K2) |
+| The line changes over time, so the 1 % line may not hold later | The design of experiments (factors A and B), K1 |
+| Our reimplementation differs from [7] | R1–R5 |
+| Labels from operators may be wrong | D1, K5 |
+| Only about 1 % of the joints are true defects | Missed true defects and false calls released instead of accuracy (K1, K2) |
 | Only one line and 132 days | K5, D7 |
 | Data licence is non-commercial, no personal data | D6; the data are never added to the repository (K5) |
-| Results cannot be repeated | C7, `requirements.txt`, CI on three systems |
+| Results cannot be repeated | 10 seeds, `requirements.txt`, CI on three systems |
 | Numbers in the report differ from the result files | K4 |
 
-## 5. Who and when
+## 7. Who and when
 
 Melisa Subasi writes the test plan (#34), the tests (#39) and the test report (#47).
 
 | Date | Milestone | Test work |
 |---|---|---|
-| 3 Nov | P2: core code and baseline | This plan. The existing tests pass in CI. |
-| 24 Nov | P3: features and testing | The planned tests are added: D1, D2, D3, D7, C2, C3, C7, S2, S3, S4 (#39) |
-| 8 Dec | P4: full evaluation | Test report on the final model: K1 to K5 (#47) |
+| 3 Nov | P2: core code and baseline | This plan. Baseline reproduced (R5). The existing tests pass in CI. |
+| 24 Nov | P3: features and testing | Run the design of experiments (A first, then B). Add D1, D2, D3, D7, R1–R4 (#39). |
+| 8 Dec | P4: full evaluation | Full design; test report K1 to K5 (#47) |
 | 22 Dec | P5: packaging | All tests pass on a clean install |
 | 12 Jan | Final | Test plan and evaluation in the final report (#44) |
