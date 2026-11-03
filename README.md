@@ -4,27 +4,34 @@ Second check of AOI results with supervised machine learning (Siemens production
 Case Study *Intelligent Systems in Production* · THD · Team 1 · Prof. Dr.-Ing. Hamidreza Heidari
 Yu Han · Melisa Subasi · Meron Hagos · Alejandro Rivas
 
-## Read first
+## Results (P2)
 
 | | |
 |---|---|
-| **Slides (P2)** | [`docs/slides_p2.pdf`](docs/slides_p2.pdf) |
-| **Report** | [`docs/literature_report.pdf`](docs/literature_report.pdf) — bibliography report, 18 sources with page references |
+| **Report** | [`docs/literature_report.pdf`](docs/literature_report.pdf) — bibliography report: literature, data, methodology, objective, factors and limitations |
+| **Slides** | [`docs/slides_p2.pdf`](docs/slides_p2.pdf) |
 | **Test plan** | [`docs/test_plan.md`](docs/test_plan.md) — design of experiments |
-| **Core code** | [`scripts/replicate_pfab2025.py`](scripts/replicate_pfab2025.py) — also produces the baseline |
-| **Baseline result** | [`results/replication_pfab2025.json`](results/replication_pfab2025.json) · figure below |
+| **Core code** | [`scripts/replicate_pfab2025.py`](scripts/replicate_pfab2025.py) — our reimplementation of [7]; also produces the baseline |
+| **Baseline result** | [`results/replication_pfab2025.json`](results/replication_pfab2025.json) |
 | **Data understanding** | [`notebooks/data_understanding.ipynb`](notebooks/data_understanding.ipynb) |
 
-Numbers in brackets, such as [7], refer to the report. [7] = Pfab & Rothering (2025), our core paper.
+Numbers in brackets refer to the report. [7] = Pfab & Rothering (2025), our core paper.
 
-## The project in one picture
+## The problem
 
-| | |
-|---|---|
-| **Problem** | About 99 % of AOI alarms are false calls, and people check every one by hand [4], [7]. |
-| **Why it matters** | A second check trained once releases 40–78 % of the false calls on later production days, but misses 5–15 % of the true defects instead of at most 1 % ([7], Table IV). |
-| **Our question** | Do the two fixes named in [7], a better threshold and retraining, bring the misses back to 1 % while keeping ≥ 40 % of the false calls released? |
-| **Input → system → output** | Siemens AOI data in time order [4] → our reimplementation of [7], threshold corrected, retraining added → missed true defects (%) and false calls released (%) per period |
+![What a second check has reached so far](docs/img/benefit_pfab2025.png)
+
+About 99 % of AOI alarms are false calls, and people check every one. A second check with machine learning releases enough false calls on almost all periods (≥ 40 %), but on later production periods it misses 5–15 % of the true defects instead of at most 1 % (D, E). Only the test set from the training period is inside the target zone (B, C).
+
+## Objective
+
+> On every later production period: **missed true defects ≤ 1 %** (hard quality limit) and **false calls released ≥ 40 %**, as many as possible. Expected saving: between 40 % and the 80–90 % reached on the test set. (Report, Section 2.4)
+
+## System
+
+![System: classifier with two adaptation strategies](docs/img/system_diagram.png)
+
+Supervised binary classifier (random forest, balanced random forest, as in [7]) with two adaptation strategies: **decision threshold selection** (Neyman–Pearson threshold [14], prior shift adjustment [15]) and **concept drift adaptation** by retraining (periodic [12], [17], [18], drift-triggered [16]). (Report, Section 2.3)
 
 ## Baseline: our code shows the same problem as [7]
 
@@ -37,13 +44,7 @@ Numbers in brackets, such as [7], refer to the report. [7] = Pfab & Rothering (2
 
 ## Test plan (P3)
 
-Threshold 3 levels × retraining 6 × retraining data 2 × model 2 = 72 settings, each with 10 seeds. Details: [`docs/test_plan.md`](docs/test_plan.md).
-
-## Milestones
-
-| P1 · 20 Oct | P2 · 3 Nov | P3 · 24 Nov | P4 · 8 Dec | P5 · 22 Dec | Final · 12 Jan |
-|---|---|---|---|---|---|
-| proposal ✅ | core code, baseline, test plan, report ✅ | run the DOE; unit tests | full evaluation; simulation tool | packaging, demo video | presentation, report |
+Threshold method 3 × retraining schedule 6 × training window 2 × model 2 = 72 settings, each with 10 seeds. Details: [`docs/test_plan.md`](docs/test_plan.md).
 
 ## Run
 
@@ -52,7 +53,6 @@ pip install -r requirements.txt
 python scripts/download_data.py                 # Siemens data (CC BY-NC 3.0, not stored here)
 python scripts/replicate_pfab2025.py runs.csv   # runs.csv: run log of [7], src/fcr_case_study/notebooks/runs/runs.csv
                                                 # in gitlab.com/research9841542/FCR_1
-python scripts/make_p2_figures.py               # figures in docs/img/
 ```
 
-Earlier work (P1 package, drafts, P1 results) is kept on the branch [`archive-p1-p2`](../../tree/archive-p1-p2). Code: MIT licence.
+Code: MIT licence.
