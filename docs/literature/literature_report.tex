@@ -227,12 +227,47 @@ For drift, the basic remedy is retraining. In the concept-drift literature, a mo
 
 This is where the literature stops and our project begins. A second check after AOI is needed and can recognise false calls, but trained once it fails on later production days; drift and a threshold set once explain this, and methods for both exist and have worked elsewhere. For the second check of AOI results, no study has tested them. We therefore reimplemented the method of \cite{pfab2025} with our own code as the baseline. Reading their code, we found that the stored threshold belongs to the last model tried during tuning, not to the best model that is finally used; in our reimplementation the threshold is taken from the best model. On this baseline, the threshold method and retraining become the variables of a simulation, and every setting is compared with \cite{pfab2025}.
 
+\subsection{Data: the input of the second check}
+\label{sec:data}
+The input of our second check is the public AOI data set of Siemens \cite{pfab2024}, the same data that \cite{pfab2025} uses. It contains 440,274 flagged solder joints on 39,742 boards from one SMT line, recorded over 132 production days. Each row is one flagged joint. Table~\ref{tab:data} shows the columns of a row and how each is used.
+
+\begin{table}[H]
+\centering\small
+\caption{Structure of one row of the Siemens AOI data \cite{pfab2024} and its use in our project. Counts from our analysis of the data file.}
+\label{tab:data}
+\begin{tabularx}{\textwidth}{@{}p{2.6cm}p{1.4cm}p{3.0cm}Lp{2.6cm}@{}}
+\toprule
+Column & Number & Type & Content & Use \\
+\midrule
+\texttt{timestamp} & 1 & date and time & time of the AOI inspection; dates are anonymised; one timestamp per board (39,742) & orders the rows in time; not a model input \\
+\texttt{class} & 1 & 0 or 1 & label from the manual inspection station: 1 = true defect (4,622 joints, 1.05\,\%), 0 = false call (435,652 joints) & target $y$ \\
+\texttt{inspection\_type} & 1 & category, 5 values & type of AOI inspection applied to the joint & input, one-hot encoded \\
+\texttt{meta\_feat1}--\texttt{4} & 4 & categories with 75, 5, 2 and 49 values & anonymised context fields of the joint; their meaning is not published & input, one-hot encoded \\
+\texttt{inspection\_feat} & 70 & numbers scaled to 0--1 & anonymised AOI measurements of the joint; a mapping file of the data set lists which of them belong to each inspection type (21 to 65) & input $x$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The inputs of the classifier are therefore the 70 AOI measurements and the five categories, which are one-hot encoded; the timestamp is used only to order the rows. Because the measurements are anonymised and scaled, a model can tell which measurement drives a decision, but not what this measurement means physically. The five inspection types differ strongly: their share of true defects ranges from 0.33\,\% (type 0, 97,053 joints) to 2.74\,\% (type 1, 57,673 joints).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{data_split.png}
+  \caption{Split of the data in time order, as in \cite{pfab2025}. Top: the first half (days 0--84) is used for training and for a test set from the same period; the second half is cut into five later periods P1--P5 with about 44,000 joints each. Bottom: share of true defects among the flagged joints in each part. Our analysis of the data of \cite{pfab2024}.}
+  \label{fig:split}
+\end{figure}
+
+Figure~\ref{fig:split} shows how the data are used, in the same way as in \cite{pfab2025}. The rows are kept in time order. The first half, 220,137 joints from days 0 to 84, is split at random, stratified by the label, into 80\,\% for training (176,110 joints) and 20\,\% for the test set (44,027 joints). The classifier is trained on the training part, with the false calls under-sampled at the ratio that \cite{pfab2025} logged for each run, and its threshold is set by 5-fold cross-validation on the same part. It is then evaluated on the test set and on the five later periods, which it has never seen. In the methods with retraining, the labelled joints of each period are added to the training data before the next period is classified, either all data seen so far or a recent window.
+
+The bottom of Figure~\ref{fig:split} shows why the later periods are hard. In the first half, 0.79\,\% of the flagged joints are true defects. In the later periods this share drops to 0.35 and 0.09\,\% and then rises to 0.81, 2.17 and 3.11\,\%. A model whose threshold was set on a share of 0.79\,\% meets a share up to four times higher in the last period. This is the change in class share that prior probability shift adjustment (M2) is designed for \cite{saerens2002}, and part of the drift that retraining should follow \cite{gama2014}.
+
 \subsection{Methodology}
+\label{sec:method}
 Our methodology is a \textbf{supervised binary classifier combined with two adaptation strategies}: \textbf{decision threshold selection} and \textbf{concept drift adaptation by retraining}. Each term is used in its standard meaning from the cited literature.
 
-\textbf{Task.} Each flagged solder joint $i$ has a vector $x_i$ of AOI measurements and a label $y_i \in \{0, 1\}$ from the manual inspection station, with $y_i = 1$ for a true defect (the positive class) and $y_i = 0$ for a false call \cite{pfab2024}. The data are ordered in time and split as in \cite{pfab2025}: the first half is the training data with a test set from the same period, and the second half forms the later production periods $k = 1, \dots, 5$.
+\textbf{Task.} Each flagged solder joint $i$ has a vector $x_i$ of AOI measurements and a label $y_i \in \{0, 1\}$ from the manual inspection station (Section~\ref{sec:data}), with $y_i = 1$ for a true defect (the positive class) and $y_i = 0$ for a false call \cite{pfab2024}. The data are ordered in time and split as in \cite{pfab2025}: the first half is the training data with a test set from the same period, and the second half forms the later production periods $k = 1, \dots, 5$.
 
-\textbf{Classifier.} A random forest or a balanced random forest \cite{breiman2001,chen2004}, trained on labelled joints, gives each joint a score $s(x_i) \in [0, 1]$, the estimated probability that it is a true defect (Section~2.2.1).
+\textbf{Classifier.} A random forest or a balanced random forest \cite{breiman2001,chen2004}, trained on labelled joints, gives each joint a score $s(x_i) \in [0, 1]$, the estimated probability that it is a true defect (Section~\ref{sec:clf}).
 
 \textbf{Decision rule.} A joint is sent to the manual station if $s(x_i) \geq t$ and released without a manual check if $s(x_i) < t$, where $t$ is the decision threshold.
 
@@ -244,9 +279,10 @@ Our methodology is a \textbf{supervised binary classifier combined with two adap
 
 \textbf{Adaptation strategy 2: concept drift adaptation by retraining.} The updating of the classifier when the distribution of the data changes over time \cite{gama2014}. The baseline trains once. We compare it with periodic retraining at fixed intervals \cite{gama2014,dalpozzolo2018,gao2026} and with retraining triggered by drift detection \cite{gama2004}, each on all data seen so far or on a recent window \cite{gama2014}.
 
-The classifier is held fixed as a control variable, so that every change in $\mathrm{FNR}_k$ and $\mathrm{TNR}_k$ can be assigned to one of the two adaptation strategies. Section~2.2.1 justifies the classifier, and Section~2.2.2 the methods of the two strategies and their place in our test plan.
+The classifier is held fixed as a control variable, so that every change in $\mathrm{FNR}_k$ and $\mathrm{TNR}_k$ can be assigned to one of the two adaptation strategies. Section~\ref{sec:clf} justifies the classifier, and Section~\ref{sec:adapt} the methods of the two strategies and their place in our test plan.
 
 \subsubsection{The classifier: random forest and balanced random forest}
+\label{sec:clf}
 We use the two models of \cite{pfab2025}, a random forest and a balanced random forest. Table~\ref{tab:models} shows the results of all model families that \cite{pfab2025} tested on the test set. Two numbers are given for each: the false calls the model could release at the 1\,\% limit if its threshold were chosen ideally, and the result with the threshold actually set by their method.
 
 \begin{table}[H]
@@ -271,6 +307,7 @@ Four reasons support the choice of the two random forests. First, they are the o
 Keeping the models of \cite{pfab2025} also makes our results directly comparable with the published ones. Whether a different model would do better is a separate question, which we leave open on purpose: if the model changed at the same time as the threshold or the retraining, an improvement could not be assigned to either.
 
 \subsubsection{The two adaptation strategies}
+\label{sec:adapt}
 The review gives a clear technical route from the problem to the methods we test (Figure~\ref{fig:route}). The problem is the missed true defects on later periods (groups D and E in Table~\ref{tab:benefit}). It has two causes, and the literature offers concrete methods for each of them. Table~\ref{tab:methodlist} lists these methods with the source and the place in the source where each one is described, and the factor of our test plan in which it is tested.
 
 \begin{figure}[H]
