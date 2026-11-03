@@ -345,7 +345,31 @@ The threshold methods M1 and M2 act on the first cause. They do not change the m
 
 The retraining methods M3 to M5 act on the second cause. They change the model itself, so that it learns from the newest data and follows the drift. M3 retrains at fixed intervals; the two closest studies found that more frequent retraining helped most \cite{dalpozzolo2018,gao2026}, which is why our test plan contains four intervals from per period to daily. M4 retrains only when the error rate rises, which saves retraining but reacts only after defects have already been missed; Gao et al.\ preferred a fixed schedule for this reason \cite{gao2026}. M5 decides which data the model is retrained on. A recent window forgets data that no longer fit, but it also contains fewer true defects, which matters for M1. The methods are therefore not independent, and this is why our test plan combines them in a full design instead of testing each one alone.
 
-One assumption applies to all retraining methods. In production, a joint that the second check releases is not checked by a person and so gets no label. Our simulation assumes that every joint receives its label later, for example from a sample check or from field returns. This assumption is stated as a limitation of our results.
+\subsection{Factors and limitations}
+\label{sec:factors}
+Figure~\ref{fig:pdiagram} summarises our system as a parameter diagram (P-diagram), the standard way in the design of experiments to show what goes into a system, what comes out, and which factors act on it. The input is the AOI data (Section~\ref{sec:data}), the system is the classifier with its two adaptation strategies (Section~\ref{sec:method}), and the output are the two responses of the objective, $\mathrm{FNR}_k$ and $\mathrm{TNR}_k$ on each later period.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{p_diagram.png}
+  \caption{Parameter diagram (P-diagram) of our system: input, system and output (responses), with the control factors that our test plan varies (top) and the noise factors that act on the system but are not controlled (bottom).}
+  \label{fig:pdiagram}
+\end{figure}
+
+\textbf{Control factors} are the factors we set on purpose. They are the four factors of our test plan: the threshold method (A), the retraining schedule (B), the training window (C) and the model (D), with the levels of Table~\ref{tab:methodlist}. All other settings are held constant at the values of \cite{pfab2025}: the data split, the input features, the hyper-parameters logged for each run, and the recall target of 99\,\% used to set the threshold. Holding them constant makes every result comparable with the baseline and with the published result.
+
+\textbf{Noise factors} act on the system but cannot be set. The most important one is drift: the data and the share of true defects change between periods, from 0.09 to 3.11\,\% (Figure~\ref{fig:split}). Our two adaptation strategies are designed to make the system robust against exactly this factor. Further noise factors are label errors from the manual station, whose share is unknown \cite{pfab2024}, the changing mix of inspection types, whose shares of true defects differ by a factor of eight, and the random seed of the training. The seed is handled by replication: every setting is run with the ten seeds of \cite{pfab2025}, and results are reported as mean and standard deviation.
+
+\textbf{Limitations.} Seven limitations apply to our project and to the conclusions that can be drawn from it.
+\begin{enumerate}
+  \item \textit{One line, one period.} The data come from one SMT line of one company over 132 days \cite{pfab2024}. Whether the results hold for other lines, products or longer periods is not known.
+  \item \textit{Anonymised measurements.} The 70 measurements are anonymised and scaled. A result can say which measurement matters, but not what it means physically.
+  \item \textit{Label quality.} The labels are set by people and may be wrong \cite{pfab2024}. A wrong label counts as an error of the model even if the model was right.
+  \item \textit{Labels in production.} A joint that the second check releases is not checked by a person and gets no label. Our simulation assumes that every joint receives its label later. In a real line, fewer labels would be available for retraining, so the benefit of retraining may be smaller than in our simulation.
+  \item \textit{Joint level.} Like \cite{pfab2025}, we evaluate per solder joint. On the line, a board goes to the manual station if any of its joints is flagged as a true defect, so the saving per board can differ from the saving per joint.
+  \item \textit{Enough true defects for the threshold.} The Neyman--Pearson threshold needs at least 299 true defects for the 1\,\% limit with 95\,\% confidence \cite{tong2018}. A short recent window may contain fewer, and then the method cannot give its guarantee.
+  \item \textit{Evidence from other fields.} The evidence that retraining helps comes from fraud detection and a semiconductor materials line \cite{dalpozzolo2018,gao2026}, not from AOI. Whether it transfers to AOI is what our project tests; a negative result is possible and would also be an answer.
+\end{enumerate}
 
 \subsection{Summary of the reviewed works}
 Table~\ref{tab:summary} compares the studies on AOI false calls, and Table~\ref{tab:drift} compares the studies on drift and retraining. Only \cite{pfab2025} evaluates on later production periods, and no study on AOI false calls retrains its model (Table~\ref{tab:summary}). Retraining helped in every study that tested it, but none of these studies is on AOI (Table~\ref{tab:drift}).
