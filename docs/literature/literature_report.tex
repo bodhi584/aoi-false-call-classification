@@ -228,6 +228,33 @@ For drift, the basic remedy is retraining. In the concept-drift literature, a mo
 This is where the literature stops and our project begins. A second check after AOI is needed and can recognise false calls, but trained once it fails on later production days; drift and a threshold set once explain this, and methods for both exist and have worked elsewhere. For the second check of AOI results, no study has tested them. We therefore reimplemented the method of \cite{pfab2025} with our own code as the baseline. Reading their code, we found that the stored threshold belongs to the last model tried during tuning, not to the best model that is finally used; in our reimplementation the threshold is taken from the best model. On this baseline, the threshold method and retraining become the variables of a simulation, and every setting is compared with \cite{pfab2025}.
 
 \subsection{Methods to solve the problem}
+Our method has two parts. The first is the classifier, the model that gives each flagged joint a score. The second is how the classifier is operated in production: how its decision threshold is set (decision threshold calibration) and how it is kept up to date when the data change (concept drift adaptation by retraining). The model is held fixed in our test plan, as a control variable, so that every change in the results can be traced to the threshold or to retraining. Section~2.2.1 justifies the choice of the model, and Section~2.2.2 the methods for the threshold and retraining.
+
+\subsubsection{The classifier: random forest and balanced random forest}
+We use the two models of \cite{pfab2025}, a random forest and a balanced random forest. Table~\ref{tab:models} shows the results of all model families that \cite{pfab2025} tested on the test set. Two numbers are given for each: the false calls the model could release at the 1\,\% limit if its threshold were chosen ideally, and the result with the threshold actually set by their method.
+
+\begin{table}[H]
+\centering\small
+\caption{Model families tested by \cite{pfab2025} on the test set, mean of ten runs: false calls released at the 1\,\% limit with an ideal threshold \cite[p.~6, Table~III]{pfab2025}, and missed true defects and false calls released with the threshold set by their method \cite[p.~11, Table~V]{pfab2025}.}
+\label{tab:models}
+\begin{tabularx}{\textwidth}{@{}p{3.6cm}p{2.6cm}p{2.3cm}p{2.3cm}L@{}}
+\toprule
+Model & Released at 1\,\%, ideal threshold & Missed, actual threshold & Released, actual threshold & Meets both limits? \\
+\midrule
+XGBoost & 92.5\,\% & 1.5\,\% ($\pm$2.1) & 59.6\,\% ($\pm$42.9) & no: missed above 1\,\%, very unstable \\
+AutoML & 90.6\,\% & 8.3\,\% & 94.9\,\% & no: missed far above 1\,\% \\
+Random forest & 90.1\,\% & 1.0\,\% & 89.7\,\% & yes \\
+Balanced random forest & 79.6\,\% & 0.8\,\% & 79.7\,\% & yes \\
+k-nearest neighbours & 47.8\,\% & 1.4\,\% & 55.5\,\% & no: missed above 1\,\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Four reasons support the choice of the two random forests. First, they are the only models that meet both limits once the threshold is actually set (Table~\ref{tab:models}). XGBoost and AutoML could release slightly more false calls with an ideal threshold, but with the threshold set by the method of \cite{pfab2025} XGBoost misses 1.5\,\% of the true defects on average with a very large spread between runs, and AutoML misses 8.3\,\%. k-nearest neighbours releases far fewer false calls even in the ideal case. Second, the result agrees with the general evidence: on tabular data such as the AOI measurements, tree ensembles remain the strongest model family \cite{grinsztajn2022}, and random forests are robust to noise \cite{breiman2001}. An earlier AOI study also found random forests among the best models on large data sets \cite{thielen2020}. Third, the balanced random forest is designed for rare classes \cite{chen2004}, and true defects are only about 1\,\% of the flagged joints; it is the safer of the two, with fewer missed defects at somewhat fewer released false calls. Fourth, a random forest is fast to train, which matters because several of the methods we test retrain the model as often as once a day.
+
+Keeping the models of \cite{pfab2025} also makes our results directly comparable with the published ones. Whether a different model would do better is a separate question, which we leave open on purpose: if the model changed at the same time as the threshold or the retraining, an improvement could not be assigned to either.
+
+\subsubsection{Threshold and retraining}
 The review gives a clear technical route from the problem to the methods we test (Figure~\ref{fig:route}). The problem is the missed true defects on later periods (groups D and E in Table~\ref{tab:benefit}). It has two causes, and the literature offers concrete methods for each of them. Table~\ref{tab:methodlist} lists these methods with the source and the place in the source where each one is described, and the factor of our test plan in which it is tested.
 
 \begin{figure}[H]
