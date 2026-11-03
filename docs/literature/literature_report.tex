@@ -73,7 +73,15 @@ Our project therefore reimplements the method of Pfab and Rothering with its own
 % ---------------- Introduction ----------------
 \pagenumbering{arabic}
 \section{Introduction}
-Zero-defect manufacturing relies on detecting defects before a product leaves the factory \cite{psarommatis2020}. In electronics assembly, components are soldered onto printed circuit boards by surface-mount technology (SMT), and AOI is placed after soldering \cite{ebayyeh2020}. AOI compares camera measurements of each solder joint with fixed limits; every flagged board goes to a manual inspection station, where an operator decides whether it is a true defect or a false call \cite{pfab2024}. Many flagged boards are false calls, which creates a large manual workload \cite{pfab2024,thielen2020}. A classifier after the AOI that releases false calls without missing true defects would reduce this workload.
+Zero-defect manufacturing relies on detecting defects before a product leaves the factory \cite{psarommatis2020}. In electronics assembly, components are soldered onto printed circuit boards by surface-mount technology (SMT), and AOI is placed after soldering \cite{ebayyeh2020}. AOI compares camera measurements of each solder joint with fixed limits; every flagged board goes to a manual inspection station, where an operator decides whether it is a true defect or a false call \cite{pfab2024}. Many flagged boards are false calls, which creates a large manual workload \cite{pfab2024,thielen2020}. A classifier after the AOI that releases false calls without missing true defects would reduce this workload. This review covers 18 sources from 2001 to 2026 on this second check; image-based defect detection is outside its scope, because the second check starts after the AOI has made its measurements. Figure~\ref{fig:map} shows the 18 sources from the general goal to our project; Section~2 follows it level by level.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{literature_map.png}
+  \caption{Reviewed literature from general to specific (numbers refer to the reference list).}
+  \label{fig:map}
+\end{figure}
+
 
 \subsection{Motivation}
 Every board that the AOI flags is checked by a person, and about 99\,\% of the flagged solder joints are false calls \cite{pfab2024,pfab2025}. This costs operator time on every line, and it is a current problem: Siemens is working on an AI second check in its Erlangen factory today, with the target of 40\,\% fewer false calls \cite{siemens2026}. Earlier studies show that a classifier on the AOI measurements can recognise many false calls \cite{thielen2020,albayari2026}. The only study that tests such a classifier on later production periods, however, finds that it fails there: it misses 5--15\,\% of the true defects instead of at most 1\,\% \cite{pfab2025}. A factory cannot use a second check that lets defects through. The authors name two possible fixes, a better method for setting the threshold and handling drift, but test neither. Table~\ref{tab:benefit} shows what has been reached so far and what is at stake.
@@ -95,7 +103,14 @@ Target of \cite{pfab2025} & any period & $\geq$ 40\,\% & $\leq$ 1\,\% \\
 \end{tabularx}
 \end{table}
 
-The benefit is therefore large but not yet usable: on a test set from the same period the second check would save about 80--90\,\% of the manual checks within the 1\,\% limit, and even on later periods it still releases about 40--78\,\% of the false calls, but there it lets through 5--15\,\% of the true defects. If the two fixes bring the missed true defects back to 1\,\% while keeping at least 40\,\% of the false calls released, the manual inspection work on the line could fall by at least 40\,\%, the Siemens target. Our motivation is to find out whether these two fixes make the second check usable in real production. This review collects what the literature says about the problem, its causes and the possible fixes.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{benefit_pfab2025.png}
+  \caption{The numbers of Table~\ref{tab:benefit} for the two models of \cite{pfab2025}: test set (stars, \cite[p.~11, Table~V]{pfab2025}) and the five later periods (dots, \cite[p.~7, Table~IV]{pfab2025}). Green: the target zone.}
+  \label{fig:benefit}
+\end{figure}
+
+Figure~\ref{fig:benefit} shows the gap at a glance. The benefit is therefore large but not yet usable: on a test set from the same period the second check would save about 80--90\,\% of the manual checks within the 1\,\% limit, and even on later periods it still releases about 40--78\,\% of the false calls, but there it lets through 5--15\,\% of the true defects. If the two fixes bring the missed true defects back to 1\,\% while keeping at least 40\,\% of the false calls released, the manual inspection work on the line could fall by at least 40\,\%, the Siemens target. Our motivation is to find out whether these two fixes make the second check usable in real production. This review collects what the literature says about the problem, its causes and the possible fixes.
 
 \subsection{Key terms}
 Table~\ref{tab:terms} explains the terms used in this report. They follow the core study \cite{pfab2025}, so that our results can be compared with it.
@@ -121,32 +136,13 @@ Retraining & Training the model again on newer labelled data during production. 
 \end{tabularx}
 \end{table}
 
-\subsection{Objectives}
-\begin{itemize}
-  \item To review the literature on AOI false calls and on supervised classifiers used as a second check of AOI results.
-  \item To identify why such classifiers fail on later production days, and what the literature offers against it.
-  \item To justify the design of our project: a reimplementation of the study of Pfab and Rothering \cite{pfab2025} as the baseline, and a test plan that varies its two named next steps: the threshold method and retraining.
-\end{itemize}
-
-\subsection{Scope of the review}
-The review covers 18 sources published between 2001 and 2026: peer-reviewed journal and conference papers, one data article, one technical report, two preprints and one industry press release. For each claim of our project we kept the sources that support it directly. It is limited to AOI of solder joints in SMT assembly and to tabular AOI measurements; image-based defect detection with deep learning is outside the scope, because our project starts after the AOI machine has made its measurements.
-
-\subsection{Structure of the report}
-Section~2 follows Figure~1 level by level: zero-defect manufacturing (2.2.1), AOI (2.2.2), false calls (2.2.3), the second check with machine learning (2.2.4), classifiers (2.2.5), evaluation (2.2.6), why models fail over time (2.2.7), methods for the threshold and retraining (2.2.8), and the bottom line, our project (2.2.9). Section~2.3 compares the works in tables, Section~3 discusses what the literature shows and leaves open, and Section~4 concludes.
-
-\clearpage
 % ---------------- Materials and Methods ----------------
 \section{Materials and Methods}
 
 \subsection{Reviewed literature}
-Figure~\ref{fig:map} shows how the sources are ordered, from the general goal at the top to our project at the bottom. The following subsections follow the figure level by level, from Section~2.2.1 (level 1) to Section~2.2.8 (level 8), and Section~2.2.9 is the bottom line. Each subsection ends with the question that leads to the next level.
+The following subsections follow Figure~\ref{fig:map} level by level, from Section~2.2.1 (level 1) to Section~2.2.8 (level 8), and Section~2.2.9 is the bottom line. Each subsection ends with the question that leads to the next level.
 
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.92\textwidth]{literature_map.png}
-  \caption{Reviewed literature from general to specific (numbers refer to the reference list).}
-  \label{fig:map}
-\end{figure}
+
 
 Table~\ref{tab:overview} lists all 18 sources before they are discussed: what each source is, the finding we use, and where in the source this finding is, so that it can be checked in the original. Page numbers refer to the version linked in the reference list; the reference numbers in this report are links to the list.
 
@@ -365,6 +361,7 @@ Ten random seeds as replicates, mean $\pm$ SD & as in \cite{pfab2025} & \cite{pf
 \end{tabularx}
 \end{table}
 
+\clearpage
 % ---------------- Discussion ----------------
 \section{Discussion}
 
