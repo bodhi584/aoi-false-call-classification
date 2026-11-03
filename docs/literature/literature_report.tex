@@ -89,16 +89,16 @@ Every board that the AOI flags is checked by a person, and about 99\,\% of the f
 \centering\small
 \caption{What a second check after AOI has reached so far. About 99\,\% of the flagged joints are false calls, so the share of false calls released is roughly the share of manual checks saved.}
 \label{tab:benefit}
-\begin{tabularx}{\textwidth}{@{}p{3.0cm}p{3.0cm}LL@{}}
+\begin{tabularx}{\textwidth}{@{}p{0.9cm}p{2.7cm}p{2.7cm}LL@{}}
 \toprule
-Source & Setting & False calls released (manual checks saved) & Missed true defects \\
+Group & Source & Setting & False calls released (manual checks saved) & Missed true defects \\
 \midrule
-Siemens \cite{siemens2026} & industrial target, Erlangen & 40\,\% (target) & -- \\
-Pfab \& Rothering \cite[p.~6, Table~III]{pfab2025} & test set, ideal threshold (best possible) & 92.5\,\% (XGBoost), 90.1\,\% (RF), 79.6\,\% (BRF) & 1\,\% (by construction) \\
-Pfab \& Rothering \cite[p.~11, Table~V]{pfab2025} & test set, threshold as set by their method & 79.7\,\% (BRF), 89.7\,\% (RF) & 0.8\,\% (BRF), 1.0\,\% (RF) \\
-Pfab \& Rothering \cite[p.~7, Table~IV]{pfab2025} & five later production periods & 41.5--78.0\,\% (BRF), 39.7--76.0\,\% (RF) & 5.3--9.4\,\% (BRF), 10.2--15.0\,\% (RF) \\
-Our baseline & five later periods, 10 seeds, mean & 57.9\,\% (BRF), 55.8\,\% (RF) & 7.5\,\% (BRF), 9.1\,\% (RF) \\
-Target of \cite{pfab2025} & any period & $\geq$ 40\,\% & $\leq$ 1\,\% \\
+A & Siemens \cite{siemens2026} & industrial target, Erlangen & 40\,\% (target) & -- \\
+B & Pfab \& Rothering \cite[p.~6, Table~III]{pfab2025} & test set, ideal threshold (best possible) & 92.5\,\% (XGBoost), 90.1\,\% (RF), 79.6\,\% (BRF) & 1\,\% (by construction) \\
+C & Pfab \& Rothering \cite[p.~11, Table~V]{pfab2025} & test set, threshold as set by their method & 79.7\,\% (BRF), 89.7\,\% (RF) & 0.8\,\% (BRF), 1.0\,\% (RF) \\
+D & Pfab \& Rothering \cite[p.~7, Table~IV]{pfab2025} & five later production periods & 41.5--78.0\,\% (BRF), 39.7--76.0\,\% (RF) & 5.3--9.4\,\% (BRF), 10.2--15.0\,\% (RF) \\
+E & Our baseline & five later periods, 10 seeds, mean & 57.9\,\% (BRF), 55.8\,\% (RF) & 7.5\,\% (BRF), 9.1\,\% (RF) \\
+F & Target of \cite{pfab2025} & any period & $\geq$ 40\,\% & $\leq$ 1\,\% \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -106,15 +106,15 @@ Target of \cite{pfab2025} & any period & $\geq$ 40\,\% & $\leq$ 1\,\% \\
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\textwidth]{benefit_pfab2025.png}
-  \caption{Missed true defects (horizontal) and false calls released (vertical) of the two models of \cite{pfab2025}, on the test set (stars, \cite[p.~11, Table~V]{pfab2025}) and on the five later periods (dots, \cite[p.~7, Table~IV]{pfab2025}). Further right is worse, higher is better. Dashed lines: the two limits of \cite{pfab2025}, at most 1\,\% missed (vertical) and at least 40\,\% released (horizontal); the green area between them is the target zone.}
+  \caption{The groups of Table~\ref{tab:benefit} as points: missed true defects (horizontal, further right is worse) and false calls released (vertical, higher is better). B: test set with an ideal threshold; C: test set with the threshold of \cite{pfab2025}, zoomed in the inset; D: the five later periods of \cite{pfab2025}; E: our baseline, mean of the later periods. Dashed lines: the limits of F, at most 1\,\% missed and at least 40\,\% released; the 40\,\% line is also the target A of Siemens. Green: the target zone.}
   \label{fig:benefit}
 \end{figure}
 
-Table~\ref{tab:benefit} compares the results in the two numbers that matter on the line. Each released false call is one manual check saved; each missed true defect is a defective joint that leaves the station unchecked. The two pull against each other: a lower threshold releases more false calls but also misses more true defects. A result is therefore only meaningful as a pair, and the target of \cite{pfab2025} defines the acceptable pairs: at most 1\,\% missed and at least 40\,\% released. The 40\,\% is also the target that Siemens names for its own second check \cite{siemens2026}.
+Table~\ref{tab:benefit} compares the results in the two numbers that matter on the line. Each released false call is one manual check saved; each missed true defect is a defective joint that leaves the station unchecked. The two pull against each other: a lower threshold releases more false calls but also misses more true defects. A result is therefore only meaningful as a pair, and the target of \cite{pfab2025} (F) defines the acceptable pairs: at most 1\,\% missed and at least 40\,\% released. The 40\,\% is also the target that Siemens names for its own second check (A) \cite{siemens2026}.
 
-The second and third rows show what is possible on data from the same period as the training data. With an ideal threshold, the best model, XGBoost, would release 92.5\,\% of the false calls at the 1\,\% limit. In the Siemens data, with 440,274 flagged joints of which 4,622 are true defects (1.05\,\%), this would mean about 400,000 fewer manual joint checks over the 133 days, at the cost of about 46 missed true defects. With the threshold actually set by the method of \cite{pfab2025}, the random forest comes close to this, 89.7\,\% released and 1.0\,\% missed, while XGBoost no longer meets the targets. The gap between the two rows is caused by the threshold alone, since the models are the same.
+Groups B and C show what is possible on data from the same period as the training data. With an ideal threshold, the best model, XGBoost, would release 92.5\,\% of the false calls at the 1\,\% limit. In the Siemens data, with 440,274 flagged joints of which 4,622 are true defects (1.05\,\%), this would mean about 400,000 fewer manual joint checks over the 133 days, at the cost of about 46 missed true defects. With the threshold actually set by the method of \cite{pfab2025}, the random forest comes close to this, 89.7\,\% released and 1.0\,\% missed, while XGBoost no longer meets the targets. The gap between B and C is caused by the threshold alone, since the models are the same.
 
-The fourth row shows what happens on the five later periods. The released share stays high, 40--78\,\%, so the saving in manual work would still be large. The missed share, however, rises to 5--15\,\%. Applied to the 4,622 true defects of the data set, this would mean about 250 to 690 missed defective joints instead of about 46. In Figure~\ref{fig:benefit}, all ten later results therefore lie to the right of the target area, while the two test-set results lie inside it. Our baseline, the reimplementation of \cite{pfab2025}, shows the same pattern (fifth row): 55.8--57.9\,\% released and 7.5--9.1\,\% missed on average over the later periods.
+Group D shows what happens on the five later periods. The released share stays high, 40--78\,\%, so the saving in manual work would still be large. The missed share, however, rises to 5--15\,\%. Applied to the 4,622 true defects of the data set, this would mean about 250 to 690 missed defective joints instead of about 46. In Figure~\ref{fig:benefit}, all ten points of D therefore lie to the right of the 1\,\% line, while B and C lie inside the target zone. Our baseline, the reimplementation of \cite{pfab2025}, shows the same pattern (E): 55.8--57.9\,\% released and 7.5--9.1\,\% missed on average over the later periods.
 
 The table thus locates the problem precisely. The released share already meets the target on every period; what fails is the missed share. A useful fix must bring the missed true defects on later periods back to 1\,\% without losing the released false calls. If it succeeds, the second check would save at least 40\,\% of the manual checks, the Siemens target, and up to about 90\,\% if the test-set result could be kept. The authors of \cite{pfab2025} name two such fixes, a better method for setting the threshold and handling drift, but test neither. Our motivation is to find out whether these two fixes make the second check usable in real production.
 
