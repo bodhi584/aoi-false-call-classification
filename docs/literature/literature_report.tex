@@ -4,6 +4,7 @@
 \usepackage{mathptmx}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{graphicx}
+\usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{float}
 \usepackage{tabularx}
@@ -277,15 +278,35 @@ Figure~\ref{fig:system} shows how the parts work together for one later period $
 
 \textbf{Classifier.} A random forest or a balanced random forest \cite{breiman2001,chen2004}, trained on labelled joints, gives each joint a score $s(x_i) \in [0, 1]$, the estimated probability that it is a true defect (Section~\ref{sec:clf}).
 
-\textbf{Decision rule.} A joint is sent to the manual station if $s(x_i) \geq t$ and released without a manual check if $s(x_i) < t$, where $t$ is the decision threshold.
+\textbf{Decision rule.} In period $k$, the classifier $f_k$ gives each joint the score $s_k(x_i)$, and the threshold $t_k$ decides:
+\begin{equation}
+\hat{y}_i = \begin{cases} 1 & \text{if } s_k(x_i) \geq t_k \quad \text{(sent to the manual station)}\\ 0 & \text{if } s_k(x_i) < t_k \quad \text{(released without a manual check).} \end{cases}
+\label{eq:rule}
+\end{equation}
 
-\textbf{Measures.} For each period $k$, the share of missed true defects is the false negative rate, $\mathrm{FNR}_k = 1 - \mathrm{recall}_k$, called slip in \cite{pfab2025}; the share of false calls released is the true negative rate, $\mathrm{TNR}_k$, the specificity, called volume reduction in \cite{pfab2025}. These class-wise measures replace accuracy, which is misleading when one class is rare \cite{he2009}.
+\textbf{Measures.} Let $P_k$ be the joints of period $k$. The share of missed true defects is the false negative rate, called slip in \cite{pfab2025}, and the share of false calls released is the true negative rate (specificity), called volume reduction in \cite{pfab2025}:
+\begin{equation}
+\mathrm{FNR}_k = \frac{|\{i \in P_k : y_i = 1,\ \hat{y}_i = 0\}|}{|\{i \in P_k : y_i = 1\}|} = 1 - \mathrm{recall}_k,
+\label{eq:fnr}
+\end{equation}
+\begin{equation}
+\mathrm{TNR}_k = \frac{|\{i \in P_k : y_i = 0,\ \hat{y}_i = 0\}|}{|\{i \in P_k : y_i = 0\}|}.
+\label{eq:tnr}
+\end{equation}
+These class-wise measures replace accuracy, which is misleading when one class is rare \cite{he2009}.
 
-\textbf{Objective.} On every later period $k$: $\mathrm{FNR}_k \leq 1\,\%$ and $\mathrm{TNR}_k \geq 40\,\%$, the two limits of \cite{pfab2025}; Section~\ref{sec:output} justifies both targets.
+\textbf{Objective.} A setting $\theta$ is one combination of the levels of the factors of our test plan (Table~\ref{tab:methodlist}). The objective is a constrained optimisation problem:
+\begin{equation}
+\max_{\theta}\ \frac{1}{5}\sum_{k=1}^{5} \mathrm{TNR}_k(\theta) \quad \text{subject to} \quad \mathrm{FNR}_k(\theta) \leq \alpha = 1\,\%, \quad \mathrm{TNR}_k(\theta) \geq 40\,\% \quad \text{for } k = 1, \dots, 5.
+\label{eq:objective}
+\end{equation}
+This is the structure of Neyman--Pearson classification: one type of error, here the missed true defects, is bounded by $\alpha$, and within this bound the other result, here the released false calls, is made as good as possible \cite{tong2018}. Section~\ref{sec:output} justifies the two limits.
 
-\textbf{Adaptation strategy 1: decision threshold selection.} The choice of $t$. The baseline sets $t$ once, as the mean of the five cross-validation thresholds that reach a recall of 99\,\% \cite{pfab2025}. We compare it with two methods from the literature: Neyman--Pearson classification, which chooses $t$ so that $\mathrm{FNR} \leq \alpha$ holds with a stated probability $1-\delta$ \cite{tong2018}, and prior probability shift adjustment, which re-sets $t$ for each period when the share of true defects changes \cite{saerens2002}.
+\textbf{Available data.} Let $D_k$ be the labelled joints available before period $k$: the training data of the first half and, with retraining, the labelled joints of periods $1, \dots, k-1$, either all of them or only a recent window $W$.
 
-\textbf{Adaptation strategy 2: concept drift adaptation by retraining.} The updating of the classifier when the distribution of the data changes over time \cite{gama2014}. The baseline trains once. We compare it with periodic retraining at fixed intervals \cite{gama2014,dalpozzolo2018,gao2026} and with retraining triggered by drift detection \cite{gama2004}, each on all data seen so far or on a recent window \cite{gama2014}.
+\textbf{Adaptation strategy 1: decision threshold selection.} The threshold is a function of the available data, $t_k = T(D_k)$. The baseline sets it once, $t_k = t_0$ for all $k$, as the mean of the five cross-validation thresholds that reach a recall of 99\,\% \cite{pfab2025}. We compare it with two methods from the literature: Neyman--Pearson classification, which chooses $t_k$ so that $\mathrm{FNR} \leq \alpha$ holds with a stated probability $1-\delta$ \cite{tong2018}, and prior probability shift adjustment, which re-sets $t_k$ for each period when the share of true defects changes \cite{saerens2002}.
+
+\textbf{Adaptation strategy 2: concept drift adaptation by retraining.} The classifier is retrained on the available data, $f_k = L(D_k)$ with the learning algorithm $L$ (random forest or balanced random forest), to follow the change in the distribution of the data over time \cite{gama2014}. The baseline trains once, $f_k = f_0$ for all $k$. We compare it with periodic retraining at fixed intervals \cite{gama2014,dalpozzolo2018,gao2026} and with retraining triggered by drift detection \cite{gama2004}, each on all data seen so far or on a recent window \cite{gama2014}.
 
 The classifier is held fixed as a control variable, so that every change in $\mathrm{FNR}_k$ and $\mathrm{TNR}_k$ can be assigned to one of the two adaptation strategies. Section~\ref{sec:clf} justifies the classifier, and Section~\ref{sec:adapt} the methods of the two strategies and their place in our test plan.
 
@@ -365,7 +386,7 @@ The output of our system are two numbers for each later production period $k$: t
   \item \textbf{Quality (hard limit):} missed true defects $\mathrm{FNR}_k \leq 1\,\%$.
   \item \textbf{Saving (as large as possible, at least 40\,\%):} false calls released $\mathrm{TNR}_k \geq 40\,\%$.
 \end{enumerate}
-A setting succeeds only if it meets the quality limit; among the settings that meet it, the one that releases the most false calls is the best.
+A setting succeeds only if it meets the quality limit; among the settings that meet it, the one that releases the most false calls is the best. This is the optimisation problem~\eqref{eq:objective}.
 \vspace{2pt}
 \end{minipage}}
 \end{center}
