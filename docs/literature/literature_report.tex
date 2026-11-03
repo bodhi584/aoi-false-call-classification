@@ -227,8 +227,48 @@ For drift, the basic remedy is retraining. In the concept-drift literature, a mo
 
 This is where the literature stops and our project begins. A second check after AOI is needed and can recognise false calls, but trained once it fails on later production days; drift and a threshold set once explain this, and methods for both exist and have worked elsewhere. For the second check of AOI results, no study has tested them. We therefore reimplemented the method of \cite{pfab2025} with our own code as the baseline. Reading their code, we found that the stored threshold belongs to the last model tried during tuning, not to the best model that is finally used; in our reimplementation the threshold is taken from the best model. On this baseline, the threshold method and retraining become the variables of a simulation, and every setting is compared with \cite{pfab2025}.
 
+\subsection{Methods to solve the problem}
+The review gives a clear technical route from the problem to the methods we test (Figure~\ref{fig:route}). The problem is the missed true defects on later periods (groups D and E in Table~\ref{tab:benefit}). It has two causes, and the literature offers concrete methods for each of them. Table~\ref{tab:methodlist} lists these methods with the source and the place in the source where each one is described, and the factor of our test plan in which it is tested.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{method_route.png}
+  \caption{Technical route of our project: from the problem on later periods (Table~\ref{tab:benefit}) to its two causes, the methods from the literature and the factors of our test plan. Numbers in brackets are the sources.}
+  \label{fig:route}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\caption{Methods from the literature that we use, the cause each one addresses, the evidence that it can help, and its place in our test plan.}
+\label{tab:methodlist}
+\begin{tabularx}{\textwidth}{@{}p{0.5cm}p{2.6cm}LLp{2.2cm}p{1.6cm}@{}}
+\toprule
+No. & Method & What it does & Evidence that it can help & Source (where) & Test plan \\
+\midrule
+M0 & Baseline: method of \cite{pfab2025}, threshold corrected & random forest or balanced random forest, trained once; threshold = mean of 5 cross-validation thresholds at 99\,\% recall, taken from the best model & meets both limits on the test set (Table~\ref{tab:benefit}, C) & \cite[p.~3, Sec.~IV]{pfab2025} & A level 1, B level 1 \\
+\midrule
+M1 & Threshold with a safety margin & threshold from the scores of left-out data so that at most $\alpha = 1\,\%$ is missed with confidence $1-\delta$ & the usual threshold does not hold the bound; this one does if at least 299 true defects are left out (Figure~\ref{fig:np}) & \cite[p.~2, p.~7]{tong2018} & A level 2 \\
+M2 & Threshold re-set per period & re-estimates the share of true defects from new data and adjusts the threshold to it & needed when the share changes, as in the last weeks of the data (Figure~\ref{fig:drift}) & \cite{saerens2002}, abstract & A level 3 \\
+\midrule
+M3 & Retraining on a fixed schedule & retrains the model on the newest labelled data per period, weekly, every 3 days or daily & daily update best in fraud detection with $<$1\,\% positives; every 5 instead of 100 batches: about 80\,\% fewer out-of-range predictions & \cite{gama2014}; \cite[pp.~4--5, 13--14]{dalpozzolo2018}; \cite[p.~9]{gao2026} & B levels 2--5 \\
+M4 & Retraining when drift is detected & watches the error rate and retrains when it rises 2--3 standard deviations above its lowest value & retrains only when needed; but reacts only after errors have occurred & \cite[p.~4, Sec.~3]{gama2004}; \cite[p.~13]{gao2026} & B level 6 \\
+M5 & Retraining data: all data so far or a recent window & trains on all labelled data seen so far, or only on the most recent part & a window forgets old data that no longer fit; the frequency mattered more than the window type & \cite{gama2014}; \cite[p.~9]{gao2026} & C levels 1--2 \\
+\midrule
+M6 & Model: random forest or balanced random forest & the two models of \cite{pfab2025} & tree ensembles are strongest on tabular data; the balanced variant suits rare true defects & \cite[p.~1]{grinsztajn2022}; \cite{breiman2001}; \cite[pp.~2--3]{chen2004} & D levels 1--2 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The baseline M0 is the method of \cite{pfab2025} as it is, with one correction: the threshold is taken from the best model of the tuning, not from the last model tried. Every other method is compared with it, so that any change in the missed true defects can be traced to one method.
+
+The threshold methods M1 and M2 act on the first cause. They do not change the model; they change where the line between ``true defect'' and ``false call'' is drawn. M1 draws it so that the 1\,\% limit holds with a stated confidence; the price is that the threshold becomes stricter, so fewer false calls are released. Table~\ref{tab:benefit} shows that there is room for this, since most later periods release 50--78\,\% of the false calls, well above the 40\,\% limit. M1 also needs enough true defects in the data it is set on, at least 299 for 1\,\% with 95\,\% confidence. M2 lets the threshold follow the share of true defects when it changes, as in the last four weeks of the data.
+
+The retraining methods M3 to M5 act on the second cause. They change the model itself, so that it learns from the newest data and follows the drift. M3 retrains at fixed intervals; the two closest studies found that more frequent retraining helped most \cite{dalpozzolo2018,gao2026}, which is why our test plan contains four intervals from per period to daily. M4 retrains only when the error rate rises, which saves retraining but reacts only after defects have already been missed; Gao et al.\ preferred a fixed schedule for this reason \cite{gao2026}. M5 decides which data the model is retrained on. A recent window forgets data that no longer fit, but it also contains fewer true defects, which matters for M1. The methods are therefore not independent, and this is why our test plan combines them in a full design instead of testing each one alone.
+
+One assumption applies to all retraining methods. In production, a joint that the second check releases is not checked by a person and so gets no label. Our simulation assumes that every joint receives its label later, for example from a sample check or from field returns. This assumption is stated as a limitation of our results.
+
 \subsection{Summary of the reviewed works}
-Table~\ref{tab:summary} compares the studies on AOI false calls, and Table~\ref{tab:drift} compares the studies on drift and retraining. Table~\ref{tab:switches} maps the methods of level 8 to the variables of our simulation. Only \cite{pfab2025} evaluates on later production periods, and no study on AOI false calls retrains its model (Table~\ref{tab:summary}). Retraining helped in every study that tested it, but none of these studies is on AOI (Table~\ref{tab:drift}).
+Table~\ref{tab:summary} compares the studies on AOI false calls, and Table~\ref{tab:drift} compares the studies on drift and retraining. Only \cite{pfab2025} evaluates on later production periods, and no study on AOI false calls retrains its model (Table~\ref{tab:summary}). Retraining helped in every study that tested it, but none of these studies is on AOI (Table~\ref{tab:drift}).
 
 \begin{table}[h]
 \centering\small
@@ -264,24 +304,7 @@ Gao et al.\ \cite{gao2026} & semiconductor materials & regression & fixed schedu
 \end{tabularx}
 \end{table}
 
-\begin{table}[h]
-\centering\small
-\caption{From the literature to the variables of our simulation (the two next steps named in \cite{pfab2025}).}
-\label{tab:switches}
-\begin{tabularx}{\textwidth}{@{}p{2.3cm}p{5.6cm}Lp{2.4cm}@{}}
-\toprule
-Variable & Option & What it does & Sources \\
-\midrule
-Threshold & as in \cite{pfab2025}, corrected & mean of the five cross-validation thresholds, taken from the best model & \cite{pfab2025} \\
- & safety margin & 1\,\% bound held with probability $1-\delta$; needs enough left-out true defects & \cite{tong2018} \\
- & re-set per period & follows a changed share of true defects, also without labels & \cite{saerens2002} \\
-\midrule
-Retraining & never & train once, as in \cite{pfab2025} & \cite{pfab2025} \\
- & on a fixed schedule & per period, weekly, every 3 days, daily; on all data so far or on a recent window & \cite{gama2014,dalpozzolo2018,gao2026} \\
- & on drift & retrain when the error rises & \cite{gama2004} \\
-\bottomrule
-\end{tabularx}
-\end{table}
+
 
 % ---------------- Discussion ----------------
 \section{Discussion}
