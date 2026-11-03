@@ -133,8 +133,8 @@ Automated optical inspection (AOI) & A camera system after soldering that measur
 Flagged joint, flagged board & A joint with at least one value outside its limits; a board with at least one flagged joint. Every flagged board goes to a manual inspection station \cite{pfab2024}. \\
 True defect, false call & The label set at the manual station: the joint is really defective, or the alarm was false. True defect is the positive class. \\
 Second check & A classifier between the AOI and the manual station that decides for each flagged joint whether it can skip the manual check. \\
-Missed true defects (slip) & Share of true defects that the second check releases as false calls, 1 $-$ recall. Target in \cite{pfab2025}: at most 1\,\%. \\
-False calls released (volume reduction) & Share of false calls that skip the manual station, the specificity. Target in \cite{pfab2025}: at least 40\,\%. \\
+Missed true defects (slip) & False negative rate: share of true defects that the second check releases as false calls, 1 $-$ recall. Target in \cite{pfab2025}: at most 1\,\%. \\
+False calls released (volume reduction) & True negative rate (specificity): share of false calls that skip the manual station. Target in \cite{pfab2025}: at least 40\,\%. \\
 Threshold & The score above which a joint is treated as a true defect; it is set so that recall reaches 99\,\% on known data. \\
 Drift & A change of the data over time, so that a model trained on old data no longer fits new data \cite{gama2014}. \\
 Retraining & Training the model again on newer labelled data during production. \\
@@ -227,8 +227,24 @@ For drift, the basic remedy is retraining. In the concept-drift literature, a mo
 
 This is where the literature stops and our project begins. A second check after AOI is needed and can recognise false calls, but trained once it fails on later production days; drift and a threshold set once explain this, and methods for both exist and have worked elsewhere. For the second check of AOI results, no study has tested them. We therefore reimplemented the method of \cite{pfab2025} with our own code as the baseline. Reading their code, we found that the stored threshold belongs to the last model tried during tuning, not to the best model that is finally used; in our reimplementation the threshold is taken from the best model. On this baseline, the threshold method and retraining become the variables of a simulation, and every setting is compared with \cite{pfab2025}.
 
-\subsection{Methods to solve the problem}
-Our method has two parts. The first is the classifier, the model that gives each flagged joint a score. The second is how the classifier is operated in production: how its decision threshold is set (decision threshold calibration) and how it is kept up to date when the data change (concept drift adaptation by retraining). The model is held fixed in our test plan, as a control variable, so that every change in the results can be traced to the threshold or to retraining. Section~2.2.1 justifies the choice of the model, and Section~2.2.2 the methods for the threshold and retraining.
+\subsection{Methodology}
+Our methodology is a \textbf{supervised binary classifier combined with two adaptation strategies}: \textbf{decision threshold selection} and \textbf{concept drift adaptation by retraining}. Each term is used in its standard meaning from the cited literature.
+
+\textbf{Task.} Each flagged solder joint $i$ has a vector $x_i$ of AOI measurements and a label $y_i \in \{0, 1\}$ from the manual inspection station, with $y_i = 1$ for a true defect (the positive class) and $y_i = 0$ for a false call \cite{pfab2024}. The data are ordered in time and split as in \cite{pfab2025}: the first half is the training data with a test set from the same period, and the second half forms the later production periods $k = 1, \dots, 5$.
+
+\textbf{Classifier.} A random forest or a balanced random forest \cite{breiman2001,chen2004}, trained on labelled joints, gives each joint a score $s(x_i) \in [0, 1]$, the estimated probability that it is a true defect (Section~2.2.1).
+
+\textbf{Decision rule.} A joint is sent to the manual station if $s(x_i) \geq t$ and released without a manual check if $s(x_i) < t$, where $t$ is the decision threshold.
+
+\textbf{Measures.} For each period $k$, the share of missed true defects is the false negative rate, $\mathrm{FNR}_k = 1 - \mathrm{recall}_k$, called slip in \cite{pfab2025}; the share of false calls released is the true negative rate, $\mathrm{TNR}_k$, the specificity, called volume reduction in \cite{pfab2025}. These class-wise measures replace accuracy, which is misleading when one class is rare \cite{he2009}.
+
+\textbf{Objective.} On every later period $k$: $\mathrm{FNR}_k \leq 1\,\%$ and $\mathrm{TNR}_k \geq 40\,\%$, the two limits of \cite{pfab2025}.
+
+\textbf{Adaptation strategy 1: decision threshold selection.} The choice of $t$. The baseline sets $t$ once, as the mean of the five cross-validation thresholds that reach a recall of 99\,\% \cite{pfab2025}. We compare it with two methods from the literature: Neyman--Pearson classification, which chooses $t$ so that $\mathrm{FNR} \leq \alpha$ holds with a stated probability $1-\delta$ \cite{tong2018}, and prior probability shift adjustment, which re-sets $t$ for each period when the share of true defects changes \cite{saerens2002}.
+
+\textbf{Adaptation strategy 2: concept drift adaptation by retraining.} The updating of the classifier when the distribution of the data changes over time \cite{gama2014}. The baseline trains once. We compare it with periodic retraining at fixed intervals \cite{gama2014,dalpozzolo2018,gao2026} and with retraining triggered by drift detection \cite{gama2004}, each on all data seen so far or on a recent window \cite{gama2014}.
+
+The classifier is held fixed as a control variable, so that every change in $\mathrm{FNR}_k$ and $\mathrm{TNR}_k$ can be assigned to one of the two adaptation strategies. Section~2.2.1 justifies the classifier, and Section~2.2.2 the methods of the two strategies and their place in our test plan.
 
 \subsubsection{The classifier: random forest and balanced random forest}
 We use the two models of \cite{pfab2025}, a random forest and a balanced random forest. Table~\ref{tab:models} shows the results of all model families that \cite{pfab2025} tested on the test set. Two numbers are given for each: the false calls the model could release at the 1\,\% limit if its threshold were chosen ideally, and the result with the threshold actually set by their method.
@@ -254,7 +270,7 @@ Four reasons support the choice of the two random forests. First, they are the o
 
 Keeping the models of \cite{pfab2025} also makes our results directly comparable with the published ones. Whether a different model would do better is a separate question, which we leave open on purpose: if the model changed at the same time as the threshold or the retraining, an improvement could not be assigned to either.
 
-\subsubsection{Threshold and retraining}
+\subsubsection{The two adaptation strategies}
 The review gives a clear technical route from the problem to the methods we test (Figure~\ref{fig:route}). The problem is the missed true defects on later periods (groups D and E in Table~\ref{tab:benefit}). It has two causes, and the literature offers concrete methods for each of them. Table~\ref{tab:methodlist} lists these methods with the source and the place in the source where each one is described, and the factor of our test plan in which it is tested.
 
 \begin{figure}[H]
@@ -274,12 +290,12 @@ No. & Method & What it does & Evidence that it can help & Source (where) & Test 
 \midrule
 M0 & Baseline: method of \cite{pfab2025}, threshold corrected & random forest or balanced random forest, trained once; threshold = mean of 5 cross-validation thresholds at 99\,\% recall, taken from the best model & meets both limits on the test set (Table~\ref{tab:benefit}, C) & \cite[p.~3, Sec.~IV]{pfab2025} & A level 1, B level 1 \\
 \midrule
-M1 & Threshold with a safety margin & threshold from the scores of left-out data so that at most $\alpha = 1\,\%$ is missed with confidence $1-\delta$ & the usual threshold does not hold the bound; this one does if at least 299 true defects are left out (Figure~\ref{fig:np}) & \cite[p.~2, p.~7]{tong2018} & A level 2 \\
-M2 & Threshold re-set per period & re-estimates the share of true defects from new data and adjusts the threshold to it & needed when the share changes, as in the last weeks of the data (Figure~\ref{fig:drift}) & \cite{saerens2002}, abstract & A level 3 \\
+M1 & Neyman--Pearson threshold (safety margin) & threshold from the scores of left-out data so that at most $\alpha = 1\,\%$ is missed with confidence $1-\delta$ & the usual threshold does not hold the bound; this one does if at least 299 true defects are left out (Figure~\ref{fig:np}) & \cite[p.~2, p.~7]{tong2018} & A level 2 \\
+M2 & Prior probability shift adjustment (threshold re-set per period) & re-estimates the share of true defects from new data and adjusts the threshold to it & needed when the share changes, as in the last weeks of the data (Figure~\ref{fig:drift}) & \cite{saerens2002}, abstract & A level 3 \\
 \midrule
-M3 & Retraining on a fixed schedule & retrains the model on the newest labelled data per period, weekly, every 3 days or daily & daily update best in fraud detection with $<$1\,\% positives; every 5 instead of 100 batches: about 80\,\% fewer out-of-range predictions & \cite{gama2014}; \cite[pp.~4--5, 13--14]{dalpozzolo2018}; \cite[p.~9]{gao2026} & B levels 2--5 \\
-M4 & Retraining when drift is detected & watches the error rate and retrains when it rises 2--3 standard deviations above its lowest value & retrains only when needed; but reacts only after errors have occurred & \cite[p.~4, Sec.~3]{gama2004}; \cite[p.~13]{gao2026} & B level 6 \\
-M5 & Retraining data: all data so far or a recent window & trains on all labelled data seen so far, or only on the most recent part & a window forgets old data that no longer fit; the frequency mattered more than the window type & \cite{gama2014}; \cite[p.~9]{gao2026} & C levels 1--2 \\
+M3 & Periodic retraining & retrains the model on the newest labelled data per period, weekly, every 3 days or daily & daily update best in fraud detection with $<$1\,\% positives; every 5 instead of 100 batches: about 80\,\% fewer out-of-range predictions & \cite{gama2014}; \cite[pp.~4--5, 13--14]{dalpozzolo2018}; \cite[p.~9]{gao2026} & B levels 2--5 \\
+M4 & Drift-triggered retraining (drift detection method) & watches the error rate and retrains when it rises 2--3 standard deviations above its lowest value & retrains only when needed; but reacts only after errors have occurred & \cite[p.~4, Sec.~3]{gama2004}; \cite[p.~13]{gao2026} & B level 6 \\
+M5 & Training window: all data so far or a sliding window & trains on all labelled data seen so far, or only on the most recent part & a window forgets old data that no longer fit; the frequency mattered more than the window type & \cite{gama2014}; \cite[p.~9]{gao2026} & C levels 1--2 \\
 \midrule
 M6 & Model: random forest or balanced random forest & the two models of \cite{pfab2025} & tree ensembles are strongest on tabular data; the balanced variant suits rare true defects & \cite[p.~1]{grinsztajn2022}; \cite{breiman2001}; \cite[pp.~2--3]{chen2004} & D levels 1--2 \\
 \bottomrule

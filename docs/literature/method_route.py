@@ -21,19 +21,19 @@ ax.text(8.95, 5.75, "Factor in our test plan", ha="center", fontsize=9, fontweig
 
 box(0.05, 2.2, 1.9, 1.6, "Later periods:\n5–15 % true defects\nmissed instead of\n≤ 1 %\n(Table 1, D, E)", fc="#FBE9E7", ec=RED, fs=8)
 
-box(2.45, 3.9, 2.0, 1.1, "Threshold set once\ncannot hold 1 %\n[14]")
-box(2.45, 1.0, 2.0, 1.1, "Drift: the data\nchange over time\n[7], [12], [13]")
-arrow(1.95, 3.3, 2.45, 4.4); arrow(1.95, 2.7, 2.45, 1.6)
+box(2.35, 3.65, 2.2, 1.6, "Threshold set once\ncannot hold 1 %\n[14]\n\nStrategy: decision\nthreshold selection")
+box(2.35, 0.75, 2.2, 1.6, "Drift: the data\nchange over time\n[7], [12], [13]\n\nStrategy: concept\ndrift adaptation")
+arrow(1.95, 3.3, 2.35, 4.4); arrow(1.95, 2.7, 2.35, 1.6)
 
-meth = [(4.95, "Threshold with a safety margin [14]"), (4.25, "Threshold re-set per period [15]"),
-        (2.15, "Retraining on a fixed schedule\n[12], [17], [18]"), (1.45, "Retraining when drift is detected [16]"),
-        (0.75, "Retraining data: all data so far\nor a recent window [12], [18]")]
+meth = [(4.95, "Neyman–Pearson threshold\n(safety margin) [14]"), (4.25, "Prior probability shift adjustment\n(threshold re-set per period) [15]"),
+        (2.15, "Periodic retraining\n[12], [17], [18]"), (1.45, "Drift-triggered retraining [16]"),
+        (0.75, "Training window: all data so far\nor a sliding window [12], [18]")]
 for y, txt in meth:
     box(4.95, y - 0.3, 2.6, 0.6, txt, fs=7.3)
 for y in (4.95, 4.25):
-    arrow(4.45, 4.45, 4.95, y)
+    arrow(4.55, 4.45, 4.95, y)
 for y in (2.15, 1.45, 0.75):
-    arrow(4.45, 1.55, 4.95, y)
+    arrow(4.55, 1.55, 4.95, y)
 
 box(8.05, 3.85, 1.85, 1.35, "A  Threshold method\n3 levels:\nas in [7] corrected,\nsafety margin, re-set", fc="#FBFCFE", fs=7.5)
 box(8.05, 1.55, 1.85, 1.2, "B  Retraining schedule\n6 levels:\nnever … daily, on drift", fc="#FBFCFE", fs=7.5)
