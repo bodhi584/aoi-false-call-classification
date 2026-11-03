@@ -264,6 +264,14 @@ The bottom of Figure~\ref{fig:split} shows why the later periods are hard. In th
 \subsection{Methodology}
 \label{sec:method}
 Our methodology is a \textbf{supervised binary classifier combined with two adaptation strategies}: \textbf{decision threshold selection} and \textbf{concept drift adaptation by retraining}. Each term is used in its standard meaning from the cited literature.
+Figure~\ref{fig:system} shows how the parts work together for one later period $k$; the definitions below describe each part.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{system_diagram.png}
+  \caption{Our system for one later period $k$. The classifier $f_k$ scores each flagged joint, and the decision rule compares the score $s(x)$ with the threshold $t_k$: joints at or above it go to the manual station, joints below it are released. Strategy~1 (decision threshold selection) sets $t_k$; Strategy~2 (concept drift adaptation) retrains $f_k$ on the labelled joints of earlier periods. The output are the two responses $\mathrm{FNR}_k$ and $\mathrm{TNR}_k$. In the baseline of \cite{pfab2025}, both strategies are switched off: $t$ and $f$ are set once.}
+  \label{fig:system}
+\end{figure}
 
 \textbf{Task.} Each flagged solder joint $i$ has a vector $x_i$ of AOI measurements and a label $y_i \in \{0, 1\}$ from the manual inspection station (Section~\ref{sec:data}), with $y_i = 1$ for a true defect (the positive class) and $y_i = 0$ for a false call \cite{pfab2024}. The data are ordered in time and split as in \cite{pfab2025}: the first half is the training data with a test set from the same period, and the second half forms the later production periods $k = 1, \dots, 5$.
 
