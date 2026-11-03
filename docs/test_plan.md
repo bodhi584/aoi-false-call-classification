@@ -33,7 +33,7 @@ The baseline is our reimplementation of [7] (`scripts/replicate_pfab2025.py`): t
 
 ## 3. How the code tests run
 
-- **Unit tests** use a small set of made-up data, because the real data are not in the repository. They run on every push, on Windows, macOS and Linux, with Python 3.11 and 3.12 (CI). File: `tests/test_classification.py`.
+- **Unit tests** use a small set of made-up data, because the real data are not in the repository. They are written for the core code in P3 (#39) and then run on every push (CI).
 - **Data checks** run on the real data after `scripts/download_data.py`.
 - **Reproduction check:** `scripts/replicate_pfab2025.py` on the real data writes `results/replication_pfab2025.json`; its baseline is compared with the run logs of [7].
 
@@ -63,10 +63,6 @@ Status: **exists** = the test is in the repository now. **planned** = we add it 
 | R4 | Retraining only uses earlier data | Record the rows used before each period | All rows come before the period | planned |
 | R5 | Baseline reproduces [7] | Compare `results/replication_pfab2025.json` with the run logs of [7] | Same pattern; balanced RF on later periods 7.5 % in both (done); open gaps listed in section 5 | exists (manual) |
 
-### P1 package (earlier plan, kept for reference)
-
-The tests C1, C4, C5, C6 and S1 in `tests/test_classification.py` test the P1 package `aoi_classification/`. They keep running in CI; in P3 the tests move to the core code (R1–R4).
-
 ## 5. Responses and checks
 
 | ID | What | How | Pass criterion | Status |
@@ -91,7 +87,7 @@ If a setting does not reach the reference lines, we report what works, what does
 | Only about 1 % of the joints are true defects | Missed true defects and false calls released instead of accuracy (K1, K2) |
 | Only one line and 132 days | K5, D7 |
 | Data licence is non-commercial, no personal data | D6; the data are never added to the repository (K5) |
-| Results cannot be repeated | 10 seeds, `requirements.txt`, CI on three systems |
+| Results cannot be repeated | 10 seeds, `requirements.txt`, unit tests in CI (P3) |
 | Numbers in the report differ from the result files | K4 |
 
 ## 7. Who and when
@@ -100,7 +96,7 @@ Melisa Subasi writes the test plan (#34), the tests (#39) and the test report (#
 
 | Date | Milestone | Test work |
 |---|---|---|
-| 3 Nov | P2: core code and baseline | This plan. Baseline reproduced (R5). The existing tests pass in CI. |
+| 3 Nov | P2: core code and baseline | This plan. Baseline reproduced (R5). |
 | 24 Nov | P3: features and testing | Run the design of experiments (A first, then B). Add D1, D2, D3, D7, R1–R4 (#39). |
 | 8 Dec | P4: full evaluation | Full design; test report K1 to K5 (#47) |
 | 22 Dec | P5: packaging | All tests pass on a clean install |

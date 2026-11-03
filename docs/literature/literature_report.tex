@@ -4,15 +4,16 @@
 \usepackage{mathptmx}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{graphicx}
+\usepackage{amsmath}
 \usepackage{booktabs}
+\usepackage{float}
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{enumitem}
 \usepackage{titlesec}
-\usepackage[hidelinks]{hyperref}
+\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=blue!60!black,urlcolor=blue!60!black,linktoc=all,bookmarksnumbered=true,bookmarksopen=true]{hyperref}
 \usepackage{xcolor}
 \usepackage{cite}
-\linespread{1.15}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
 \setlist{nosep,leftmargin=*}
@@ -61,7 +62,7 @@ In electronics assembly, automated optical inspection (AOI) checks every solder 
 
 This report reviews 18 sources, from the general to the specific. Earlier studies show that classifiers such as random forests can recognise false calls from AOI measurements. On the same Siemens data, however, models that meet the targets on a test set from the same period (at most 1\,\% missed defects, at least 40\,\% fewer manual checks) miss 5--15\,\% of the true defects on every later production period. The literature on dataset shift and concept drift, cases from manufacturing, and the authors of the data and of the study themselves point to drift, a change of the data over time, as the cause; an unstable method for setting the decision threshold adds to it. The standard remedy in the drift literature is to retrain the model regularly on recent data. In related applications, a binary fraud classifier with less than 1\,\% positives and a quality model on a semiconductor materials line, regular retraining reduced the loss in performance. For the second check of AOI results, this remedy has not been tested in the literature we reviewed.
 
-Our project therefore reimplements the method of Pfab and Rothering with its own code, on the same data with the same models, and addresses the two causes they name: the threshold method and retraining. A design of experiments varies the threshold method (3 levels), the retraining schedule (6 levels), the retraining data (2 levels) and the model (2 levels). The deliverable is a simulation of the second check in production in which threshold and retraining are settings; its results are compared with the published result, and the targets of the original study (at most 1\,\% missed true defects, at least 40\,\% fewer manual checks) serve as reference lines.
+Our project addresses this gap. Its methodology is a supervised binary classifier, the random forest and balanced random forest of Pfab and Rothering, reimplemented with our own code as the baseline, combined with two adaptation strategies from the literature: decision threshold selection (Neyman--Pearson classification, prior probability shift adjustment) and concept drift adaptation by retraining (periodic and drift-triggered). A design of experiments varies the threshold method, the retraining schedule, the training window and the model. The objective is that on every later production period at most 1\,\% of the true defects are missed, as a hard quality limit, and at least 40\,\% of the false calls are released; the expected saving lies between 40\,\% and the 80--90\,\% that the second check reaches on the test set.
 
 \newpage
 \tableofcontents
@@ -72,7 +73,51 @@ Our project therefore reimplements the method of Pfab and Rothering with its own
 % ---------------- Introduction ----------------
 \pagenumbering{arabic}
 \section{Introduction}
-Zero-defect manufacturing relies on detecting defects before a product leaves the factory \cite{psarommatis2020}. In electronics assembly, components are soldered onto printed circuit boards by surface-mount technology (SMT), and AOI is placed after soldering \cite{ebayyeh2020}. AOI compares camera measurements of each solder joint with fixed limits; every flagged board goes to a manual inspection station, where an operator decides whether it is a true defect or a false call \cite{pfab2024}. Many flagged boards are false calls, which creates a large manual workload \cite{pfab2024,thielen2020}. A classifier after the AOI that releases false calls without missing true defects would reduce this workload.
+Zero-defect manufacturing relies on detecting defects before a product leaves the factory \cite{psarommatis2020}. In electronics assembly, components are soldered onto printed circuit boards by surface-mount technology (SMT), and AOI is placed after soldering \cite{ebayyeh2020}. Every board that the AOI flags goes to a manual inspection station, where an operator decides whether it is a true defect or a false call \cite{pfab2024}. A classifier after the AOI, a second check, could release the false calls without a manual check. This review covers 18 sources from 2001 to 2026 on this second check; image-based defect detection is outside its scope, because the second check starts after the AOI has made its measurements. Figure~\ref{fig:map} shows the 18 sources from the general goal to our project; Section~2.1 follows it from top to bottom.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{literature_map.png}
+  \caption{The reviewed literature from general to specific. Each box is one level of the review, with its sources on the right; Section~2.1 follows them from top to bottom. The line below the funnel is our project.}
+  \label{fig:map}
+\end{figure}
+
+
+\subsection{Motivation}
+Every board that the AOI flags is checked by a person, and about 99\,\% of the flagged solder joints are false calls \cite{pfab2024,pfab2025}. This costs operator time on every line, and it is a current problem: Siemens is working on an AI second check in its Erlangen factory today, with the target of 40\,\% fewer false calls \cite{siemens2026}. Earlier studies show that a classifier on the AOI measurements can recognise many false calls \cite{thielen2020,albayari2026}. The only study that tests such a classifier on later production periods, however, finds that it fails there: it misses 5--15\,\% of the true defects instead of at most 1\,\% \cite{pfab2025}. A factory cannot use a second check that lets defects through. Table~\ref{tab:benefit} shows what has been reached so far and what is at stake.
+
+\begin{table}[H]
+\centering\small
+\caption{What a second check after AOI has reached so far. About 99\,\% of the flagged joints are false calls, so the share of false calls released is roughly the share of manual checks saved.}
+\label{tab:benefit}
+\begin{tabularx}{\textwidth}{@{}p{0.9cm}p{2.7cm}p{2.7cm}LL@{}}
+\toprule
+Group & Source & Setting & False calls released (manual checks saved) & Missed true defects \\
+\midrule
+A & Siemens \cite{siemens2026} & industrial target, Erlangen & 40\,\% (target) & -- \\
+B & Pfab \& Rothering \cite[p.~6, Table~III]{pfab2025} & test set, ideal threshold (best possible) & 92.5\,\% (XGBoost), 90.1\,\% (RF), 79.6\,\% (BRF) & 1\,\% (by construction) \\
+C & Pfab \& Rothering \cite[p.~11, Table~V]{pfab2025} & test set, threshold as set by their method & 79.7\,\% (BRF), 89.7\,\% (RF) & 0.8\,\% (BRF), 1.0\,\% (RF) \\
+D & Pfab \& Rothering \cite[p.~7, Table~IV]{pfab2025} & five later production periods & 41.5--78.0\,\% (BRF), 39.7--76.0\,\% (RF) & 5.3--9.4\,\% (BRF), 10.2--15.0\,\% (RF) \\
+E & Our baseline & five later periods, 10 seeds, mean & 57.9\,\% (BRF), 55.8\,\% (RF) & 7.5\,\% (BRF), 9.1\,\% (RF) \\
+F & Target of \cite{pfab2025} & any period & $\geq$ 40\,\% & $\leq$ 1\,\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{benefit_pfab2025.png}
+  \caption{The groups of Table~\ref{tab:benefit} as points: missed true defects (horizontal, further right is worse) and false calls released (vertical, higher is better). B: test set with an ideal threshold; C: test set with the threshold of \cite{pfab2025}, zoomed in the inset; D: the five later periods of \cite{pfab2025}; E: our baseline, mean of the later periods. Dashed lines: the limits of F, at most 1\,\% missed and at least 40\,\% released; the 40\,\% line is also the target A of Siemens. Green: the target zone.}
+  \label{fig:benefit}
+\end{figure}
+
+Table~\ref{tab:benefit} and Figure~\ref{fig:benefit} compare all results in the two numbers that matter on the line. The vertical axis is the share of false calls released: each released false call is one manual check saved. The horizontal axis is the share of true defects missed: each missed true defect is a defective joint that passes without a manual check. A second check is acceptable only if it meets both limits of \cite{pfab2025} (F): at most 1\,\% missed and at least 40\,\% released. The 40\,\% is also the target of Siemens (A) \cite{siemens2026}.
+
+\textbf{Saving at least 40\,\% of the manual checks is not the problem.} All results but one lie above the 40\,\% line. On the test set, the second check releases 79.6--92.5\,\% of the false calls (B, C). On the five later periods it still releases 39.7--78.0\,\% (D); the lowest value, 39.7\,\%, lies just below it. Our baseline releases 55.8--57.9\,\% (E). In the Siemens data, with 440,274 flagged joints of which 4,622 are true defects, releasing 90\,\% of the false calls would mean about 400,000 fewer manual joint checks over 133 days.
+
+\textbf{Keeping the missed true defects at 1\,\% is the problem.} Only the five results on the test set, which comes from the same period as the training data, meet the 1\,\% limit (B, C). All ten results on the later periods miss 5.3--15.0\,\% of the true defects (D), and our baseline misses 7.5--9.1\,\% (E). They all lie to the right of the 1\,\% line. Applied to the 4,622 true defects of the data set, 5--15\,\% would mean about 250 to 690 defective joints passing without a manual check, instead of about 46 at 1\,\%. These are real defects that would reach the customer.
+
+\textbf{What our project does.} Our project tries to move the later periods (D, E) into the green zone: to bring the missed true defects on later production periods back to at most 1\,\%, while still releasing at least 40\,\% of the false calls. There is room for this. Missing fewer true defects requires a stricter threshold, and a stricter threshold releases fewer false calls; but on most later periods the released share is 50--78\,\%, well above 40\,\%, so part of it can be given up for fewer missed defects. We test the two methods that \cite{pfab2025} names as next steps but does not test. A better method for setting the threshold decides how much of this room is used and keeps the 1\,\% limit with a stated confidence. Retraining on new data lets the model follow the change in the data, so that the points move back to the left. If one or both methods succeed, the second check saves at least 40\,\% of the manual checks without letting more true defects pass than the 1\,\% limit allows.
 
 \subsection{Key terms}
 Table~\ref{tab:terms} explains the terms used in this report. They follow the core study \cite{pfab2025}, so that our results can be compared with it.
@@ -89,8 +134,8 @@ Automated optical inspection (AOI) & A camera system after soldering that measur
 Flagged joint, flagged board & A joint with at least one value outside its limits; a board with at least one flagged joint. Every flagged board goes to a manual inspection station \cite{pfab2024}. \\
 True defect, false call & The label set at the manual station: the joint is really defective, or the alarm was false. True defect is the positive class. \\
 Second check & A classifier between the AOI and the manual station that decides for each flagged joint whether it can skip the manual check. \\
-Missed true defects (slip) & Share of true defects that the second check releases as false calls, 1 $-$ recall. Target in \cite{pfab2025}: at most 1\,\%. \\
-False calls released (volume reduction) & Share of false calls that skip the manual station, the specificity. Target in \cite{pfab2025}: at least 40\,\%. \\
+Missed true defects (slip) & False negative rate: share of true defects that the second check releases as false calls, 1 $-$ recall. Target in \cite{pfab2025}: at most 1\,\%. \\
+False calls released (volume reduction) & True negative rate (specificity): share of false calls that skip the manual station. Target in \cite{pfab2025}: at least 40\,\%. \\
 Threshold & The score above which a joint is treated as a true defect; it is set so that recall reaches 99\,\% on known data. \\
 Drift & A change of the data over time, so that a model trained on old data no longer fits new data \cite{gama2014}. \\
 Retraining & Training the model again on newer labelled data during production. \\
@@ -98,192 +143,288 @@ Retraining & Training the model again on newer labelled data during production. 
 \end{tabularx}
 \end{table}
 
-\subsection{Objectives}
-\begin{itemize}
-  \item To review the literature on AOI false calls and on supervised classifiers used as a second check of AOI results.
-  \item To identify why such classifiers fail on later production days, and what the literature offers against it.
-  \item To justify the design of our project: a reimplementation of the study of Pfab and Rothering \cite{pfab2025} as the baseline, and a test plan that varies its two named next steps: the threshold method and retraining.
-\end{itemize}
-
-\subsection{Scope of the review}
-The review covers 18 sources published between 2001 and 2026: peer-reviewed journal and conference papers, one data article, one technical report, two preprints and one industry press release. For each claim of our project we kept the sources that support it directly. It is limited to AOI of solder joints in SMT assembly and to tabular AOI measurements; image-based defect detection with deep learning is outside the scope, because our project starts after the AOI machine has made its measurements.
-
-\subsection{Structure of the report}
-Section~2 describes how the sources were found and summarises them from the general to the specific: from zero-defect manufacturing and AOI (2.2.1), through the Siemens data and earlier false-call studies (2.2.2), classifiers and evaluation (2.2.3, 2.2.4), to the reasons why models fail over time (2.2.5) and the methods for the two next steps named in the core study (2.2.6, 2.2.7). Section~2.3 compares the works in tables. Section~3 discusses what the literature shows and what it leaves open, and Section~4 concludes with the position of our project.
-
-\clearpage
 % ---------------- Materials and Methods ----------------
 \section{Materials and Methods}
 
-\subsection{Method of the literature search}
-The sources were searched in five topics, ordered from general to specific: AOI and false calls; classifiers for tabular data; evaluation with rare classes; causes of failure over time; and retraining as a remedy. Each source was read and summarised, and every reference was checked against its DOI or official page. For the central study \cite{pfab2025}, the full text and the published source code and run logs were read.
-\begin{itemize}
-  \item \textbf{Databases:} IEEE Xplore, ScienceDirect, SpringerLink, ACM Digital Library, arXiv, Google Scholar, Crossref, Mendeley Data, GitLab and the Siemens press room.
-  \item \textbf{Search terms:} \textit{automated optical inspection}, \textit{false call}, \textit{SMT}, \textit{solder joint}, \textit{tabular data benchmark}, \textit{imbalanced data}, \textit{dataset shift}, \textit{concept drift}, \textit{manufacturing}, \textit{retraining}, \textit{sliding window}.
-  \item \textbf{Inclusion criteria:} the source deals with AOI false calls or the Siemens AOI data, with a method we use, or with model failure and retraining under drift; it is peer-reviewed or a primary source; its full reference can be verified. Preprints are marked as such.
-  \item \textbf{Reading:} for each source we noted what was done, the data, the main result and how it relates to our project. Numbers are only taken from the sources or from our own result files.
-\end{itemize}
-
 \subsection{Reviewed literature}
-Figure~\ref{fig:map} shows how the sources are ordered. The following subsections follow this order.
+The review below follows Figure~\ref{fig:map} from top to bottom as one argument. Table~\ref{tab:overview} lists the sources in the same order, with the finding we use and where it is in the source; page numbers refer to the version linked in the reference list.
 
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.92\textwidth]{literature_map.png}
-  \caption{Reviewed literature from general to specific (numbers refer to the reference list).}
-  \label{fig:map}
-\end{figure}
+\begin{table}[H]
+\centering\small
+\caption{The 18 reviewed sources in the order of Figure~\ref{fig:map}: the finding we use and where it is in the source.}
+\label{tab:overview}
+\begin{tabularx}{\textwidth}{@{}p{0.7cm}p{0.7cm}p{2.6cm}Lp{2.6cm}@{}}
+\toprule
+Level & Source & Type, year & Finding we use & Where in the source \\
+\midrule
+1 & \cite{psarommatis2020} & journal review, 2020 & 280 articles (1987--2018); four strategies: detection, repair, prediction, prevention & abstract \\
+2 & \cite{ebayyeh2020} & journal review, 2020 & how AOI works: cameras, lighting, feature extraction, fixed limits & abstract \\
+3 & \cite{siemens2026} & press release, 2026 & second check at Erlangen; targets 40\,\% fewer false calls, 85\,\% less engineering effort & web page \\
+3 & \cite{pfab2024} & data article, 2024 & 132 days, one SMT line; labels set by people; ``may contain distribution drifts of unknown type'' & abstract; Limitations \\
+4 & \cite{thielen2020} & conference paper, 2020 & kNN, neural network, random forest after AOI; threshold for no extra slip & abstract; summarised in \cite[p.~2]{pfab2025} \\
+4 & \cite{albayari2026} & conference paper, 2026 & XGBoost best balance of recall and precision on Siemens data; LIME, SHAP & abstract \\
+4 & \cite{pfab2025} & preprint, 2025 & split in time order & p.~3, Sec.~IV \\
+ &  &  & best possible at 1\,\% missed: 92.5\,\% (XGBoost), 90.1\,\% (RF) released & p.~6, Table~III \\
+ &  &  & test set: 0.8\,\% (BRF) and 1.0\,\% (RF) missed; 79.7\,\% and 89.7\,\% false calls released & p.~11, Table~V \\
+ &  &  & later periods: 5.3--9.4\,\% (BRF) and 10.2--15.0\,\% (RF) missed & p.~7, Table~IV \\
+ &  &  & data clusters that ``did just appear in a certain period'' & p.~3, Fig.~2 \\
+ &  &  & next steps: threshold and distribution drifts; ``would fail from the first moment'' & pp.~7--8, Sec.~VII \\
+5 & \cite{grinsztajn2022} & conference paper, 2022 & 45 data sets: tree models remain state of the art on tabular data & p.~1, abstract \\
+5 & \cite{breiman2001} & journal article, 2001 & random forest: trees on random samples and features vote & abstract \\
+5 & \cite{chen2004} & technical report, 2004 & balanced and weighted random forest for rare classes & pp.~2--3 \\
+6 & \cite{he2009} & journal review, 2009 & accuracy misleading for rare classes; use recall, specificity & abstract \\
+7 & \cite{gama2014} & journal survey, 2014 & drift = change of $p(X,y)$; retraining on a sliding window as baseline & definition and adaptation sections \\
+7 & \cite{bauer2025} & journal article, 2025 & controlled drift lowers all metrics of a weld-quality classifier & abstract \\
+7, 8 & \cite{tong2018} & journal article, 2018 & empirical threshold does not hold an error bound; order statistic, $n \geq \log\delta/\log(1-\alpha)$ & p.~2; p.~7 (arXiv copy) \\
+8 & \cite{saerens2002} & journal article, 2002 & re-estimate class shares from unlabelled data and adjust outputs & abstract \\
+8 & \cite{gama2004} & conference paper, 2004 & drift detection: warning at 2, drift at 3 standard deviations & p.~4, Sec.~3 \\
+8 & \cite{dalpozzolo2018} & journal article, 2018 & fraud, $<$1\,\% positives, 75 million transactions; daily update; recent data better & pp.~1--2; pp.~13--14 \\
+8 & \cite{gao2026} & preprint, 2026 & retraining every 5 vs.\ 100 batches: about 80\,\% fewer out-of-range predictions; frequency matters most & p.~9; p.~13 \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
-% --- 2.2.1
-\subsubsection{From zero-defect manufacturing to AOI in electronics assembly}
+% --- review as one continuous argument, in the order of Figure 1
+The aim of manufacturing quality is that no defective product leaves the factory. Of the four strategies that research on zero-defect manufacturing distinguishes, detection, repair, prediction and prevention, detection is the one that every line uses today \cite{psarommatis2020}. Detection, however, has a cost: every inspection step adds time and work. A second check after an inspection is one way to lower this cost without letting more defects pass, and this is the idea behind our project.
 
-\source{Zero defect manufacturing: state-of-the-art review}{F.~Psarommatis et al. (2020), Int.\ J.\ Production Research}{\cite{psarommatis2020}}
-The authors review 280 articles on zero-defect manufacturing published between 1987 and 2018 and group the approaches into four strategies: detection, repair, prediction and prevention of defects.
-\relevance{AOI and the manual inspection station belong to the \textit{detection} strategy. A second check makes detection cheaper without letting more defects pass.}
+In electronics assembly, defects are detected after soldering by automated optical inspection. Cameras and lighting record each board, and the AOI software measures every solder joint and compares each value with fixed limits \cite{ebayyeh2020}. AOI replaced human visual inspection, which is slow and tires, but it moved the problem rather than solving it. Fixed limits are set conservatively so that no defect slips through, and as a result the machine raises many alarms on joints that are in fact good. Every flagged board still goes to a person.
 
-\source{A review and analysis of automatic optical inspection and quality monitoring methods in electronics industry}{A.~A.~R.~M.~Abu Ebayyeh and A.~Mousavi (2020), IEEE Access}{\cite{ebayyeh2020}}
-This review describes AOI systems in electronics production: the hardware (cameras and lighting) and the software steps (pre-processing, feature extraction, classification). AOI replaces human visual inspection, which is slow and suffers from fatigue.
-\relevance{It explains where our input comes from: AOI measures each solder joint and compares it with fixed limits; the second check works on these measurements.}
-
-\source{Siemens and NVIDIA advance AI-powered PCB inspection from digital twin to factory}{Siemens (Oct.~2026), press release}{\cite{siemens2026}}
-Siemens and NVIDIA prepare AOI programs on the computer before production; the solution is shown in the Siemens electronics factory in Erlangen. When the AOI flags a possible defect, a second inspection step decides whether it is a real defect or a false call. The stated targets are up to 85\,\% less manual engineering effort for AOI programs, 40\,\% fewer false calls and more than 5\,\% higher first-pass yield.
-\relevance{The false-call problem is a current industrial problem. The 40\,\% is a target, not a published result.}
-
-% --- 2.2.2
-\subsubsection{False calls of AOI: the Siemens data and earlier studies}
-
-\source{Data of automated optical inspection of surface-mounted technology electronic production}{K.~Pfab et al. (2024), Data in Brief}{\cite{pfab2024}}
-The authors publish 132 days of AOI data from one SMT line of Siemens AG in Germany. Every row is a solder joint that the AOI flagged, with its AOI measurements and the label from the manual inspection station: true defect or false call. The authors warn that the share of wrong labels is unknown, because people set them, and that ``the data may contain distribution drifts of unknown type''.
-\relevance{This is our data set. The authors themselves name drift as a property of the data. Our own first analysis of the data confirms it (Figure~\ref{fig:drift}): the share of flagged boards with a true defect stays between 0.8 and 2.3\,\% for 15 weeks and rises to 3.2--6.3\,\% in the last four weeks.}
+How large this problem is can be seen in data that Siemens published from one of its own lines. Pfab et al.\ released 132 days of AOI data from an SMT line of Siemens AG in Germany, with the AOI measurements of every flagged joint and the label from the manual inspection station \cite{pfab2024}. About 99\,\% of the flagged joints are false calls. The authors also warn that the labels are set by people and may be wrong, and that ``the data may contain distribution drifts of unknown type''. Our own first look at the data confirms the drift (Figure~\ref{fig:drift}): the share of flagged boards with a true defect stays between 0.8 and 2.3\,\% for 15 weeks and then rises to 3.2--6.3\,\% in the last four weeks, while the number of flagged boards in these weeks is not unusual. What changes is the mix of true defects and false calls, not the volume, and this will matter later. The problem is also current: in October 2026, Siemens and NVIDIA announced a second inspection step at the Erlangen electronics factory that decides for each AOI alarm whether it is a real defect, with the target of 40\,\% fewer false calls \cite{siemens2026}. This is a target, not a result, but it shows that industry is working on exactly this step.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.85\textwidth]{data_drift.png}
-  \caption{Data of \cite{pfab2024}, our analysis: share of flagged boards with a true defect per production week (bars) and number of flagged boards (line).}
+  \caption{Share of flagged boards with a true defect per production week (bars, left axis; red: weeks above 3\,\%) and number of flagged boards per week (line, right axis). Data of \cite{pfab2024}, our analysis.}
   \label{fig:drift}
 \end{figure}
 
-\source{A machine learning based approach to detect false calls in SMT manufacturing}{N.~Thielen et al. (2020), ISSE}{\cite{thielen2020}}
-The authors test whether a machine learning step after the AOI can recognise false calls from the numerical AOI measurements. They compare k-nearest neighbours, a neural network and random forests and vary the data set size and the decision threshold, aiming to recognise as many false calls as possible without more missed defects (slip). k-nearest neighbours works best on small data sets but becomes too slow on large ones, where neural networks and random forests perform better.
-\relevance{Same task on the same kind of data. The data are not public, and whether the test data come after the training data in time is not reported.}
+The natural answer is a second check with supervised machine learning: a classifier that learns from the labels of the manual station and decides for each flagged joint whether it can skip the manual check. Thielen et al.\ showed that this works in principle on AOI measurements: random forests and neural networks recognised many false calls on large data sets, and the decision threshold could be set so that no additional defects were missed \cite{thielen2020}. Albayari et al.\ reached a similar result on AOI data from Siemens AG, with XGBoost giving the best balance of recall and precision \cite{albayari2026}. Neither study reports how many false calls its second check would release at a fixed rate of missed defects, so their results cannot be compared in the terms a factory uses. Both also test the classifier on data from the same period as the training data, by a random split. A factory uses the classifier on the days after training, and neither study tells us what happens then.
 
-\source{Enhancing false call detection in automated optical inspection using XGBoost classifier and XAI algorithms}{J.~Albayari et al. (FAIM 2025, publ.\ 2026), Springer LNME}{\cite{albayari2026}}
-The authors use AOI data from Siemens AG and compare XGBoost, random forest, a deep neural network and k-nearest neighbours as a second check after the AOI, with several train--test splits. XGBoost gives the best balance of recall and precision; LIME and SHAP show which AOI measurements drive the predictions.
-\relevance{Same classifier types on Siemens data; no evaluation on later production periods is reported.}
-
-\source{Towards improved research methodologies for industrial AI: a case study of false call reduction}{K.~Pfab and M.~Rothering (2025), arXiv preprint}{\cite{pfab2025}}
-This is the central study for our project. On the data of \cite{pfab2024}, the authors split the rows in time order: the first half is used for modelling (a stratified random 80/20 split into a tuning set and a test set), the second half is cut into five later periods in time order. Their goal is at most 1\,\% missed true defects (slip) and at least 40\,\% fewer manual checks (volume reduction). They tune k-nearest neighbours, random forests, balanced random forests, XGBoost and an AutoML model with Bayesian optimisation and 5-fold cross-validation; the decision threshold is the mean of the thresholds found in the five folds, and each model is trained once. Two models, a random forest and a balanced random forest, meet the goal on the test set, but on all five later periods they miss 5--15\,\% of the true defects (Figure~\ref{fig:pfab}); the authors conclude that the model ``would fail from the first moment in production''. A principal component analysis shows data clusters that ``did just appear in a certain period of time'', and the authors state that ``various distribution drifts'' occur in the data. As possible next steps they name ``improving the method for setting the threshold and handling the distribution drifts'', without testing either. Neural networks are not tested.
-\relevance{This is our core paper. We reimplement its method with our own code as the baseline and test its two named next steps. Their published code and run logs make a direct comparison possible. Reading their code, we found that the stored threshold belongs to the last model tried during tuning, not to the best model that is finally used; we take the threshold of the best model.}
+Pfab and Rothering answered this question on the public Siemens data, and their study is the core paper of our project \cite{pfab2025}. They kept the time order: the first half of the data is used for training and for a test set from the same period, and the second half is cut into five later production periods. Their targets are at most 1\,\% missed true defects and at least 40\,\% of the false calls released. On the test set, the best results reported so far for a second check after AOI are theirs. If the threshold is chosen ideally, XGBoost would release 92.5\,\% of the false calls at the 1\,\% limit, the random forest 90.1\,\% and the balanced random forest 79.6\,\% \cite[p.~6, Table~III]{pfab2025}. With the threshold actually set by their method, XGBoost loses most of this advantage, and only the random forest and the balanced random forest still meet both targets: they release 89.7 and 79.7\,\% of the false calls and miss 1.0 and 0.8\,\% of the true defects \cite[p.~11, Table~V]{pfab2025}. The best model on paper is therefore not the best in use, and the difference is the threshold, a point we return to below. On all five later periods, however, the two models miss 5--15\,\% of the true defects, already in the first one (Figure~\ref{fig:pfab}). The best later result still releases 78\,\% of the false calls, but misses 9.4\,\% of the true defects \cite[p.~7, Table~IV]{pfab2025}. The authors conclude that such a model ``would fail from the first moment in production''. This result changes the question. Whether a second check can recognise false calls is answered; the open question is why it stops working over time, and what can be done about it. Because the authors publish their code and run logs, their result can also be checked and built on directly.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.85\textwidth]{pfab2025_slip.png}
-  \caption{Missed true defects reported by Pfab and Rothering \cite{pfab2025} (Tables IV and V, mean $\pm$ SD of their runs): on target on the test set, far above it on all later periods.}
+  \caption{Missed true defects of the two models of \cite{pfab2025} on the test set and on the five later periods (slices), mean and standard deviation of their runs \cite[p.~7, Table~IV; p.~11, Table~V]{pfab2025}. Dashed line: the target of at most 1\,\%.}
   \label{fig:pfab}
 \end{figure}
 
-% --- 2.2.3
-\subsubsection{Classifiers for tabular data}
-AOI measurements are tabular data. A large benchmark study shows which classifier family works best on such data, and the original papers describe the two models used in \cite{pfab2025}.
+Before turning to the causes, two choices in this study need to be justified, because our project keeps them: the type of model and the way it is measured. AOI measurements are tabular data, one row per joint with numbers and a few categories, and on such data tree ensembles remain stronger than deep learning: on 45 tabular benchmarks, random forests and boosted trees stayed state of the art for medium-sized data \cite{grinsztajn2022}. The two models of \cite{pfab2025} are of this family. The random forest lets many decision trees, each trained on a random sample of rows and features, vote \cite{breiman2001}. The balanced random forest draws the same number of cases from each class for every tree \cite{chen2004}, which suits data in which true defects are only about 1\,\% of the flagged joints. With so few true defects, accuracy is also the wrong measure: a model that calls every joint a false call would be right 99\,\% of the time and still miss every defect \cite{he2009}. The study therefore measures, for the two classes separately, the missed true defects and the false calls released, and so do we. The model and the measure are therefore not the reason for the failure; the reason must lie in the data over time.
 
-\source{Why do tree-based models still outperform deep learning on typical tabular data?}{L.~Grinsztajn et al. (2022), NeurIPS Datasets and Benchmarks}{\cite{grinsztajn2022}}
-On 45 tabular data sets, tree-based models (XGBoost, random forests) remain state of the art for medium-sized data, even without counting their speed advantage.
-\relevance{Supports tree ensembles such as random forests, the models of \cite{pfab2025}, for tabular data like the AOI measurements; deep tabular models are not needed for our question.}
+Pfab and Rothering name two causes themselves. The first is drift. They show data clusters that ``did just appear in a certain period of time'' and state that ``various distribution drifts'' occur in the data \cite{pfab2025}. In the literature on concept drift, drift is a change of the joint distribution of inputs and labels over time, and a model trained on old data is expected to fail when it occurs \cite{gama2014}. That drift alone is enough to lower a quality classifier in manufacturing was shown in a controlled experiment on friction stir welds, where all metrics dropped once tool geometry, material or lighting changed \cite{bauer2025}. Together with the warning of the data authors and the weekly shift in Figure~\ref{fig:drift}, drift is the most likely main cause.
 
-\source{Random forests}{L.~Breiman (2001), Machine Learning}{\cite{breiman2001}}
-A random forest is a set of decision trees, each trained on a random sample of the data with a random subset of features at each split; the trees vote. Random forests reach an accuracy comparable to boosting, are robust to noise and give a measure of variable importance.
-\relevance{One of the two models of \cite{pfab2025} that we reimplement.}
+The second cause is the threshold. The threshold of \cite{pfab2025} is set once, on the training data, so that 99\,\% of the known true defects are caught. Tong et al.\ show why this is not enough \cite{tong2018}: when one type of error must stay below a bound, limiting the error on the data at hand ``does not satisfy the [\ldots] error control objective'', because the resulting classifiers ``are still likely to have [\ldots] errors much larger than'' the bound. A threshold set once therefore cannot be trusted to hold 1\,\% even before the data change, and after a drift it has even less reason to.
 
-\source{Using random forest to learn imbalanced data}{C.~Chen, A.~Liaw and L.~Breiman (2004), technical report}{\cite{chen2004}}
-The report proposes two variants for rare classes: a balanced random forest, which draws an equal number of cases from each class for every tree, and a weighted random forest.
-\relevance{The second model of \cite{pfab2025} that we reimplement; true defects are about 1\,\% of the flagged joints.}
-
-% --- 2.2.4
-\subsubsection{Evaluation with rare true defects}
-
-\source{Learning from imbalanced data}{H.~He and E.~A.~Garcia (2009), IEEE Trans.\ Knowledge and Data Engineering}{\cite{he2009}}
-The review explains why accuracy is misleading when one class is rare, presents class weighting and resampling, and recommends class-wise metrics such as recall and specificity.
-\relevance{We report slip (1 $-$ recall) and volume reduction (specificity) instead of accuracy, as \cite{pfab2025} does.}
-
-% --- 2.2.5
-\subsubsection{Why models fail over time: drift and the threshold}
-Pfab and Rothering name two causes for the failure on later periods \cite{pfab2025}: drift and the method for setting the threshold. The sources below cover drift; why a threshold set once cannot keep a 1\,\% bound is explained by \cite{tong2018} in Section~2.2.6.
-
-\source{A survey on concept drift adaptation}{J.~Gama et al. (2014), ACM Computing Surveys}{\cite{gama2014}}
-Concept drift is a change of the joint distribution $p(X, y)$ over time. The survey groups adaptation into memory (which data to keep or forget), change detection and learning; one learning mode is ``retraining that discards the current model and builds a new model from scratch''. A fixed sliding window that periodically retrains on the latest examples is ``often used as a baseline''.
-\relevance{Periodic retraining on recent data is the baseline remedy for drift; this is what we add to \cite{pfab2025}.}
-
-\source{Handling data drift in deep learning-based quality monitoring}{J.~C.~Bauer et al. (2025), J.\ Intelligent Manufacturing}{\cite{bauer2025}}
-For the optical quality monitoring of friction stir welds (good or not good), the authors test the same models on normal data and on data with controlled drift: other tool geometries, alloys and sheet thicknesses, more brightness and blur. All metrics drop on the drifted data.
-\relevance{A controlled manufacturing experiment showing that drift alone lowers the performance of a quality classifier.}
-
-% --- 2.2.6
-\subsubsection{Methods for the first next step: setting the threshold}
-Pfab and Rothering name ``improving the method for setting the threshold'' as a next step \cite{pfab2025}. The literature offers two methods.
-
-\source{Neyman-Pearson classification algorithms and NP receiver operating characteristics}{X.~Tong, Y.~Feng and J.~J.~Li (2018), Science Advances}{\cite{tong2018}}
-When one type of error must stay below a bound $\alpha$, the common practice of limiting the \textit{empirical} error to $\alpha$ ``does not satisfy the [\ldots] error control objective'', because the resulting classifiers ``are still likely to have [\ldots] errors much larger than $\alpha$''. The authors' umbrella algorithm, which works with any scoring classifier such as random forests, takes the threshold as an order statistic of the scores of a left-out sample and so guarantees that the error stays below $\alpha$ with probability at least $1-\delta$. This needs a minimum size of the left-out sample, $n \geq \log\delta / \log(1-\alpha)$.
-\relevance{Our bound is at most 1\,\% missed true defects. With $\alpha = 0.01$ and $\delta = 0.05$, the left-out data must contain at least 299 true defects; with fewer, no threshold can guarantee the bound. This explains why a threshold for 1\,\% slip is unstable, and gives a method to set it with a stated confidence (Figure~\ref{fig:np}). In the data of \cite{pfab2024}, true defects are about 1\,\% of the flagged joints, so a left-out set with 299 true defects needs roughly 30,000 flagged joints; the cross-validation folds of \cite{pfab2025} are large enough for this, a short recent period may not be.}
+Both causes have known remedies, and they are exactly the two next steps that Pfab and Rothering name but do not test: ``improving the method for setting the threshold and handling the distribution drifts'' \cite{pfab2025}. For the threshold, Tong et al.\ also give a fix. Their method takes the threshold from the scores of a left-out sample in such a way that the error stays below the bound $\alpha$ with a chosen confidence $1-\delta$, a threshold with a safety margin. The price is data: the left-out sample must contain at least $n \geq \log\delta / \log(1-\alpha)$ true defects. For our bound of 1\,\% with 95\,\% confidence these are 299 true defects (Figure~\ref{fig:np}), or roughly 30,000 flagged joints at a defect share of 1\,\%. The cross-validation folds of \cite{pfab2025} are large enough for this, but a short recent period may not be. A second fix addresses the changing share of true defects seen in Figure~\ref{fig:drift}: when the share of a class differs from its share in training, the outputs of a classifier no longer fit, and they can be adjusted by re-estimating the new share from new, even unlabelled data \cite{saerens2002}. For a second check this means that the threshold should be set again for each period instead of once.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.75\textwidth]{np_sample_size.png}
-  \caption{Minimum number of true defects in the left-out data so that the threshold keeps the share of missed true defects below $\alpha$ with the stated confidence, $n \geq \log\delta/\log(1-\alpha)$ \cite{tong2018}; computed by us.}
+  \caption{Minimum number of true defects in the left-out data so that the threshold keeps the share of missed true defects below $\alpha$ with the stated confidence, $n \geq \log\delta/\log(1-\alpha)$ \cite{tong2018}; dark bars 95\,\%, light bars 90\,\% confidence; computed by us.}
   \label{fig:np}
 \end{figure}
 
-\source{Adjusting the outputs of a classifier to new a priori probabilities: a simple procedure}{M.~Saerens et al. (2002), Neural Computation}{\cite{saerens2002}}
-When the share of a class in use differs from its share in training, the classifier's outputs no longer fit; the authors re-estimate the new class shares from new, unlabelled data and adjust the outputs.
-\relevance{If the share of true defects on the line changes, a threshold fixed once cannot follow; it has to be set again for the current period.}
+For drift, the basic remedy is retraining. In the concept-drift literature, a model that is periodically retrained on a sliding window of the latest data is ``often used as a baseline'' \cite{gama2014}. The open questions are when to retrain and whether it pays off in practice. One answer to the first question is to retrain only when needed: the drift detection method watches the error rate of the model and retrains when it rises by more than two to three standard deviations above its lowest value \cite{gama2004}. Evidence for the second question comes from two fields close to ours. In credit card fraud detection, a binary task with fewer than 1\,\% positives on more than 75 million transactions, a classifier updated every day on the newest labelled data performed best, and a model trained on data only a week older was already worse \cite{dalpozzolo2018}. On a semiconductor materials line, a random forest that predicts product quality degraded after a supplier change and with equipment wear; retraining every 5 batches instead of every 100 gave about 80\,\% fewer out-of-range predictions, and the frequency of retraining mattered more than the size of the training window \cite{gao2026}. The fraud case is the closest analogue to our task in its statistics, the semiconductor case in its setting; neither is AOI.
 
-% --- 2.2.7
-\subsubsection{Methods for the second next step: handling drift}
-The second next step named by Pfab and Rothering is ``handling the distribution drifts within the dataset'' \cite{pfab2025}. Retraining is the basic remedy \cite{gama2014}; the methods below decide when to retrain and show that it works in related applications.
+This is where the literature stops and our project begins. A second check after AOI is needed and can recognise false calls, but trained once it fails on later production days; drift and a threshold set once explain this, and methods for both exist and have worked elsewhere. For the second check of AOI results, no study has tested them. We therefore reimplemented the method of \cite{pfab2025} with our own code as the baseline. Reading their code, we found that the stored threshold belongs to the last model tried during tuning, not to the best model that is finally used; in our reimplementation the threshold is taken from the best model. On this baseline, the threshold method and retraining become the variables of a simulation, and every setting is compared with \cite{pfab2025}.
 
-\source{Learning with drift detection}{J.~Gama et al. (2004), SBIA}{\cite{gama2004}}
-The drift detection method (DDM) tracks the online error rate of the model. A warning level is reached when the error plus its standard deviation exceeds the lowest value seen by two standard deviations, and a drift level at three; at a drift, a new model is learned from the examples since the warning.
-\relevance{An alternative to retraining on a fixed schedule: retrain only when the error rises.}
+\subsection{Data: the input of the second check}
+\label{sec:data}
+The input of our second check is the public AOI data set of Siemens \cite{pfab2024}, the same data that \cite{pfab2025} uses. It contains 440,274 flagged solder joints on 39,742 boards from one SMT line, recorded over 132 production days. Each row is one flagged joint. Table~\ref{tab:data} shows the columns of a row and how each is used.
 
-\source{Credit card fraud detection: a realistic modeling and a novel learning strategy}{A.~Dal Pozzolo et al. (2018), IEEE Trans.\ Neural Networks and Learning Systems}{\cite{dalpozzolo2018}}
-Fraud detection is a binary task with fewer than 1\,\% positives on a stream of more than 75 million transactions over three years. The classifier is updated every day. A classifier trained on the most recent days ranks frauds better than one trained on data a week older, which the authors take as evidence that the stream is non-stationary and that recent data are more informative; their strategy that uses the newest labelled transactions performs best throughout.
-\relevance{The closest classification analogue to our task: binary, rare positives, a long daily stream, and regular retraining that helps.}
-
-\source{Robust and reliable AI for predictive quality in semiconductor materials manufacturing with MLOps and uncertainty quantification}{M.~Gao et al. (2026), arXiv preprint}{\cite{gao2026}}
-On five years of data from a semiconductor materials line, a random forest that predicts product quality (regression) degrades after a supplier change and with equipment wear. Retraining every 100 batches gives ``only marginal improvements''; retraining every 5 batches gives about 80\,\% fewer out-of-range predictions. The retraining frequency matters more than the choice between a fixed and a growing training window, and new hyper-parameter tuning at each retraining is not worth its cost. The authors prefer a fixed schedule to drift-triggered retraining, which ``will only be triggered after poor predictions have been observed''.
-\relevance{A manufacturing case in which retraining works; the frequency is the main setting. Differences: regression instead of classification, and a preprint.}
-
-\subsection{Summary of the reviewed works}
-Table~\ref{tab:overview} lists all 18 sources with their type and their use in our project. Table~\ref{tab:summary} compares the studies on AOI false calls, and Table~\ref{tab:drift} compares the studies on drift and retraining. Table~\ref{tab:chain} shows the chain of evidence behind our project, Table~\ref{tab:switches} maps the methods from the literature to the variables of our simulation, and Table~\ref{tab:methods} lists the methods of our project and their sources.
-
-\begin{table}[h]
+\begin{table}[H]
 \centering\small
-\caption{Overview of the 18 reviewed sources and their use in our project.}
-\label{tab:overview}
-\begin{tabularx}{\textwidth}{@{}p{1.0cm}p{3.0cm}p{1.0cm}L@{}}
+\caption{Structure of one row of the Siemens AOI data \cite{pfab2024} and its use in our project. Counts from our analysis of the data file.}
+\label{tab:data}
+\begin{tabularx}{\textwidth}{@{}p{2.6cm}p{1.4cm}p{3.0cm}Lp{2.6cm}@{}}
 \toprule
-Source & Type & Year & Use in our project \\
+Column & Number & Type & Content & Use \\
 \midrule
-\cite{psarommatis2020} & journal review & 2020 & goal: detect defects before the product leaves the factory \\
-\cite{ebayyeh2020} & journal review & 2020 & how AOI works; where our input comes from \\
-\cite{siemens2026} & press release & 2026 & the problem is current; 40\,\% target \\
-\cite{pfab2024} & data article & 2024 & our data set; drift named by its authors \\
-\cite{thielen2020} & conference paper & 2020 & second check after AOI works (not public data) \\
-\cite{albayari2026} & conference paper & 2026 & second check on Siemens data, random splits \\
-\cite{pfab2025} & preprint & 2025 & core paper: our baseline and its two next steps \\
-\cite{grinsztajn2022} & conference paper & 2022 & tree ensembles are strong on tabular data \\
-\cite{breiman2001} & journal article & 2001 & random forest, model 1 of the DOE \\
-\cite{chen2004} & technical report & 2004 & balanced random forest, model 2 of the DOE \\
-\cite{he2009} & journal review & 2009 & recall and specificity instead of accuracy \\
-\cite{gama2014} & journal survey & 2014 & definition of drift; retraining windows (factor C) \\
-\cite{bauer2025} & journal article & 2025 & drift lowers a quality classifier in manufacturing \\
-\cite{tong2018} & journal article & 2018 & threshold with a safety margin (factor A) \\
-\cite{saerens2002} & journal article & 2002 & threshold re-set per period (factor A) \\
-\cite{gama2004} & conference paper & 2004 & retraining on detected drift (factor B) \\
-\cite{dalpozzolo2018} & journal article & 2018 & daily retraining helps with rare positives \\
-\cite{gao2026} & preprint & 2026 & retraining frequency matters most (factor B) \\
+\texttt{timestamp} & 1 & date and time & time of the AOI inspection; dates are anonymised; one timestamp per board (39,742) & orders the rows in time; not a model input \\
+\texttt{class} & 1 & 0 or 1 & label from the manual inspection station: 1 = true defect (4,622 joints, 1.05\,\%), 0 = false call (435,652 joints) & target $y$ \\
+\texttt{inspection\_type} & 1 & category, 5 values & type of AOI inspection applied to the joint & input, one-hot encoded \\
+\texttt{meta\_feat1}--\texttt{4} & 4 & categories with 75, 5, 2 and 49 values & anonymised context fields of the joint; their meaning is not published & input, one-hot encoded \\
+\texttt{inspection\_feat} & 70 & numbers scaled to 0--1 & anonymised AOI measurements of the joint; a mapping file of the data set lists which of them belong to each inspection type (21 to 65) & input $x$ \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+The inputs of the classifier are therefore the 70 AOI measurements and the five categories, which are one-hot encoded; the timestamp is used only to order the rows. Because the measurements are anonymised and scaled, a model can tell which measurement drives a decision, but not what this measurement means physically. The five inspection types differ strongly: their share of true defects ranges from 0.33\,\% (type 0, 97,053 joints) to 2.74\,\% (type 1, 57,673 joints).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{data_split.png}
+  \caption{Split of the data in time order, as in \cite{pfab2025}. Top: the first half (days 0--84) is used for training and for a test set from the same period; the second half is cut into five later periods P1--P5 with about 44,000 joints each. Bottom: share of true defects among the flagged joints in each part. Our analysis of the data of \cite{pfab2024}.}
+  \label{fig:split}
+\end{figure}
+
+Figure~\ref{fig:split} shows how the data are used, in the same way as in \cite{pfab2025}. The rows are kept in time order. The first half, 220,137 joints from days 0 to 84, is split at random, stratified by the label, into 80\,\% for training (176,110 joints) and 20\,\% for the test set (44,027 joints). The classifier is trained on the training part, with the false calls under-sampled at the ratio that \cite{pfab2025} logged for each run, and its threshold is set by 5-fold cross-validation on the same part. It is then evaluated on the test set and on the five later periods, which it has never seen. In the methods with retraining, the labelled joints of each period are added to the training data before the next period is classified, either all data seen so far or a recent window.
+
+The bottom of Figure~\ref{fig:split} shows why the later periods are hard. In the first half, 0.79\,\% of the flagged joints are true defects. In the later periods this share drops to 0.35 and 0.09\,\% and then rises to 0.81, 2.17 and 3.11\,\%. A model whose threshold was set on a share of 0.79\,\% meets a share up to four times higher in the last period. This is the change in class share that prior probability shift adjustment (M2) is designed for \cite{saerens2002}, and part of the drift that retraining should follow \cite{gama2014}.
+
+\subsection{Methodology}
+\label{sec:method}
+Our methodology is a \textbf{supervised binary classifier combined with two adaptation strategies}: \textbf{decision threshold selection} and \textbf{concept drift adaptation by retraining}. Each term is used in its standard meaning from the cited literature.
+Figure~\ref{fig:system} shows how the parts work together for one later period $k$; the definitions below describe each part.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{system_diagram.png}
+  \caption{Our system for one later period $k$. The classifier $f_k$ scores each flagged joint, and the decision rule compares the score $s(x)$ with the threshold $t_k$: joints at or above it go to the manual station, joints below it are released. Strategy~1 (decision threshold selection) sets $t_k$; Strategy~2 (concept drift adaptation) retrains $f_k$ on the labelled joints of earlier periods. The output are the two responses $\mathrm{FNR}_k$ and $\mathrm{TNR}_k$. In the baseline of \cite{pfab2025}, both strategies are switched off: $t$ and $f$ are set once.}
+  \label{fig:system}
+\end{figure}
+
+\textbf{Task.} Each flagged solder joint $i$ has a vector $x_i$ of AOI measurements and a label $y_i \in \{0, 1\}$ from the manual inspection station (Section~\ref{sec:data}), with $y_i = 1$ for a true defect (the positive class) and $y_i = 0$ for a false call \cite{pfab2024}. The data are ordered in time and split as in \cite{pfab2025}: the first half is the training data with a test set from the same period, and the second half forms the later production periods $k = 1, \dots, 5$.
+
+\textbf{Classifier.} A random forest or a balanced random forest \cite{breiman2001,chen2004}, trained on labelled joints, gives each joint a score $s(x_i) \in [0, 1]$, the estimated probability that it is a true defect (Section~\ref{sec:clf}).
+
+\textbf{Decision rule.} In period $k$, the classifier $f_k$ gives each joint the score $s_k(x_i)$, and the threshold $t_k$ decides:
+\begin{equation}
+\hat{y}_i = \begin{cases} 1 & \text{if } s_k(x_i) \geq t_k \quad \text{(sent to the manual station)}\\ 0 & \text{if } s_k(x_i) < t_k \quad \text{(released without a manual check).} \end{cases}
+\label{eq:rule}
+\end{equation}
+
+\textbf{Measures.} Let $P_k$ be the joints of period $k$. The share of missed true defects is the false negative rate, called slip in \cite{pfab2025}, and the share of false calls released is the true negative rate (specificity), called volume reduction in \cite{pfab2025}:
+\begin{equation}
+\mathrm{FNR}_k = \frac{|\{i \in P_k : y_i = 1,\ \hat{y}_i = 0\}|}{|\{i \in P_k : y_i = 1\}|} = 1 - \mathrm{recall}_k,
+\label{eq:fnr}
+\end{equation}
+\begin{equation}
+\mathrm{TNR}_k = \frac{|\{i \in P_k : y_i = 0,\ \hat{y}_i = 0\}|}{|\{i \in P_k : y_i = 0\}|}.
+\label{eq:tnr}
+\end{equation}
+These class-wise measures replace accuracy, which is misleading when one class is rare \cite{he2009}.
+
+\textbf{Objective.} A setting $\theta$ is one combination of the levels of the factors of our test plan (Table~\ref{tab:methodlist}). The objective is a constrained optimisation problem:
+\begin{equation}
+\max_{\theta}\ \frac{1}{5}\sum_{k=1}^{5} \mathrm{TNR}_k(\theta) \quad \text{subject to} \quad \mathrm{FNR}_k(\theta) \leq \alpha = 1\,\%, \quad \mathrm{TNR}_k(\theta) \geq 40\,\% \quad \text{for } k = 1, \dots, 5.
+\label{eq:objective}
+\end{equation}
+This is the structure of Neyman--Pearson classification: one type of error, here the missed true defects, is bounded by $\alpha$, and within this bound the other result, here the released false calls, is made as good as possible \cite{tong2018}. Section~\ref{sec:output} justifies the two limits.
+
+\textbf{Available data.} Let $D_k$ be the labelled joints available before period $k$: the training data of the first half and, with retraining, the labelled joints of periods $1, \dots, k-1$, either all of them or only a recent window $W$.
+
+\textbf{Adaptation strategy 1: decision threshold selection.} The threshold is a function of the available data, $t_k = T(D_k)$. The baseline sets it once, $t_k = t_0$ for all $k$, as the mean of the five cross-validation thresholds that reach a recall of 99\,\% \cite{pfab2025}. We compare it with two methods from the literature: Neyman--Pearson classification, which chooses $t_k$ so that $\mathrm{FNR} \leq \alpha$ holds with a stated probability $1-\delta$ \cite{tong2018}, and prior probability shift adjustment, which re-sets $t_k$ for each period when the share of true defects changes \cite{saerens2002}.
+
+\textbf{Adaptation strategy 2: concept drift adaptation by retraining.} The classifier is retrained on the available data, $f_k = L(D_k)$ with the learning algorithm $L$ (random forest or balanced random forest), to follow the change in the distribution of the data over time \cite{gama2014}. The baseline trains once, $f_k = f_0$ for all $k$. We compare it with periodic retraining at fixed intervals \cite{gama2014,dalpozzolo2018,gao2026} and with retraining triggered by drift detection \cite{gama2004}, each on all data seen so far or on a recent window \cite{gama2014}.
+
+The classifier is held fixed as a control variable, so that every change in $\mathrm{FNR}_k$ and $\mathrm{TNR}_k$ can be assigned to one of the two adaptation strategies. Section~\ref{sec:clf} justifies the classifier, and Section~\ref{sec:adapt} the methods of the two strategies and their place in our test plan.
+
+\subsubsection{The classifier: random forest and balanced random forest}
+\label{sec:clf}
+We use the two models of \cite{pfab2025}, a random forest and a balanced random forest. Table~\ref{tab:models} shows the results of all model families that \cite{pfab2025} tested on the test set. Two numbers are given for each: the false calls the model could release at the 1\,\% limit if its threshold were chosen ideally, and the result with the threshold actually set by their method.
+
+\begin{table}[H]
+\centering\small
+\caption{Model families tested by \cite{pfab2025} on the test set, mean of ten runs: false calls released at the 1\,\% limit with an ideal threshold \cite[p.~6, Table~III]{pfab2025}, and missed true defects and false calls released with the threshold set by their method \cite[p.~11, Table~V]{pfab2025}.}
+\label{tab:models}
+\begin{tabularx}{\textwidth}{@{}p{3.6cm}p{2.6cm}p{2.3cm}p{2.3cm}L@{}}
+\toprule
+Model & Released at 1\,\%, ideal threshold & Missed, actual threshold & Released, actual threshold & Meets both limits? \\
+\midrule
+XGBoost & 92.5\,\% & 1.5\,\% ($\pm$2.1) & 59.6\,\% ($\pm$42.9) & no: missed above 1\,\%, very unstable \\
+AutoML & 90.6\,\% & 8.3\,\% & 94.9\,\% & no: missed far above 1\,\% \\
+Random forest & 90.1\,\% & 1.0\,\% & 89.7\,\% & yes \\
+Balanced random forest & 79.6\,\% & 0.8\,\% & 79.7\,\% & yes \\
+k-nearest neighbours & 47.8\,\% & 1.4\,\% & 55.5\,\% & no: missed above 1\,\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Four reasons support the choice of the two random forests. First, they are the only models that meet both limits once the threshold is actually set (Table~\ref{tab:models}). XGBoost and AutoML could release slightly more false calls with an ideal threshold, but with the threshold set by the method of \cite{pfab2025} XGBoost misses 1.5\,\% of the true defects on average with a very large spread between runs, and AutoML misses 8.3\,\%. k-nearest neighbours releases far fewer false calls even in the ideal case. Second, the result agrees with the general evidence: on tabular data such as the AOI measurements, tree ensembles remain the strongest model family \cite{grinsztajn2022}, and random forests are robust to noise \cite{breiman2001}. An earlier AOI study also found random forests among the best models on large data sets \cite{thielen2020}. Third, the balanced random forest is designed for rare classes \cite{chen2004}, and true defects are only about 1\,\% of the flagged joints; it is the safer of the two, with fewer missed defects at somewhat fewer released false calls. Fourth, a random forest is fast to train, which matters because several of the methods we test retrain the model as often as once a day.
+
+Keeping the models of \cite{pfab2025} also makes our results directly comparable with the published ones. Whether a different model would do better is a separate question, which we leave open on purpose: if the model changed at the same time as the threshold or the retraining, an improvement could not be assigned to either.
+
+\subsubsection{The two adaptation strategies}
+\label{sec:adapt}
+The review gives a clear technical route from the problem to the methods we test (Figure~\ref{fig:route}). The problem is the missed true defects on later periods (groups D and E in Table~\ref{tab:benefit}). It has two causes, and the literature offers concrete methods for each of them. Table~\ref{tab:methodlist} lists these methods with the source and the place in the source where each one is described, and the factor of our test plan in which it is tested.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{method_route.png}
+  \caption{Technical route of our project: from the problem on later periods (Table~\ref{tab:benefit}) to its two causes, the methods from the literature and the factors of our test plan. Numbers in brackets are the sources.}
+  \label{fig:route}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\caption{Methods from the literature that we use, the cause each one addresses, the evidence that it can help, and its place in our test plan.}
+\label{tab:methodlist}
+\begin{tabularx}{\textwidth}{@{}p{0.5cm}p{2.6cm}LLp{2.2cm}p{1.6cm}@{}}
+\toprule
+No. & Method & What it does & Evidence that it can help & Source (where) & Test plan \\
+\midrule
+M0 & Baseline: method of \cite{pfab2025}, threshold corrected & random forest or balanced random forest, trained once; threshold = mean of 5 cross-validation thresholds at 99\,\% recall, taken from the best model & meets both limits on the test set (Table~\ref{tab:benefit}, C) & \cite[p.~3, Sec.~IV]{pfab2025} & A level 1, B level 1 \\
+\midrule
+M1 & Neyman--Pearson threshold (safety margin) & threshold from the scores of left-out data so that at most $\alpha = 1\,\%$ is missed with confidence $1-\delta$ & the usual threshold does not hold the bound; this one does if at least 299 true defects are left out (Figure~\ref{fig:np}) & \cite[p.~2, p.~7]{tong2018} & A level 2 \\
+M2 & Prior probability shift adjustment (threshold re-set per period) & re-estimates the share of true defects from new data and adjusts the threshold to it & needed when the share changes, as in the last weeks of the data (Figure~\ref{fig:drift}) & \cite{saerens2002}, abstract & A level 3 \\
+\midrule
+M3 & Periodic retraining & retrains the model on the newest labelled data per period, weekly, every 3 days or daily & daily update best in fraud detection with $<$1\,\% positives; every 5 instead of 100 batches: about 80\,\% fewer out-of-range predictions & \cite{gama2014}; \cite[pp.~4--5, 13--14]{dalpozzolo2018}; \cite[p.~9]{gao2026} & B levels 2--5 \\
+M4 & Drift-triggered retraining (drift detection method) & watches the error rate and retrains when it rises 2--3 standard deviations above its lowest value & retrains only when needed; but reacts only after errors have occurred & \cite[p.~4, Sec.~3]{gama2004}; \cite[p.~13]{gao2026} & B level 6 \\
+M5 & Training window: all data so far or a sliding window & trains on all labelled data seen so far, or only on the most recent part & a window forgets old data that no longer fit; the frequency mattered more than the window type & \cite{gama2014}; \cite[p.~9]{gao2026} & C levels 1--2 \\
+\midrule
+M6 & Model: random forest or balanced random forest & the two models of \cite{pfab2025} & tree ensembles are strongest on tabular data; the balanced variant suits rare true defects & \cite[p.~1]{grinsztajn2022}; \cite{breiman2001}; \cite[pp.~2--3]{chen2004} & D levels 1--2 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The baseline M0 is the method of \cite{pfab2025} as it is, with one correction: the threshold is taken from the best model of the tuning, not from the last model tried. Every other method is compared with it, so that any change in the missed true defects can be traced to one method.
+
+The threshold methods M1 and M2 act on the first cause. They do not change the model; they change where the line between ``true defect'' and ``false call'' is drawn. M1 draws it so that the 1\,\% limit holds with a stated confidence; the price is that the threshold becomes stricter, so fewer false calls are released. Table~\ref{tab:benefit} shows that there is room for this, since most later periods release 50--78\,\% of the false calls, well above the 40\,\% limit. M1 also needs enough true defects in the data it is set on, at least 299 for 1\,\% with 95\,\% confidence. M2 lets the threshold follow the share of true defects when it changes, as in the last four weeks of the data.
+
+The retraining methods M3 to M5 act on the second cause. They change the model itself, so that it learns from the newest data and follows the drift. M3 retrains at fixed intervals; the two closest studies found that more frequent retraining helped most \cite{dalpozzolo2018,gao2026}, which is why our test plan contains four intervals from per period to daily. M4 retrains only when the error rate rises, which saves retraining but reacts only after defects have already been missed; Gao et al.\ preferred a fixed schedule for this reason \cite{gao2026}. M5 decides which data the model is retrained on. A recent window forgets data that no longer fit, but it also contains fewer true defects, which matters for M1. The methods are therefore not independent, and this is why our test plan combines them in a full design instead of testing each one alone.
+
+\subsection{Output: objective and targets}
+\label{sec:output}
+The output of our system are two numbers for each later production period $k$: the share of missed true defects $\mathrm{FNR}_k$ and the share of false calls released $\mathrm{TNR}_k$ (Section~\ref{sec:method}). Our objective sets a target for each of them.
+
+\begin{center}
+\fbox{\begin{minipage}{0.92\textwidth}
+\vspace{4pt}
+\textbf{Objective of our project.} On every later production period $k = 1, \dots, 5$:
+\begin{enumerate}
+  \item \textbf{Quality (hard limit):} missed true defects $\mathrm{FNR}_k \leq 1\,\%$.
+  \item \textbf{Saving (as large as possible, at least 40\,\%):} false calls released $\mathrm{TNR}_k \geq 40\,\%$.
+\end{enumerate}
+A setting succeeds only if it meets the quality limit; among the settings that meet it, the one that releases the most false calls is the best. This is the optimisation problem~\eqref{eq:objective}.
+\vspace{2pt}
+\end{minipage}}
+\end{center}
+
+\textbf{Why at most 1\,\% missed true defects.} Today, without a second check, every flagged board is inspected by a person, so no flagged defect leaves the station unchecked. Any true defect that the second check releases is therefore a new quality risk, while a false call that still goes to the manual station only keeps the current state \cite[p.~4, Sec.~V]{pfab2025}. Missed defects are therefore much more costly than unnecessary checks. No industry benchmark exists for this limit; the authors of \cite{pfab2025}, who work at Siemens, set it at 1\,\% and state that it represents ``realistic requirements from the industrial shopfloor'' \cite[p.~4, Sec.~IV]{pfab2025}. We adopt it unchanged, because our results are only comparable with theirs under the same limit. We treat it as a hard limit: a setting that misses more than 1\,\% fails, however many false calls it releases.
+
+\textbf{Why at least 40\,\% false calls released.} A second check has to pay for itself: it has to save enough manual checks to justify its cost and the remaining risk \cite[p.~4, Sec.~V]{pfab2025}. The 40\,\% is the minimum saving set in \cite{pfab2025} for this reason, and it is also the target that Siemens names for its own second check in Erlangen, ``40\,\% fewer false calls'' \cite{siemens2026}. A setting that releases less than 40\,\% therefore does not count as a success, even if it holds the quality limit.
+
+\textbf{What saving we expect.} The 40\,\% is a minimum, not an expectation. Table~\ref{tab:benefit} gives the range in which the saving can lie. The upper reference is the test set, where the data have not yet changed: there the second check releases 79.7--89.7\,\% of the false calls within the 1\,\% limit (group C), and at most 92.5\,\% with an ideal threshold (group B). No setting can be expected to do better on later periods, where the data have changed. The lower reference is the 40\,\% limit. Holding 1\,\% on later periods requires a stricter threshold than in \cite{pfab2025}, and a stricter threshold releases fewer false calls, so the saving will fall below the 39.7--78.0\,\% that the later periods reach today with too many missed defects (group D). Our expectation is therefore a saving between 40\,\% and the test-set value of about 80--90\,\%, and the position within this range is what our test plan measures. If no setting holds the 1\,\% limit with at least 40\,\% released, this is also a result: it shows how far the two adaptation strategies are from making the second check usable, and which of them comes closest.
+
+\subsection{Factors and limitations}
+\label{sec:factors}
+Figure~\ref{fig:pdiagram} summarises our system as a parameter diagram (P-diagram), the standard way in the design of experiments to show what goes into a system, what comes out, and which factors act on it. The input is the AOI data (Section~\ref{sec:data}), the system is the classifier with its two adaptation strategies (Section~\ref{sec:method}), and the output are the two responses of the objective, $\mathrm{FNR}_k$ and $\mathrm{TNR}_k$ on each later period (Section~\ref{sec:output}).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{p_diagram.png}
+  \caption{Parameter diagram (P-diagram) of our system: input, system and output (responses), with the control factors that our test plan varies (top) and the noise factors that act on the system but are not controlled (bottom).}
+  \label{fig:pdiagram}
+\end{figure}
+
+\textbf{Control factors} are the factors we set on purpose. They are the four factors of our test plan: the threshold method (A), the retraining schedule (B), the training window (C) and the model (D), with the levels of Table~\ref{tab:methodlist}. All other settings are held constant at the values of \cite{pfab2025}: the data split, the input features, the hyper-parameters logged for each run, and the recall target of 99\,\% used to set the threshold. Holding them constant makes every result comparable with the baseline and with the published result.
+
+\textbf{Noise factors} act on the system but cannot be set. The most important one is drift: the data and the share of true defects change between periods, from 0.09 to 3.11\,\% (Figure~\ref{fig:split}). Our two adaptation strategies are designed to make the system robust against exactly this factor. Further noise factors are label errors from the manual station, whose share is unknown \cite{pfab2024}, the changing mix of inspection types, whose shares of true defects differ by a factor of eight, and the random seed of the training. The seed is handled by replication: every setting is run with the ten seeds of \cite{pfab2025}, and results are reported as mean and standard deviation.
+
+\textbf{Limitations.} Seven limitations apply to our project and to the conclusions that can be drawn from it.
+\begin{enumerate}
+  \item \textit{One line, one period.} The data come from one SMT line of one company over 132 days \cite{pfab2024}. Whether the results hold for other lines, products or longer periods is not known.
+  \item \textit{Anonymised measurements.} The 70 measurements are anonymised and scaled. A result can say which measurement matters, but not what it means physically.
+  \item \textit{Label quality.} The labels are set by people and may be wrong \cite{pfab2024}. A wrong label counts as an error of the model even if the model was right.
+  \item \textit{Labels in production.} A joint that the second check releases is not checked by a person and gets no label. Our simulation assumes that every joint receives its label later. In a real line, fewer labels would be available for retraining, so the benefit of retraining may be smaller than in our simulation.
+  \item \textit{Joint level.} Like \cite{pfab2025}, we evaluate per solder joint. On the line, a board goes to the manual station if any of its joints is flagged as a true defect, so the saving per board can differ from the saving per joint.
+  \item \textit{Enough true defects for the threshold.} The Neyman--Pearson threshold needs at least 299 true defects for the 1\,\% limit with 95\,\% confidence \cite{tong2018}. A short recent window may contain fewer, and then the method cannot give its guarantee.
+  \item \textit{Evidence from other fields.} The evidence that retraining helps comes from fraud detection and a semiconductor materials line \cite{dalpozzolo2018,gao2026}, not from AOI. Whether it transfers to AOI is what our project tests; a negative result is possible and would also be an answer.
+\end{enumerate}
+
+\subsection{Summary of the reviewed works}
+Table~\ref{tab:summary} compares the studies on AOI false calls, and Table~\ref{tab:drift} compares the studies on drift and retraining. Only \cite{pfab2025} evaluates on later production periods, and no study on AOI false calls retrains its model (Table~\ref{tab:summary}). Retraining helped in every study that tested it, but none of these studies is on AOI (Table~\ref{tab:drift}).
 
 \begin{table}[h]
 \centering\small
@@ -319,147 +460,81 @@ Gao et al.\ \cite{gao2026} & semiconductor materials & regression & fixed schedu
 \end{tabularx}
 \end{table}
 
-\begin{table}[h]
-\centering\small
-\caption{Chain of evidence behind our research question.}
-\label{tab:chain}
-\begin{tabularx}{\textwidth}{@{}p{4.2cm}Lp{2.6cm}@{}}
-\toprule
-Claim & Evidence & Sources \\
-\midrule
-1.\ A second check trained once fails on later production periods & on target on the test set, 5--15\,\% missed defects on all five later periods & \cite{pfab2025} \\
-2.\ Two causes: drift and the threshold method & definition and effect of dataset shift; drift lowers quality classifiers in manufacturing; drift is named for this data by its authors and shown by a PCA in \cite{pfab2025}; an empirical threshold at a 1\,\% error bound does not hold with few cases & \cite{gama2014,bauer2025,pfab2024,pfab2025,tong2018} \\
-3.\ Methods exist for both & threshold: order statistic with a stated confidence, re-setting under changed class shares; drift: periodic, window-based or drift-triggered retraining & \cite{tong2018,saerens2002,gama2014,gama2004} \\
-4.\ Retraining helps in related applications & binary fraud classifier with rare positives; semiconductor materials line & \cite{dalpozzolo2018,gao2026} \\
-5.\ Named as next steps for AOI false calls, not tested & ``improving the method for setting the threshold and handling the distribution drifts'' & \cite{pfab2025} \\
-\bottomrule
-\end{tabularx}
-\end{table}
 
-\begin{table}[h]
-\centering\small
-\caption{From the literature to the variables of our simulation (the two next steps named in \cite{pfab2025}).}
-\label{tab:switches}
-\begin{tabularx}{\textwidth}{@{}p{2.3cm}p{5.6cm}Lp{2.4cm}@{}}
-\toprule
-Variable & Option & What it does & Sources \\
-\midrule
-Threshold & as in \cite{pfab2025}, corrected & mean of the five cross-validation thresholds, taken from the best model & \cite{pfab2025} \\
- & safety margin & 1\,\% bound held with probability $1-\delta$; needs enough left-out true defects & \cite{tong2018} \\
- & re-set per period & follows a changed share of true defects, also without labels & \cite{saerens2002} \\
-\midrule
-Retraining & never & train once, as in \cite{pfab2025} & \cite{pfab2025} \\
- & on a fixed schedule & per period, weekly, every 3 days, daily; on all data so far or on a recent window & \cite{gama2014,dalpozzolo2018,gao2026} \\
- & on drift & retrain when the error rises & \cite{gama2004} \\
-\bottomrule
-\end{tabularx}
-\end{table}
 
-\begin{table}[h]
-\centering\small
-\caption{Methods of our project and the sources they are based on.}
-\label{tab:methods}
-\begin{tabularx}{\textwidth}{@{}p{4.6cm}Lp{2.6cm}@{}}
-\toprule
-Method & Reason & Sources \\
-\midrule
-Binary classification of each flagged joint & the manual inspection label has two classes & \cite{pfab2024,pfab2025} \\
-Same data split, models, hyper-parameters and threshold method as \cite{pfab2025}, reimplemented with our own code & direct comparison with the baseline & \cite{pfab2025,breiman2001,chen2004} \\
-Threshold method as a factor of the test plan (3 levels) & first next step named in \cite{pfab2025} & \cite{pfab2025,tong2018,saerens2002} \\
-Retraining schedule (6 levels) and retraining data (2 levels) as factors of the test plan; only earlier data are used & second next step named in \cite{pfab2025} & \cite{gama2014,gama2004,dalpozzolo2018,gao2026} \\
-Slip and volume reduction; reference lines $\leq$1\,\% and $\geq$40\,\% & business metrics and targets of \cite{pfab2025} & \cite{pfab2025,he2009} \\
-Model as a factor (random forest, balanced random forest) & tree ensembles are strong on tabular data; the two models of \cite{pfab2025} & \cite{grinsztajn2022,breiman2001,chen2004} \\
-Ten random seeds as replicates, mean $\pm$ SD & as in \cite{pfab2025} & \cite{pfab2025} \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\clearpage
 % ---------------- Discussion ----------------
 \section{Discussion}
-
-\subsection{What the literature shows}
-Three points are well supported. First, false calls are a large and current cost in electronics assembly: about 99\,\% of the flagged joints in the Siemens data are false calls \cite{pfab2024,pfab2025}, and Siemens is working on a second check in production today \cite{siemens2026}. Second, a classifier on the AOI measurements can recognise many false calls: three independent studies show this with tree ensembles, k-nearest neighbours and neural networks \cite{thielen2020,albayari2026,pfab2025}, which agrees with the general finding that tree ensembles are strong on tabular data \cite{grinsztajn2022}. Third, a good result on a test set from the same period does not carry over to later production: the only study that tests later periods finds 5--15\,\% missed true defects where the target is 1\,\% \cite{pfab2025}.
 
 \subsection{Why the earlier results look better than they are}
 Most studies evaluate on a random or stratified split of data from the same period \cite{thielen2020,albayari2026}. Under drift, such a split mixes past and future and hides the loss in performance \cite{gama2014}. The evaluation in time order of \cite{pfab2025} is therefore the one that matches the use in a factory, and it is the reason why we build on this study. The measure matters as well: with about 1\,\% true defects, accuracy says little, and recall and specificity must be reported for the class that matters \cite{he2009}.
 
-\subsection{What the literature leaves open}
-For the second check of AOI results, no reviewed study tests a remedy against the failure over time. The two causes are named \cite{pfab2025}, and general methods exist for both: a threshold with a stated confidence \cite{tong2018}, a threshold that follows a changed class share \cite{saerens2002}, and retraining on a schedule or on detected drift \cite{gama2004,gama2014}. Evidence that retraining helps comes from other fields: fraud detection, a binary task with rare positives \cite{dalpozzolo2018}, and a semiconductor materials line, a regression task \cite{gao2026}. Whether the same holds for AOI data, with about 1\,\% true defects and a target of at most 1\,\% missed defects, is open. This gap is the research question of our project.
-
 \subsection{Limitations of the reviewed sources}
-Two of the central sources are preprints \cite{pfab2025,gao2026}; for \cite{pfab2025}, the published code and run logs allow us to check the results ourselves. The industrial targets of Siemens \cite{siemens2026} are targets, not measured results. The manufacturing evidence for retraining \cite{gao2026} concerns regression, not classification, and the drift experiment of \cite{bauer2025} works on images. The labels of the Siemens data come from operators and may contain errors \cite{pfab2024}. Finally, all evidence for the AOI case comes from one production line; whether the findings transfer to other lines is not known.
+Two of the central sources are preprints \cite{pfab2025,gao2026}; for \cite{pfab2025}, the published code and run logs allow us to check the results ourselves. The figures of Siemens \cite{siemens2026} are targets, not measured results. The manufacturing evidence for retraining \cite{gao2026} concerns regression, not classification, and the drift experiment of \cite{bauer2025} works on images. The limitations of our own project are listed in Section~\ref{sec:factors}.
 
-\clearpage
 % ---------------- Conclusion ----------------
 \section{Conclusion}
-The literature leads from a general goal to one specific question. Zero-defect manufacturing needs reliable defect detection \cite{psarommatis2020}; in electronics assembly this is done by AOI \cite{ebayyeh2020}, which raises many false calls that operators check by hand \cite{pfab2024}, a problem that industry is still working on \cite{siemens2026}. Supervised classifiers after the AOI can recognise false calls \cite{thielen2020,albayari2026}, and on tabular data like the AOI measurements tree ensembles are the strongest family \cite{grinsztajn2022}.
+The literature leads from the general goal of zero-defect manufacturing \cite{psarommatis2020} to one open question. AOI raises many false calls that people check by hand \cite{ebayyeh2020,pfab2024}, and a second check with machine learning can release many of them \cite{thielen2020,albayari2026}. On later production days, however, it misses 5--15\,\% of the true defects instead of at most 1\,\% \cite{pfab2025}. Drift \cite{gama2014,bauer2025} and a threshold set once \cite{tong2018,saerens2002} explain this failure, and retraining has helped in related fields \cite{dalpozzolo2018,gao2026}, but for AOI no study has tested either remedy.
 
-On the same public data that our project uses, however, Pfab and Rothering \cite{pfab2025} show that models which meet the targets on a test set from the same period miss 5--15\,\% of the true defects on every later period. The evidence points to drift as the main cause: by definition, a model fails when the data it meets differ from the data it learned from \cite{gama2014}; a controlled manufacturing experiment shows this effect \cite{bauer2025}; and for the Siemens data the authors themselves warn of drift and show data clusters that appear only in certain periods \cite{pfab2024,pfab2025}. The method for setting the threshold, named by \cite{pfab2025} as a second problem, makes it worse: a threshold set on the empirical error does not keep a 1\,\% bound unless enough true defects are left out for it \cite{tong2018}, and a threshold fixed once does not follow a changing class share \cite{saerens2002}.
+\textbf{Position of our project.} Pfab and Rothering name as ``potential next steps to stabilize the modeling'' the ``improving [of] the method for setting the threshold and handling the distribution drifts within the dataset'' \cite{pfab2025}, without testing either. Our project tests exactly these two steps. We do not propose a new model; we test whether the standard adaptation strategies, decision threshold selection and concept drift adaptation by retraining, make the second check of AOI results usable in production. The objective is at most 1\,\% missed true defects and at least 40\,\% released false calls on every later period, measured against our reimplementation of \cite{pfab2025} and against its published result. Whatever the result, it answers a question that the original study left open.
 
-The standard remedy for drift is to retrain the model regularly on recent data \cite{gama2014}. It has helped in a binary classification task with rare positives \cite{dalpozzolo2018} and on a semiconductor materials line, where the retraining frequency mattered most \cite{gao2026}. For the second check of AOI results, the reviewed literature does not report whether it works.
-
-\textbf{Position of our project.} In their discussion, Pfab and Rothering name as ``potential next steps to stabilize the modeling'' the ``improving [of] the method for setting the threshold and handling the distribution drifts within the dataset'' \cite{pfab2025}, without testing either. Our project focuses on exactly these two steps. We do not propose a new method; we test whether the standard remedies work for this real problem. First, we reimplemented the method of \cite{pfab2025} with our own code, on the same data, with the same split, models, hyper-parameters and threshold method; while doing so we corrected one point: the threshold is taken from the best model of the tuning, not from the last model tried. This reimplementation is our baseline. Second, a design of experiments varies the threshold method (as in \cite{pfab2025} corrected, a safety margin \cite{tong2018}, re-set per period \cite{saerens2002}), the retraining schedule (never, per period, weekly, every 3 days, daily, on drift \cite{gama2004}), the retraining data (all data so far or a recent window \cite{gama2014}) and the model (random forest or balanced random forest), each setting with the ten seeds of \cite{pfab2025}. The question is: how do missed true defects and released false calls on later production periods change when threshold and retraining change, compared with training once? Every result is shown next to the published result of \cite{pfab2025}; its targets (at most 1\,\% missed true defects, at least 40\,\% fewer manual checks) serve as reference lines. In the end, the simulation becomes a small software tool in which threshold and retraining are settings. Whatever the result, it answers a question that the original study left open.
-
-\clearpage
 % ---------------- References ----------------
 \begin{thebibliography}{99}
 \addcontentsline{toc}{section}{References}
 \small
 
 \bibitem{psarommatis2020}
-F.~Psarommatis, G.~May, P.-A.~Dreyfus, and D.~Kiritsis, ``Zero defect manufacturing: state-of-the-art review, shortcomings and future directions in research,'' \textit{Int.\ J.\ Production Research}, vol.~58, no.~1, pp.~1--17, 2020, doi:~10.1080/00207543.2019.1605228.
+F.~Psarommatis, G.~May, P.-A.~Dreyfus, and D.~Kiritsis, ``Zero defect manufacturing: state-of-the-art review, shortcomings and future directions in research,'' \textit{Int.\ J.\ Production Research}, vol.~58, no.~1, pp.~1--17, 2020, \href{https://doi.org/10.1080/00207543.2019.1605228}{doi:~10.1080/00207543.2019.1605228}.
 
 \bibitem{ebayyeh2020}
-A.~A.~R.~M.~Abu Ebayyeh and A.~Mousavi, ``A review and analysis of automatic optical inspection and quality monitoring methods in electronics industry,'' \textit{IEEE Access}, vol.~8, pp.~183192--183271, 2020, doi:~10.1109/ACCESS.2020.3029127.
+A.~A.~R.~M.~Abu Ebayyeh and A.~Mousavi, ``A review and analysis of automatic optical inspection and quality monitoring methods in electronics industry,'' \textit{IEEE Access}, vol.~8, pp.~183192--183271, 2020, \href{https://doi.org/10.1109/ACCESS.2020.3029127}{doi:~10.1109/ACCESS.2020.3029127}.
 
 \bibitem{siemens2026}
 Siemens, ``Siemens and NVIDIA advance AI-powered PCB inspection from Digital Twin to factory,'' press release, Plano, TX, USA, Oct.~21, 2026. [Online]. Available: \url{https://news.siemens.com/en-us/siemens-nvidia-pcba-digital-twin-factory/}
 
 \bibitem{pfab2024}
-K.~Pfab, R.~Eichler, A.~Mallandur, and M.~Rothering, ``Data of automated optical inspection of surface-mounted technology electronic production,'' \textit{Data in Brief}, vol.~53, Art.~no.~110110, Apr.~2024, doi:~10.1016/j.dib.2024.110110. Data: Mendeley Data, v2, doi:~10.17632/99jzmh9658.2.
+K.~Pfab, R.~Eichler, A.~Mallandur, and M.~Rothering, ``Data of automated optical inspection of surface-mounted technology electronic production,'' \textit{Data in Brief}, vol.~53, Art.~no.~110110, Apr.~2024, \href{https://doi.org/10.1016/j.dib.2024.110110}{doi:~10.1016/j.dib.2024.110110}. Data: Mendeley Data, v2, \href{https://doi.org/10.17632/99jzmh9658.2}{doi:~10.17632/99jzmh9658.2}.
 
 \bibitem{thielen2020}
-N.~Thielen, D.~Werner, K.~Schmidt, R.~Seidel, A.~Reinhardt, and J.~Franke, ``A machine learning based approach to detect false calls in SMT manufacturing,'' in \textit{Proc.\ 43rd Int.\ Spring Seminar on Electronics Technology (ISSE)}, Demanovska Valley, Slovakia, 2020, pp.~1--6, doi:~10.1109/ISSE49702.2020.9121044.
+N.~Thielen, D.~Werner, K.~Schmidt, R.~Seidel, A.~Reinhardt, and J.~Franke, ``A machine learning based approach to detect false calls in SMT manufacturing,'' in \textit{Proc.\ 43rd Int.\ Spring Seminar on Electronics Technology (ISSE)}, Demanovska Valley, Slovakia, 2020, pp.~1--6, \href{https://doi.org/10.1109/ISSE49702.2020.9121044}{doi:~10.1109/ISSE49702.2020.9121044}.
 
 \bibitem{albayari2026}
-J.~Albayari, P.~Patra, D.~Patel, and D.~Santos, ``Enhancing false call detection in automated optical inspection using XGBoost classifier and XAI algorithms,'' in \textit{Flexible Automation and Intelligent Manufacturing (FAIM 2025)}, Lecture Notes in Mechanical Engineering. Cham, Switzerland: Springer, 2026, pp.~509--530, doi:~10.1007/978-3-032-05610-8\_51.
+J.~Albayari, P.~Patra, D.~Patel, and D.~Santos, ``Enhancing false call detection in automated optical inspection using XGBoost classifier and XAI algorithms,'' in \textit{Flexible Automation and Intelligent Manufacturing (FAIM 2025)}, Lecture Notes in Mechanical Engineering. Cham, Switzerland: Springer, 2026, pp.~509--530, \href{https://doi.org/10.1007/978-3-032-05610-8_51}{doi:~10.1007/978-3-032-05610-8\_51}.
 
 \bibitem{pfab2025}
-K.~Pfab and M.~Rothering, ``Towards improved research methodologies for industrial AI: a case study of false call reduction,'' arXiv:2506.14521 [cs.LG], Jun.~2025. Source code and run logs: \url{https://gitlab.com/research9841542/FCR_1}.
+K.~Pfab and M.~Rothering, ``Towards improved research methodologies for industrial AI: a case study of false call reduction,'' \href{https://arxiv.org/abs/2506.14521}{arXiv:2506.14521} [cs.LG], Jun.~2025. Source code and run logs: \url{https://gitlab.com/research9841542/FCR_1}. Open-access copy: \href{https://github.com/bodhi584/aoi-false-call-classification/blob/main/docs/papers/07_pfab_rothering_2025_arxiv.pdf}{PDF in our repository}.
 
 \bibitem{grinsztajn2022}
-L.~Grinsztajn, E.~Oyallon, and G.~Varoquaux, ``Why do tree-based models still outperform deep learning on typical tabular data?'' in \textit{Advances in Neural Information Processing Systems 35 (NeurIPS 2022), Datasets and Benchmarks Track}, 2022.
+L.~Grinsztajn, E.~Oyallon, and G.~Varoquaux, ``Why do tree-based models still outperform deep learning on typical tabular data?'' in \textit{Advances in Neural Information Processing Systems 35 (NeurIPS 2022), Datasets and Benchmarks Track}, 2022. Open-access copy: \href{https://github.com/bodhi584/aoi-false-call-classification/blob/main/docs/papers/08_grinsztajn_2022_neurips.pdf}{PDF in our repository}.
 
 \bibitem{breiman2001}
-L.~Breiman, ``Random forests,'' \textit{Machine Learning}, vol.~45, no.~1, pp.~5--32, 2001, doi:~10.1023/A:1010933404324.
+L.~Breiman, ``Random forests,'' \textit{Machine Learning}, vol.~45, no.~1, pp.~5--32, 2001, \href{https://doi.org/10.1023/A:1010933404324}{doi:~10.1023/A:1010933404324}.
 
 \bibitem{chen2004}
-C.~Chen, A.~Liaw, and L.~Breiman, ``Using random forest to learn imbalanced data,'' Dept.\ of Statistics, University of California, Berkeley, Tech.\ Rep.~666, 2004.
+C.~Chen, A.~Liaw, and L.~Breiman, ``Using random forest to learn imbalanced data,'' Dept.\ of Statistics, University of California, Berkeley, Tech.\ Rep.~666, 2004. Open-access copy: \href{https://github.com/bodhi584/aoi-false-call-classification/blob/main/docs/papers/10_chen_liaw_breiman_2004_techreport.pdf}{PDF in our repository}.
 
 \bibitem{he2009}
-H.~He and E.~A.~Garcia, ``Learning from imbalanced data,'' \textit{IEEE Trans.\ Knowledge and Data Engineering}, vol.~21, no.~9, pp.~1263--1284, Sep.~2009, doi:~10.1109/TKDE.2008.239.
+H.~He and E.~A.~Garcia, ``Learning from imbalanced data,'' \textit{IEEE Trans.\ Knowledge and Data Engineering}, vol.~21, no.~9, pp.~1263--1284, Sep.~2009, \href{https://doi.org/10.1109/TKDE.2008.239}{doi:~10.1109/TKDE.2008.239}.
 
 \bibitem{gama2014}
-J.~Gama, I.~\v{Z}liobait\.{e}, A.~Bifet, M.~Pechenizkiy, and A.~Bouchachia, ``A survey on concept drift adaptation,'' \textit{ACM Computing Surveys}, vol.~46, no.~4, Art.~no.~44, pp.~1--37, 2014, doi:~10.1145/2523813.
+J.~Gama, I.~\v{Z}liobait\.{e}, A.~Bifet, M.~Pechenizkiy, and A.~Bouchachia, ``A survey on concept drift adaptation,'' \textit{ACM Computing Surveys}, vol.~46, no.~4, Art.~no.~44, pp.~1--37, 2014, \href{https://doi.org/10.1145/2523813}{doi:~10.1145/2523813}.
 
 \bibitem{bauer2025}
-J.~C.~Bauer, S.~Trattnig, F.~Vieltorf, and R.~Daub, ``Handling data drift in deep learning-based quality monitoring: evaluating calibration methods using the example of friction stir welding,'' \textit{J.\ Intelligent Manufacturing}, vol.~37, no.~2, pp.~759--774, 2025, doi:~10.1007/s10845-025-02569-6.
+J.~C.~Bauer, S.~Trattnig, F.~Vieltorf, and R.~Daub, ``Handling data drift in deep learning-based quality monitoring: evaluating calibration methods using the example of friction stir welding,'' \textit{J.\ Intelligent Manufacturing}, vol.~37, no.~2, pp.~759--774, 2025, \href{https://doi.org/10.1007/s10845-025-02569-6}{doi:~10.1007/s10845-025-02569-6}.
 
 \bibitem{tong2018}
-X.~Tong, Y.~Feng, and J.~J.~Li, ``Neyman-Pearson classification algorithms and NP receiver operating characteristics,'' \textit{Science Advances}, vol.~4, no.~2, Art.~no.~eaao1659, 2018, doi:~10.1126/sciadv.aao1659.
+X.~Tong, Y.~Feng, and J.~J.~Li, ``Neyman-Pearson classification algorithms and NP receiver operating characteristics,'' \textit{Science Advances}, vol.~4, no.~2, Art.~no.~eaao1659, 2018, \href{https://doi.org/10.1126/sciadv.aao1659}{doi:~10.1126/sciadv.aao1659}. Open-access copy: \href{https://github.com/bodhi584/aoi-false-call-classification/blob/main/docs/papers/14_tong_2018_arxiv.pdf}{PDF in our repository}.
 
 \bibitem{saerens2002}
-M.~Saerens, P.~Latinne, and C.~Decaestecker, ``Adjusting the outputs of a classifier to new a priori probabilities: a simple procedure,'' \textit{Neural Computation}, vol.~14, no.~1, pp.~21--41, 2002, doi:~10.1162/089976602753284446.
+M.~Saerens, P.~Latinne, and C.~Decaestecker, ``Adjusting the outputs of a classifier to new a priori probabilities: a simple procedure,'' \textit{Neural Computation}, vol.~14, no.~1, pp.~21--41, 2002, \href{https://doi.org/10.1162/089976602753284446}{doi:~10.1162/089976602753284446}.
 
 \bibitem{gama2004}
-J.~Gama, P.~Medas, G.~Castillo, and P.~Rodrigues, ``Learning with drift detection,'' in \textit{Advances in Artificial Intelligence -- SBIA 2004}, Lecture Notes in Computer Science, vol.~3171. Berlin, Germany: Springer, 2004, pp.~286--295, doi:~10.1007/978-3-540-28645-5\_29.
+J.~Gama, P.~Medas, G.~Castillo, and P.~Rodrigues, ``Learning with drift detection,'' in \textit{Advances in Artificial Intelligence -- SBIA 2004}, Lecture Notes in Computer Science, vol.~3171. Berlin, Germany: Springer, 2004, pp.~286--295, \href{https://doi.org/10.1007/978-3-540-28645-5_29}{doi:~10.1007/978-3-540-28645-5\_29}. Open-access copy: \href{https://github.com/bodhi584/aoi-false-call-classification/blob/main/docs/papers/16_gama_2004_sbia_authorcopy.pdf}{PDF in our repository}.
 
 \bibitem{dalpozzolo2018}
-A.~Dal Pozzolo, G.~Boracchi, O.~Caelen, C.~Alippi, and G.~Bontempi, ``Credit card fraud detection: a realistic modeling and a novel learning strategy,'' \textit{IEEE Trans.\ Neural Networks and Learning Systems}, vol.~29, no.~8, pp.~3784--3797, 2018, doi:~10.1109/TNNLS.2017.2736643.
+A.~Dal Pozzolo, G.~Boracchi, O.~Caelen, C.~Alippi, and G.~Bontempi, ``Credit card fraud detection: a realistic modeling and a novel learning strategy,'' \textit{IEEE Trans.\ Neural Networks and Learning Systems}, vol.~29, no.~8, pp.~3784--3797, 2018, \href{https://doi.org/10.1109/TNNLS.2017.2736643}{doi:~10.1109/TNNLS.2017.2736643}. Open-access copy: \href{https://github.com/bodhi584/aoi-false-call-classification/blob/main/docs/papers/17_dalpozzolo_2018_tnnls.pdf}{PDF in our repository}.
 
 \bibitem{gao2026}
-M.~Gao, J.~M.~Perathoner, A.~L.~Bonin, S.~Eulig, and G.~Klesse, ``Robust and reliable AI for predictive quality in semiconductor materials manufacturing with MLOps and uncertainty quantification,'' arXiv:2605.07752 [cs.LG], 2026.
+M.~Gao, J.~M.~Perathoner, A.~L.~Bonin, S.~Eulig, and G.~Klesse, ``Robust and reliable AI for predictive quality in semiconductor materials manufacturing with MLOps and uncertainty quantification,'' \href{https://arxiv.org/abs/2605.07752}{arXiv:2605.07752} [cs.LG], 2026. Open-access copy: \href{https://github.com/bodhi584/aoi-false-call-classification/blob/main/docs/papers/18_gao_2026_arxiv.pdf}{PDF in our repository}.
 
 \end{thebibliography}
 
