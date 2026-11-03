@@ -77,11 +77,9 @@ Zero-defect manufacturing relies on detecting defects before a product leaves th
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.92\textwidth]{literature_map.png}
-  \caption{Reviewed literature from general to specific (numbers refer to the reference list).}
+  \caption{The reviewed literature from general to specific. Each box is one level of the review, with its sources on the right; Section~2 follows the levels from top to bottom. The line below the funnel is our project.}
   \label{fig:map}
 \end{figure}
-
-\textbf{How to read Figure~\ref{fig:map}.} Each box is one level of the review, from the most general topic at the top to the most specific at the bottom; the numbers on the right are the sources of that level, and the arrow on the right runs from general to specific. Each level answers a question raised by the level above it: zero-defect manufacturing needs inspection, inspection in electronics is done by AOI, AOI produces false calls, and so on down to the methods for the threshold and retraining. The line under the funnel is where this leads: our project.
 
 
 \subsection{Motivation}
@@ -107,13 +105,11 @@ Target of \cite{pfab2025} & any period & $\geq$ 40\,\% & $\leq$ 1\,\% \\
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\textwidth]{benefit_pfab2025.png}
-  \caption{The numbers of Table~\ref{tab:benefit} for the two models of \cite{pfab2025}: test set (stars, \cite[p.~11, Table~V]{pfab2025}) and the five later periods (dots, \cite[p.~7, Table~IV]{pfab2025}). Green: the target zone.}
+  \caption{Missed true defects (horizontal) and false calls released (vertical) of the two models of \cite{pfab2025}, on the test set (stars, \cite[p.~11, Table~V]{pfab2025}) and on the five later periods (dots, \cite[p.~7, Table~IV]{pfab2025}). Further right is worse, higher is better. Green: the target of \cite{pfab2025}, at most 1\,\% missed and at least 40\,\% released.}
   \label{fig:benefit}
 \end{figure}
 
-\textbf{How to read Table~\ref{tab:benefit} and Figure~\ref{fig:benefit}.} The table has two result columns, the two goals of a second check: release as many false calls as possible (each released false call is one manual check saved) and miss as few true defects as possible. The rows go from the industrial target, through what \cite{pfab2025} reached on the test set and on later periods, and our baseline, to the target. Figure~\ref{fig:benefit} shows the same numbers as points. The horizontal axis is the share of missed true defects, so further right is worse; the vertical axis is the share of false calls released, so higher is better. The green area is the target of \cite{pfab2025}: at most 1\,\% missed and at least 40\,\% released. The two stars, the test set, lie inside the green area. All ten dots, one per model and later period, lie to the right of it: between 5 and 15\,\% of the true defects are missed.
-
-\textbf{What this shows.} The benefit is large but not yet usable: on a test set from the same period the second check would save about 80--90\,\% of the manual checks within the 1\,\% limit, and even on later periods it still releases about 40--78\,\% of the false calls, but there it lets through 5--15\,\% of the true defects. If the two fixes bring the missed true defects back to 1\,\% while keeping at least 40\,\% of the false calls released, the manual inspection work on the line could fall by at least 40\,\%, the Siemens target. In the language of Figure~\ref{fig:benefit}, the question of this project is whether the two fixes move the dots back into the green area. Our motivation is to find out whether they make the second check usable in real production. This review collects what the literature says about the problem, its causes and the possible fixes.
+On the test set, both models of \cite{pfab2025} lie inside the target area (Figure~\ref{fig:benefit}): within the 1\,\% limit they release 80--90\,\% of the false calls, so 80--90\,\% of the manual checks would be saved. On all five later periods, both models still release about 40--78\,\% of the false calls, but they miss 5--15\,\% of the true defects, and all points lie to the right of the target area. Our baseline reproduces this pattern (Table~\ref{tab:benefit}). The benefit is therefore large but not yet usable. If the two fixes named in \cite{pfab2025} move the later periods back into the target area, the manual inspection work on the line could fall by at least 40\,\%, the Siemens target \cite{siemens2026}. Our motivation is to find out whether these two fixes make the second check usable in real production.
 
 \subsection{Key terms}
 Table~\ref{tab:terms} explains the terms used in this report. They follow the core study \cite{pfab2025}, so that our results can be compared with it.
@@ -143,7 +139,7 @@ Retraining & Training the model again on newer labelled data during production. 
 \section{Materials and Methods}
 
 \subsection{Reviewed literature}
-The review follows Figure~\ref{fig:map} from top to bottom, one subsection per level. Table~\ref{tab:overview} lists the sources in the same order, with the finding we use and where it is in the source; page numbers refer to the version linked in the reference list. To check a finding, read across its row: for example, the missed true defects of \cite{pfab2025} on later periods are in Table~IV on page~7 of that paper.
+The review follows Figure~\ref{fig:map} from top to bottom, one subsection per level. Table~\ref{tab:overview} lists the sources in the same order, with the finding we use and where it is in the source; page numbers refer to the version linked in the reference list.
 
 \begin{table}[H]
 \centering\small
@@ -195,16 +191,14 @@ In electronics assembly, defects are detected after soldering by automated optic
 
 Most AOI alarms are false calls. That this is a current industrial problem is shown by a press release of Siemens from October 2026 \cite{siemens2026}. In its electronics factory in Erlangen, Siemens and NVIDIA prepare AOI programs on the computer before production, and when the AOI flags a possible defect, a second inspection step decides whether it is a real defect or a false call. The stated targets are up to 85\,\% less manual engineering effort, 40\,\% fewer false calls and more than 5\,\% higher first-pass yield. These are targets, not published results, but they show that the false-call problem is being worked on in industry today.
 
-How large the problem is can be seen in data that Siemens published itself. Pfab et al.\ released 132 days of AOI data from one SMT line of Siemens AG in Germany \cite{pfab2024}. Every row is a solder joint that the AOI flagged, with its AOI measurements and the label from the manual inspection station: true defect or false call. The authors point out two limits of the data: the share of wrong labels is unknown, because people set them, and ``the data may contain distribution drifts of unknown type''. This is the data set of our project, and its authors already name drift as one of its properties. Our own first analysis confirms it (Figure~\ref{fig:drift}): the share of flagged boards with a true defect stays between 0.8 and 2.3\,\% for 15 weeks and rises to 3.2--6.3\,\% in the last four weeks.
+How large the problem is can be seen in data that Siemens published itself. Pfab et al.\ released 132 days of AOI data from one SMT line of Siemens AG in Germany \cite{pfab2024}. Every row is a solder joint that the AOI flagged, with its AOI measurements and the label from the manual inspection station: true defect or false call. The authors point out two limits of the data: the share of wrong labels is unknown, because people set them, and ``the data may contain distribution drifts of unknown type''. This is the data set of our project, and its authors already name drift as one of its properties. Our own first analysis confirms it (Figure~\ref{fig:drift}): the share of flagged boards with a true defect stays between 0.8 and 2.3\,\% for 15 weeks and rises to 3.2--6.3\,\% in the last four weeks, while the number of flagged boards in these weeks is not unusual. What changes is the mix of true defects and false calls, not the volume.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.85\textwidth]{data_drift.png}
-  \caption{Data of \cite{pfab2024}, our analysis: share of flagged boards with a true defect per production week (bars) and number of flagged boards (line).}
+  \caption{Share of flagged boards with a true defect per production week (bars, left axis; red: weeks above 3\,\%) and number of flagged boards per week (line, right axis). Data of \cite{pfab2024}, our analysis.}
   \label{fig:drift}
 \end{figure}
-
-\textbf{How to read Figure~\ref{fig:drift}.} Each bar is one production week; its height is the share of flagged boards that had a true defect (left axis). The grey line is the number of flagged boards in that week (right axis). Red bars are the weeks above 3\,\%. \textbf{What it shows:} for 15 weeks the share stays between 0.8 and 2.3\,\%; in the last four weeks it is two to five times higher. The grey line shows that the number of flagged boards in these weeks is not unusual, so what changes is the mix, not the volume. A model trained on the early weeks therefore meets a different mix of true defects and false calls later.
 
 The obvious answer to so many false calls is a second check after the AOI, the next level.
 
@@ -213,16 +207,14 @@ The obvious answer to so many false calls is a second check after the AOI, the n
 
 A second check with supervised machine learning decides for each flagged joint whether it is a true defect or a false call. Whether such a step can recognise false calls from the AOI measurements was studied by Thielen et al.\ \cite{thielen2020}. They compared k-nearest neighbours, a neural network and random forests and varied the size of the data set and the decision threshold, with the aim of recognising as many false calls as possible without more missed defects. k-nearest neighbours worked best on small data sets but became too slow on large ones, where neural networks and random forests performed better. Their data are not public, and whether the test data come after the training data in time is not reported. Albayari et al.\ later used AOI data from Siemens AG and compared XGBoost, random forest, a deep neural network and k-nearest neighbours with several train--test splits \cite{albayari2026}. XGBoost gave the best balance of recall and precision, and the explanation methods LIME and SHAP showed which AOI measurements drive the predictions. Both studies therefore show that a second check can recognise false calls, but neither tests the classifier on production periods that come after the training data.
 
-This is the gap that Pfab and Rothering close, and their study is the core paper of our project \cite{pfab2025}. On the data of \cite{pfab2024}, they split the rows in time order: the first half is used for modelling, with a stratified random 80/20 split into a tuning set and a test set, and the second half is cut into five later periods. Their goal is at most 1\,\% missed true defects (slip) and at least 40\,\% fewer manual checks (volume reduction). They tune k-nearest neighbours, random forests, balanced random forests, XGBoost and an AutoML model with Bayesian optimisation and 5-fold cross-validation; the decision threshold is the mean of the thresholds found in the five folds, and each model is trained once. Two models, a random forest and a balanced random forest, meet the goal on the test set, but on all five later periods they miss 5--15\,\% of the true defects (Figure~\ref{fig:pfab}). The authors conclude that the model ``would fail from the first moment in production''. A principal component analysis shows data clusters that ``did just appear in a certain period of time'', and the authors state that ``various distribution drifts'' occur in the data. As possible next steps they name ``improving the method for setting the threshold and handling the distribution drifts'', without testing either.
+This is the gap that Pfab and Rothering close, and their study is the core paper of our project \cite{pfab2025}. On the data of \cite{pfab2024}, they split the rows in time order: the first half is used for modelling, with a stratified random 80/20 split into a tuning set and a test set, and the second half is cut into five later periods. Their goal is at most 1\,\% missed true defects (slip) and at least 40\,\% fewer manual checks (volume reduction). They tune k-nearest neighbours, random forests, balanced random forests, XGBoost and an AutoML model with Bayesian optimisation and 5-fold cross-validation; the decision threshold is the mean of the thresholds found in the five folds, and each model is trained once. Two models, a random forest and a balanced random forest, meet the goal on the test set, but on all five later periods they miss 5--15\,\% of the true defects (Figure~\ref{fig:pfab}), already in the first one. The authors conclude that the model ``would fail from the first moment in production''. A principal component analysis shows data clusters that ``did just appear in a certain period of time'', and the authors state that ``various distribution drifts'' occur in the data. As possible next steps they name ``improving the method for setting the threshold and handling the distribution drifts'', without testing either.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.85\textwidth]{pfab2025_slip.png}
-  \caption{Missed true defects reported by Pfab and Rothering \cite{pfab2025} (Tables IV and V, mean $\pm$ SD of their runs): on target on the test set, far above it on all later periods.}
+  \caption{Missed true defects of the two models of \cite{pfab2025} on the test set and on the five later periods (slices), mean and standard deviation of their runs \cite[p.~7, Table~IV; p.~11, Table~V]{pfab2025}. Dashed line: the target of at most 1\,\%.}
   \label{fig:pfab}
 \end{figure}
-
-\textbf{How to read Figure~\ref{fig:pfab}.} Each pair of bars is one data set: on the left the test set from the same period as the training data, then the five later periods (called slices in \cite{pfab2025}). The height is the share of missed true defects, the mean of the runs of \cite{pfab2025}; the black lines show the spread between runs (one standard deviation). The red dashed line is the target of at most 1\,\%. \textbf{What it shows:} on the test set both models are at the target, 0.8 and 1.0\,\%. On every later period both are far above it, between 5.3 and 15.0\,\%, already in the first period. The model does not get worse slowly; it fails as soon as it meets new data.
 
 Because the authors publish their code and run logs, their result can be checked directly. Two questions follow from this level: which classifiers to use, and how to evaluate them. They are the next two levels.
 
@@ -255,11 +247,9 @@ The second cause is the threshold. Tong, Feng and Li show why the usual way of s
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.75\textwidth]{np_sample_size.png}
-  \caption{Minimum number of true defects in the left-out data so that the threshold keeps the share of missed true defects below $\alpha$ with the stated confidence, $n \geq \log\delta/\log(1-\alpha)$ \cite{tong2018}; computed by us.}
+  \caption{Minimum number of true defects in the left-out data so that the threshold keeps the share of missed true defects below $\alpha$ with the stated confidence, $n \geq \log\delta/\log(1-\alpha)$ \cite{tong2018}; dark bars 95\,\%, light bars 90\,\% confidence; computed by us.}
   \label{fig:np}
 \end{figure}
-
-\textbf{How to read Figure~\ref{fig:np}.} The horizontal axis is the allowed share of missed true defects $\alpha$; each bar is the number of true defects that the left-out data must contain, dark for 95\,\% confidence and light for 90\,\%. \textbf{What it shows:} the stricter the limit, the more true defects are needed. For our limit of 1\,\% with 95\,\% confidence, 299 true defects are needed; for 5\,\% only 59. A threshold for 1\,\% set on fewer true defects than this cannot be trusted.
 
 The second method is needed when the share of true defects changes, as it does in the last weeks of the Siemens data (Figure~\ref{fig:drift}). Saerens, Latinne and Decaestecker show that when the share of a class in use differs from its share in training, the outputs of a classifier no longer fit \cite{saerens2002}. They re-estimate the new class shares from new, unlabelled data and adjust the outputs. For our project this means that a threshold fixed once cannot follow a changing share of true defects; it has to be set again for each period.
 
@@ -277,7 +267,7 @@ Read from top to bottom, the funnel narrows the general goal of zero-defect manu
 This is where our project starts. We reimplemented the method of \cite{pfab2025} with our own code as the baseline. Reading their code, we found that the stored threshold belongs to the last model tried during tuning, not to the best model that is finally used; in our reimplementation the threshold is taken from the best model. On this baseline, the threshold method and retraining become the variables of a simulation, and every setting is compared with \cite{pfab2025}.
 
 \subsection{Summary of the reviewed works}
-Table~\ref{tab:summary} compares the studies on AOI false calls, and Table~\ref{tab:drift} compares the studies on drift and retraining. Table~\ref{tab:switches} maps the methods of level 8 to the variables of our simulation. \textbf{What the tables show:} in Table~\ref{tab:summary}, only \cite{pfab2025} evaluates on later production periods, and no study on AOI false calls retrains its model; the last column is filled only for our project. In Table~\ref{tab:drift}, retraining helped in every study that tested it, but none of these studies is on AOI. Table~\ref{tab:switches} reads row by row: each row is one option that the simulation can switch on, with the source it comes from.
+Table~\ref{tab:summary} compares the studies on AOI false calls, and Table~\ref{tab:drift} compares the studies on drift and retraining. Table~\ref{tab:switches} maps the methods of level 8 to the variables of our simulation. Only \cite{pfab2025} evaluates on later production periods, and no study on AOI false calls retrains its model (Table~\ref{tab:summary}). Retraining helped in every study that tested it, but none of these studies is on AOI (Table~\ref{tab:drift}).
 
 \begin{table}[h]
 \centering\small
