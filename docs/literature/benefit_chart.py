@@ -9,7 +9,11 @@ col = {"Balanced RF": "#2F6DB5", "RF": "#9AB4D6"}
 
 fig, ax = plt.subplots(figsize=(7, 4))
 ax.add_patch(plt.Rectangle((0, 40), 1, 60, color="#DFF0E3", zorder=0))
-ax.annotate("target of [7]: ≤ 1 % missed, ≥ 40 % released", xy=(1, 55), xytext=(2.2, 22),
+ax.axvline(1, color="#1D6B3A", ls="--", lw=1.2, zorder=1)
+ax.axhline(40, color="#1D6B3A", ls="--", lw=1.2, zorder=1)
+ax.text(1.15, 2, "1 % missed", fontsize=8, color="#1D6B3A")
+ax.text(15.9, 41.5, "40 % released", fontsize=8, color="#1D6B3A", ha="right")
+ax.annotate("target of [7]: ≤ 1 % missed, ≥ 40 % released", xy=(0.5, 70), xytext=(2.2, 22),
             fontsize=8, color="#1D6B3A", arrowprops=dict(arrowstyle="->", color="#1D6B3A"))
 for m in later:
     ax.scatter(*later[m], color=col[m], s=40, label=f"{m}, 5 later periods", zorder=3)
