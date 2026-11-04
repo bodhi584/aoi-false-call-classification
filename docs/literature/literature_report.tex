@@ -75,7 +75,24 @@ Our project addresses this gap. Its methodology is a supervised binary classifie
 \section{Introduction}
 Zero-defect manufacturing relies on detecting defects before a product leaves the factory \cite{psarommatis2020}. In electronics assembly, components are soldered onto printed circuit boards by surface-mount technology (SMT), and AOI is placed after soldering \cite{ebayyeh2020}. Every board that the AOI flags goes to a manual inspection station, where an operator decides whether it is a true defect or a false call \cite{pfab2024}. A classifier after the AOI, a second check, could release the false calls without a manual check. This review covers 18 sources from 2001 to 2026 on this second check; image-based defect detection is outside its scope, because the second check starts after the AOI has made its measurements. Figure~\ref{fig:map} shows the 18 sources from the general goal to our project; Section~2.1 follows it from top to bottom.
 
-\begin{figure}[H]
+\begin{center}
+\fbox{\begin{minipage}{0.94\textwidth}
+\vspace{3pt}
+\textbf{Our project in one sentence each.}
+\begin{description}[leftmargin=2.3cm,style=nextline,itemsep=2pt]
+  \item[Project] We test whether a better decision threshold and retraining keep a machine-learning second check of AOI alarms at or below 1\,\% missed true defects on later production periods, while it still releases at least 40\,\% of the false calls.
+  \item[Motivation] A published second check already saves 40--78\,\% of the manual checks on later production periods, but it misses 5--15\,\% of the true defects, so it cannot be used in production.
+  \item[Input] 440,274 AOI-flagged solder joints from one Siemens line in time order, each with 70 measurements, 5 categories and the label from manual inspection.
+  \item[System] A random forest classifier whose decision threshold is selected and whose model is retrained on new data, so that it follows the drift of the production data.
+  \item[Output] For every later period, the share of missed true defects (at most 1\,\%, hard limit) and the share of false calls released (at least 40\,\%, as high as possible).
+  \item[Factors] We vary the threshold method, the retraining schedule, the training window and the model; drift, label errors and the random seed act as noise.
+  \item[Limitations] The results come from one line over 132 days with anonymised data, and they assume that released joints still receive their labels later.
+\end{description}
+\vspace{1pt}
+\end{minipage}}
+\end{center}
+
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.92\textwidth]{literature_map.png}
   \caption{The reviewed literature from general to specific. Each box is one level of the review, with its sources on the right; Section~2.1 follows them from top to bottom. The line below the funnel is our project.}
