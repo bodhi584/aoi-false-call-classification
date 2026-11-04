@@ -15,7 +15,7 @@ Yu Han · Melisa Subasi · Meron Hagos · Alejandro Rivas
 | **P5** · 22 Dec | demo video, run instructions, packaging | planned |
 | **Final** · 12 Jan | final presentation and report | planned |
 
-## In one sentence each
+## Project at a glance
 
 | | |
 |---|---|
