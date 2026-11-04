@@ -8,12 +8,24 @@ Yu Han · Melisa Subasi · Meron Hagos · Alejandro Rivas
 
 | Milestone | Course requirement | Results |
 |---|---|---|
-| **P1** · 20 Oct (revised 4 Nov) | proposal, tech stack, MVP | [one-page proposal](docs/proposal.pdf) ([Word](docs/proposal.docx)) |
+| **P1** · 20 Oct (revised 4 Nov) | proposal, tech stack, MVP | [one-page proposal](docs/proposal.pdf) ([Word](docs/proposal.docx)) · [slides](docs/slides_p1.pdf) |
 | **P2** · 3 Nov | core code + baseline simulation; test plan + report | [report](docs/literature_report.pdf) · [slides](docs/slides_p2.pdf) · [test plan](docs/test_plan.md) · [core code](scripts/replicate_pfab2025.py) · [baseline result](results/replication_pfab2025.json) · [data understanding](notebooks/data_understanding.ipynb) |
 | **P3** · 24 Nov | feature progress; unit tests and CI; issues board | planned: threshold methods and retraining against the baseline · [issues](../../issues) |
 | **P4** · 8 Dec | feature progress; unit tests and CI; issues board | planned: full design of experiments, evaluation, simulation tool |
 | **P5** · 22 Dec | demo video, run instructions, packaging | planned |
 | **Final** · 12 Jan | final presentation and report | planned |
+
+## In one sentence each
+
+| | |
+|---|---|
+| **Project** | We test whether a better decision threshold and retraining keep a machine-learning second check of AOI alarms at or below 1 % missed true defects on later production periods, while it still releases at least 40 % of the false calls. |
+| **Motivation** | A published second check already saves 40–78 % of the manual checks on later production periods, but it misses 5–15 % of the true defects, so it cannot be used in production. |
+| **Input** | 440,274 AOI-flagged solder joints from one Siemens line in time order, each with 70 measurements, 5 categories and the label from manual inspection. |
+| **System** | A random forest classifier whose decision threshold is selected and whose model is retrained on new data, so that it follows the drift of the production data. |
+| **Output** | For every later period, the share of missed true defects (at most 1 %, hard limit) and the share of false calls released (at least 40 %, as high as possible). |
+| **Factors** | We vary the threshold method, the retraining schedule, the training window and the model; drift, label errors and the random seed act as noise. |
+| **Limitations** | The results come from one line over 132 days with anonymised data, and they assume that released joints still receive their labels later. |
 
 Numbers in brackets refer to the report. [7] = Pfab & Rothering (2025), our core paper.
 
