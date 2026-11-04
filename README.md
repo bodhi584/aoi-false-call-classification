@@ -4,16 +4,16 @@ Second check of AOI results with supervised machine learning (Siemens production
 Case Study *Intelligent Systems in Production* · THD · Team 1 · Prof. Dr.-Ing. Hamidreza Heidari
 Yu Han · Melisa Subasi · Meron Hagos · Alejandro Rivas
 
-## Results (P2)
+## Results by milestone
 
-| | |
-|---|---|
-| **Report** | [`docs/literature_report.pdf`](docs/literature_report.pdf) — bibliography report: literature, data, methodology, objective, factors and limitations |
-| **Slides** | [`docs/slides_p2.pdf`](docs/slides_p2.pdf) |
-| **Test plan** | [`docs/test_plan.md`](docs/test_plan.md) — design of experiments |
-| **Core code** | [`scripts/replicate_pfab2025.py`](scripts/replicate_pfab2025.py) — our reimplementation of [7]; also produces the baseline |
-| **Baseline result** | [`results/replication_pfab2025.json`](results/replication_pfab2025.json) |
-| **Data understanding** | [`notebooks/data_understanding.ipynb`](notebooks/data_understanding.ipynb) |
+| Milestone | Course requirement | Results |
+|---|---|---|
+| **P1** · 20 Oct (revised 4 Nov) | proposal, tech stack, MVP | [one-page proposal](docs/proposal.pdf) ([Word](docs/proposal.docx)) |
+| **P2** · 3 Nov | core code + baseline simulation; test plan + report | [report](docs/literature_report.pdf) · [slides](docs/slides_p2.pdf) · [test plan](docs/test_plan.md) · [core code](scripts/replicate_pfab2025.py) · [baseline result](results/replication_pfab2025.json) · [data understanding](notebooks/data_understanding.ipynb) |
+| **P3** · 24 Nov | feature progress; unit tests and CI; issues board | planned: threshold methods and retraining against the baseline · [issues](../../issues) |
+| **P4** · 8 Dec | feature progress; unit tests and CI; issues board | planned: full design of experiments, evaluation, simulation tool |
+| **P5** · 22 Dec | demo video, run instructions, packaging | planned |
+| **Final** · 12 Jan | final presentation and report | planned |
 
 Numbers in brackets refer to the report. [7] = Pfab & Rothering (2025), our core paper.
 
