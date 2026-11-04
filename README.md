@@ -8,7 +8,7 @@ Yu Han · Melisa Subasi · Meron Hagos · Alejandro Rivas
 
 | Milestone | Course requirement | Results |
 |---|---|---|
-| **P1** · 20 Oct (revised 4 Nov) | proposal, tech stack, MVP | [one-page proposal](docs/proposal.pdf) ([Word](docs/proposal.docx)) |
+| **P1** · 20 Oct (revised 4 Nov) | proposal, tech stack, MVP | [one-page proposal](docs/proposal.pdf) ([Word](docs/proposal.docx)) · [slides](docs/slides_p1.pdf) |
 | **P2** · 3 Nov | core code + baseline simulation; test plan + report | [report](docs/literature_report.pdf) · [slides](docs/slides_p2.pdf) · [test plan](docs/test_plan.md) · [core code](scripts/replicate_pfab2025.py) · [baseline result](results/replication_pfab2025.json) · [data understanding](notebooks/data_understanding.ipynb) |
 | **P3** · 24 Nov | feature progress; unit tests and CI; issues board | planned: threshold methods and retraining against the baseline · [issues](../../issues) |
 | **P4** · 8 Dec | feature progress; unit tests and CI; issues board | planned: full design of experiments, evaluation, simulation tool |
