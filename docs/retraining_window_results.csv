@@ -1,0 +1,6 @@
+Strategy,Mean Recall (%),Mean Specificity (%)
+Train Once,99.2,35.4
+Weekly (All Past),99.1,42.1
+Weekly (Last 56 Days),99.3,44.8
+Weekly (Last 28 Days),99.0,46.2
+Weekly (Last 14 Days),98.8,41.5
