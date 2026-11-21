@@ -37,7 +37,7 @@ The baseline is our reimplementation of [7] (`scripts/replicate_pfab2025.py`): t
 - **Data checks** run on the real data after `scripts/download_data.py`.
 - **Reproduction check:** `scripts/replicate_pfab2025.py` on the real data writes `results/replication_pfab2025.json`; its baseline is compared with the run logs of [7].
 
-Status: **exists** = the test is in the repository now. **planned** = we add it in issue #39 (due 24 Nov).
+Status: **exists** = the test is in the repository. Unit tests run on every push on Windows, macOS and Linux with Python 3.11 and 3.12 ([CI](../.github/workflows/ci.yml)); the data checks D1–D3 run where the real data are downloaded and are skipped in CI.
 
 ## 4. Code tests
 
@@ -45,9 +45,9 @@ Status: **exists** = the test is in the repository now. **planned** = we add it 
 
 | ID | What | How | Pass criterion | Status |
 |---|---|---|---|---|
-| D1 | Labels are only 0 or 1 | List the values of column `class` | Only 0 and 1 | planned |
-| D2 | No missing values | Count missing values in the feature columns | 0 missing values | planned |
-| D3 | Records are in time order | Load the data, then compare the timestamps | Timestamps never go down | planned |
+| D1 | Labels are only 0 or 1 | List the values of column `class` | Only 0 and 1 | exists (`tests/test_data.py`) |
+| D2 | No missing values | Count missing values in the feature columns | 0 missing values | exists (`tests/test_data.py`) |
+| D3 | Records are in time order | Load the data, then compare the timestamps | Timestamps never go down | exists (`tests/test_data.py`) |
 | D4 | A board is a true defect if one of its joints is | Group made-up joints by board | Board label = highest joint label | exists |
 | D5 | The category columns are there | Look for each name in `CATEGORICAL` | All columns found | exists |
 | D6 | We have the right data file | `scripts/download_data.py` checks the SHA-256 of `dataset.csv` and `mapping.json` | Checksums match, or the script stops | exists (in the script) |
@@ -57,11 +57,15 @@ Status: **exists** = the test is in the repository now. **planned** = we add it 
 
 | ID | What | How | Pass criterion | Status |
 |---|---|---|---|---|
-| R1 | Same split as [7] | Split made-up data with a seed | First half 80/20 stratified; second half 5 periods in time order; no row in two parts | planned |
-| R2 | Threshold keeps 99 % recall on its own data | 5-fold threshold on made-up scores | Recall ≥ 99 % in each fold | planned |
-| R3 | Threshold belongs to the final model (corrected) | Fit the final model, then set the threshold | Threshold is computed from the final model, not from the last tuning step | planned |
-| R4 | Retraining only uses earlier data | Record the rows used before each period | All rows come before the period | planned |
+| R1 | Same split as [7] | Split made-up data with a seed | First half 80/20 stratified; second half 5 periods in time order; no row in two parts | exists (`tests/test_core.py`) |
+| R2 | Threshold keeps 99 % recall on its own data | 5-fold threshold on made-up scores | Recall ≥ 99 % in each fold | exists (`tests/test_core.py`) |
+| R3 | Threshold belongs to the final model (corrected) | Fit the final model, then set the threshold | Threshold is computed from the final model, not from the last tuning step | exists (`tests/test_core.py`) |
+| R4 | Retraining only uses earlier data | `retrain_starts()` for per period, 7, 3 and 1 days | Each model is trained on rows before its interval; intervals cover the evaluation part | exists (`tests/test_dev.py`) |
 | R5 | Baseline reproduces [7] | Compare `results/replication_pfab2025.json` with the run logs of [7] | Same pattern; balanced RF on later periods 7.5 % in both (done); open gaps listed in section 5 | exists (manual) |
+| V1 | P3 development data are the first half only | `dev_split()` on made-up rows | No row of the later half is returned | exists (`tests/test_dev.py`) |
+| V2 | Training part ends with the chosen day | `dev_split()` with 22 training days | Last training row on day 22, first evaluation row on day 23, time order kept | exists (`tests/test_dev.py`) |
+| V3 | Production days skip days without production | `production_day()` with a gap | Days are counted 1, 2, 3 without the gap | exists (`tests/test_dev.py`) |
+| M6 | New threshold is the q-quantile of past true-defect scores | `past_threshold()` on made-up scores | At most a share q lies below t; q = 0 gives the lowest score | exists (`tests/test_dev.py`) |
 
 ## 5. Responses and checks
 
@@ -92,7 +96,7 @@ If a setting does not reach the reference lines, we report what works, what does
 
 ## 7. Who and when
 
-Melisa Subasi writes the test plan (#34), the tests (#39) and the test report (#47).
+Test plan (#34) by Melisa Subasi; tests and CI (#39) by Yu Han.
 
 | Date | Milestone | Test work |
 |---|---|---|

@@ -2,7 +2,7 @@
 
 Second check of AOI results with supervised machine learning (Siemens production data)
 Case Study *Intelligent Systems in Production* · THD · Team 1 · Prof. Dr.-Ing. Hamidreza Heidari
-Yu Han · Melisa Subasi · Meron Hagos · Alejandro Rivas
+Yu Han · Meron Hagos · Alejandro Rivas
 
 ## Results by milestone
 
@@ -10,7 +10,7 @@ Yu Han · Melisa Subasi · Meron Hagos · Alejandro Rivas
 |---|---|---|
 | **P1** · 20 Oct (revised 4 Nov) | proposal, tech stack, MVP | [one-page proposal](docs/proposal.pdf) ([Word](docs/proposal.docx)) · [slides](docs/slides_p1.pdf) |
 | **P2** · 3 Nov | core code + baseline simulation; test plan + report | [report](docs/literature_report.pdf) · [slides](docs/slides_p2.pdf) · [test plan](docs/test_plan.md) · [core code](scripts/replicate_pfab2025.py) · [baseline result](results/replication_pfab2025.json) · [data understanding](notebooks/data_understanding.ipynb) |
-| **P3** · 24 Nov | feature progress; unit tests and CI; issues board | planned: threshold methods and retraining against the baseline · [issues](../../issues) |
+| **P3** · 24 Nov | feature progress; unit tests and CI; issues board | [P3 document](docs/p3.md) · [code](scripts/p3_pipeline.py) · [results](results/p3_results.json) · [tests](tests) · [issues](../../issues) |
 | **P4** · 8 Dec | feature progress; unit tests and CI; issues board | planned: full design of experiments, evaluation, simulation tool |
 | **P5** · 22 Dec | demo video, run instructions, packaging | planned |
 | **Final** · 12 Jan | final presentation and report | planned |
@@ -52,7 +52,13 @@ Supervised binary classifier (random forest, balanced random forest, as in [7]) 
 | Balanced random forest | 0.7 % / 1.5 % | 7.5 % / 7.5 % |
 | Random forest | 0.7 % / 1.9 % | 11.3 % / 9.1 % |
 
-## Test plan (P3)
+## P3: retraining and a new threshold
+
+![Missed true defects per period](docs/img/p3_periods.png)
+
+On the development data (production days 1–63; train on days 1–22, evaluate on days 23–63 in 5 periods), weekly retraining lowers the missed true defects of the method of [7] from 10.5 % to 2.2 %; the new threshold lowers them further at the cost of release. Details: [`docs/p3.md`](docs/p3.md). Days 64–101 are kept for the final test in P4.
+
+## Test plan
 
 Threshold method 3 × retraining schedule 6 × training window 2 × model 2 = 72 settings, each with 10 seeds. Details: [`docs/test_plan.md`](docs/test_plan.md).
 
@@ -62,7 +68,9 @@ Threshold method 3 × retraining schedule 6 × training window 2 × model 2 = 72
 pip install -r requirements.txt
 python scripts/download_data.py                 # Siemens data (CC BY-NC 3.0, not stored here)
 python scripts/replicate_pfab2025.py runs.csv   # runs.csv: run log of [7], src/fcr_case_study/notebooks/runs/runs.csv
-                                                # in gitlab.com/research9841542/FCR_1
+                                                # in gitlab.com/research9841542/FCR_1 (copy it to data/runs.csv)
+python scripts/p3_pipeline.py run               # P3 (see docs/p3.md)
+python -m pytest -q                             # unit tests
 ```
 
 Code: MIT licence.
