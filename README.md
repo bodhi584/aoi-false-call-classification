@@ -10,7 +10,7 @@ Yu Han · Meron Hagos · Alejandro Rivas
 |---|---|---|
 | **P1** · 20 Oct (revised 4 Nov) | proposal, tech stack, MVP | [one-page proposal](docs/proposal.pdf) ([Word](docs/proposal.docx)) · [slides](docs/slides_p1.pdf) |
 | **P2** · 3 Nov | core code + baseline simulation; test plan + report | [report](docs/literature_report.pdf) · [slides](docs/slides_p2.pdf) · [test plan](docs/test_plan.md) · [core code](scripts/replicate_pfab2025.py) · [baseline result](results/replication_pfab2025.json) · [data understanding](notebooks/data_understanding.ipynb) |
-| **P3** · 24 Nov | feature progress; unit tests and CI; issues board | [P3 document](docs/p3.md) · [code](scripts/p3_pipeline.py) · [results](results/p3_results.json) · [tests](tests) · [issues](../../issues) |
+| **P3** · 24 Nov | feature progress; unit tests and CI; issues board | [P3 document](docs/p3.md) · [run on Kaggle](https://kaggle.com/kernels/welcome?src=https://github.com/bodhi584/aoi-false-call-classification/blob/main/notebooks/p3_kaggle.ipynb) · [code](scripts/p3_pipeline.py) · [results](results/p3_results.json) · [tests](tests) · [issues](../../issues) |
 | **P4** · 8 Dec | feature progress; unit tests and CI; issues board | planned: full design of experiments, evaluation, simulation tool |
 | **P5** · 22 Dec | demo video, run instructions, packaging | planned |
 | **Final** · 12 Jan | final presentation and report | planned |
