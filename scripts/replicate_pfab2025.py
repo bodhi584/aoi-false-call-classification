@@ -54,10 +54,10 @@ SCALERS = [StandardScaler, MinMaxScaler]
 
 def load(path):
     """Rows in time order; one-hot categories; X, y as numpy arrays."""
-    df = pd.read_csv(path, index_col=0).drop(columns="timestamp")
-    enc = OneHotEncoder(sparse_output=False).fit(df[CATEGORICAL])
-    X = np.hstack([df.drop(columns=CATEGORICAL + ["class"]).values, enc.transform(df[CATEGORICAL])])
-    return X, df["class"].values
+    df = pd.read_csv(path, index_col=0).drop(columns="timestamp")                  # one row per flagged joint
+    enc = OneHotEncoder(sparse_output=False).fit(df[CATEGORICAL])                  # 5 category columns -> 0/1 columns
+    X = np.hstack([df.drop(columns=CATEGORICAL + ["class"]).values, enc.transform(df[CATEGORICAL])])  # 206 inputs
+    return X, df["class"].values                                                   # y: 1 = true defect, 0 = false call
 
 
 def split(X, y, seed):
@@ -88,24 +88,27 @@ def build(model, p, seed):
 
 def fit(model, p, seed, X, y):
     """Under-sample the false calls as in the paper, then train."""
+    # keep all true defects, draw false calls at random until true defects : false calls = 1 : sampling_ratio
     Xs, ys = RandomUnderSampler(sampling_strategy=1 / p["sampling_ratio"], random_state=seed).fit_resample(X, y)
+    # scaler + (balanced) random forest with the hyper-parameters of this seed; each BRF tree is again
+    # trained on all true defects of its bootstrap sample and an equal number of false calls [10]
     return build(model, p, seed).fit(Xs, ys)
 
 
 def threshold_at_recall(y, score):
     """Highest threshold with recall >= 99 % (same rule as the paper's get_proper_threshold)."""
-    pos = np.sort(score[y == 1])[::-1]
-    k = int(np.ceil(TARGET_RECALL * len(pos)))
-    return float(pos[k - 1])
+    pos = np.sort(score[y == 1])[::-1]                    # scores of the true defects, high to low
+    k = int(np.ceil(TARGET_RECALL * len(pos)))            # 99 % of them must stay at or above t
+    return float(pos[k - 1])                              # t = score of the k-th highest true defect
 
 
 def cv_threshold(model, p, seed, X, y):
     """The paper's threshold method: mean of the 5 fold thresholds."""
     ts = []
-    for tr, va in StratifiedKFold(5, shuffle=True, random_state=seed).split(X, y):
-        m = fit(model, p, seed, X[tr], y[tr])
-        ts.append(threshold_at_recall(y[va], m.predict_proba(X[va])[:, 1]))
-    return float(np.mean(ts))
+    for tr, va in StratifiedKFold(5, shuffle=True, random_state=seed).split(X, y):   # 5 folds, same defect share
+        m = fit(model, p, seed, X[tr], y[tr])                                      # train on 4 folds
+        ts.append(threshold_at_recall(y[va], m.predict_proba(X[va])[:, 1]))       # threshold on the 5th
+    return float(np.mean(ts))                                                      # mean of the 5 thresholds
 
 
 def scores(m, t, X, y):
