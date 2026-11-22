@@ -16,6 +16,7 @@ Charts:   target7       objective: target region of [7] and the 5 slices of [7]
           model_choice  design: three steps from the data fact to the random forest (diagram, no data)
           brf_principle design: how the balanced random forest samples and votes (diagram, no data)
           drift_evidence design: share of true defects and change of the inputs per week (results/p3_drift.json)
+          np_formula    design: the threshold rule of [14, Alg. 1] as a typeset formula
           np_threshold  design: threshold as a quantile of the true-defect scores (schematic, no data)
 """
 import json
@@ -333,7 +334,7 @@ def np_threshold():
     ax.text(0.80, 1.0, "true defects", ha="center", fontsize=15, color=NAVY)
     ax.annotate("released true defects:\nat most α, with probability ≥ 1 − δ", xy=(t - 0.02, 0.03), xytext=(0.47, 3.3), fontsize=14,
                 color=NAVY, ha="left", va="center", arrowprops={"arrowstyle": "-|>", "color": NAVY, "lw": 1.5})
-    ax.text(0.70, -0.66, "ticks: scores of left-out true defects; t is the r*-th lowest", ha="center", va="center", fontsize=12.5, color=NAVY)
+    ax.text(0.70, -0.66, "ticks: scores of left-out true defects; t is the k-th lowest", ha="center", va="center", fontsize=12.5, color=NAVY)
     ax.set_xlim(0, 1); ax.set_ylim(0, top)
     ax.set_yticks([]); ax.set_ylabel("Number of joints", fontsize=15)
     ax.set_xticks([0, 1]); ax.set_xticklabels(["0", "1"]); ax.tick_params(axis="x", pad=14)
@@ -344,7 +345,17 @@ def np_threshold():
     fig.savefig(OUT / "np_threshold.png", dpi=200); plt.close(fig)
 
 
+def np_formula():
+    """The threshold rule of [14, Alg. 1], typeset: the k-th lowest score of m left-out true defects."""
+    tex = (r"$t = s_{(k)}, \qquad k = \max\left\{\, r \;:\; \sum_{j=0}^{r-1} \binom{m}{j}\, \alpha^{j} (1-\alpha)^{m-j} \;\leq\; \delta \right\}$")
+    with plt.rc_context({"mathtext.fontset": "cm"}):
+        fig = plt.figure(figsize=(8.7, 1.15))
+        fig.text(0.5, 0.5, tex, ha="center", va="center", fontsize=23, color=NAVY)
+        OUT.mkdir(parents=True, exist_ok=True)
+        fig.savefig(OUT / "np_formula.png", dpi=200, transparent=True); plt.close(fig)
+
+
 if __name__ == "__main__":
-    for f in [target7, dev_days, dev_periods, dev_retrain, dev_q, raw_missed, gini, model_choice, brf_principle, drift_evidence, np_threshold]:
+    for f in [target7, dev_days, dev_periods, dev_retrain, dev_q, raw_missed, gini, model_choice, brf_principle, drift_evidence, np_threshold, np_formula]:
         f()
         print("docs/img/slides/" + f.__name__ + ".png")
