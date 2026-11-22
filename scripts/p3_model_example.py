@@ -10,7 +10,8 @@ The script reports, with real numbers:
     root       the Gini calculation of the first split of tree 1 (parent, two children, gain)
     forest     depth and leaves of all trees
     votes      tree votes and score s for three true defects and three false calls of period P1
-    threshold  the CV threshold of [7] for this model, and the q = 1 % threshold of feature 2
+    threshold  the CV threshold of [7] for this model (with its 5 fold thresholds), and the q = 1 % threshold
+               of feature 2
 """
 import json
 import sys
@@ -24,7 +25,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 sys.path.insert(0, str(Path(__file__).parent))
 from p3_pipeline import MODEL, TRAIN_DAYS, data, past_threshold, periods, seed_params  # noqa: E402
-from replicate_pfab2025 import CATEGORICAL, cv_threshold, fit  # noqa: E402
+from replicate_pfab2025 import CATEGORICAL, cv_threshold, fit, threshold_at_recall  # noqa: E402
 
 OUT = Path("results/p3_model_example.json")
 
@@ -92,6 +93,15 @@ def main():
     Xp = sc.transform(X[a:b]); yp = y[a:b]
     s = model.predict_proba(X[a:b])[:, 1]
     out["cv_threshold"] = cv_threshold(MODEL, p, seed, X[idx_fit], y[idx_fit])
+    # how [7] gets it: 5 folds of the fit set, ~36 true defects each; the 99 % recall threshold of a fold
+    # with fewer than 100 true defects is its lowest true-defect score; the CV threshold is their mean
+    folds = []
+    Xf, yf = X[idx_fit], y[idx_fit]
+    for tr, va in StratifiedKFold(5, shuffle=True, random_state=seed).split(Xf, yf):
+        sv = fit(MODEL, p, seed, Xf[tr], yf[tr]).predict_proba(Xf[va])[:, 1]
+        folds.append({"true_defects": int(yf[va].sum()), "threshold_99_recall": threshold_at_recall(yf[va], sv),
+                      "lowest_true_defect_score": float(sv[yf[va] == 1].min())})
+    out["cv_folds"] = folds
     t_cv = out["cv_threshold"]
     picks = [("true defect", np.flatnonzero(yp == 1)[0]),
              ("false call, released", np.flatnonzero((yp == 0) & (s < t_cv))[0]),

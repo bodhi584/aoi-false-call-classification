@@ -94,6 +94,33 @@
  ],
  "root_gain": 0.03458289407959214,
  "cv_threshold": 0.2148148148148148,
+ "cv_folds": [
+  {
+   "true_defects": 35,
+   "threshold_99_recall": 0.4722222222222222,
+   "lowest_true_defect_score": 0.4722222222222222
+  },
+  {
+   "true_defects": 36,
+   "threshold_99_recall": 0.027777777777777776,
+   "lowest_true_defect_score": 0.027777777777777776
+  },
+  {
+   "true_defects": 36,
+   "threshold_99_recall": 0.09259259259259259,
+   "lowest_true_defect_score": 0.09259259259259259
+  },
+  {
+   "true_defects": 36,
+   "threshold_99_recall": 0.25925925925925924,
+   "lowest_true_defect_score": 0.25925925925925924
+  },
+  {
+   "true_defects": 35,
+   "threshold_99_recall": 0.2222222222222222,
+   "lowest_true_defect_score": 0.2222222222222222
+  }
+ ],
  "votes_P1": [
   {
    "row": 65975,
