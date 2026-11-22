@@ -2,7 +2,8 @@
 
     python scripts/p3_feature_relevance.py  ->  results/p3_feature_relevance.json, docs/img/slides/corr_matrix.png, shap_share.png
 
-1 correlation  Pearson correlation matrix of the 70 measurements and the class, training rows (days 1-22)
+1 correlation  Pearson correlation matrix of the 70 measurements and the class: whole data set (all 440,274 rows; figure)
+               and training rows of days 1-22 (|r| next to the SHAP bars, same rows as the model)
 2 shap         SHAP values (TreeExplainer, Lundberg & Lee 2017) of the model of setting "once", seed 42,
                on the 20 % held-out rows of days 1-22; share of each input in the total mean |SHAP|
 """
@@ -51,8 +52,14 @@ def main():
     out["shap"]["filter_abs_r_ge_0.1_keeps"] = keep
     out["shap"]["filter_abs_r_ge_0.1_shap_share_kept"] = float(sum(share[names.index(n)] for n in keep))
     out["shap"]["top10_abs_r_below_0.1"] = int(sum(1 for i in order[:10] if names[i] in rc.index and rc[names[i]] < 0.1))
+    da = pd.read_csv("data/dataset.csv", index_col=0, usecols=lambda c: c == "Unnamed: 0" or c.startswith("inspection_feat") or c == "class")
+    da = da[num + ["class"]].loc[:, da[num + ["class"]].std() > 0]
+    CA = da.corr(method="pearson"); ra = CA["class"].drop("class").abs()
+    out["correlation_all_rows"] = {"rows": int(len(da)), "true_defects": int(da["class"].sum()), "measurements_with_variation": int(len(ra)),
+                                   "max_abs_r_with_class": float(ra.max()), "argmax": ra.idxmax(), "n_abs_r_with_class_below_0.1": int((ra < 0.1).sum()),
+                                   "abs_r_with_class": ra.round(4).to_dict()}
     OUT.write_text(json.dumps(out, indent=1))
-    figures(out, C)
+    figures(out, CA)
     print(json.dumps({k: v for k, v in out["correlation"].items() if k != "abs_r_with_class"}, indent=1))
     print({k: v for k, v in out["shap"].items() if k != "share"})
     print([(n.replace("inspection_", ""), round(s * 100, 1)) for n, s in list(out["shap"]["share"].items())[:15]])
