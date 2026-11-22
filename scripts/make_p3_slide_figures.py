@@ -352,7 +352,7 @@ def np_formula():
         fig = plt.figure(figsize=(8.7, 1.15))
         fig.text(0.5, 0.5, tex, ha="center", va="center", fontsize=23, color=NAVY)
         OUT.mkdir(parents=True, exist_ok=True)
-        fig.savefig(OUT / "np_formula.png", dpi=200, transparent=True); plt.close(fig)
+        fig.savefig(OUT / "np_formula.png", dpi=200, transparent=True, bbox_inches="tight", pad_inches=0.03); plt.close(fig)
 
 
 if __name__ == "__main__":
