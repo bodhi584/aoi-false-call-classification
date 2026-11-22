@@ -15,6 +15,7 @@ Charts:   target7       objective: target region of [7] and the 5 slices of [7]
           gini          system: Gini of the first split of tree 1
           model_choice  design: three steps from the data fact to the random forest (diagram, no data)
           brf_principle design: how the balanced random forest samples and votes (diagram, no data)
+          drift_evidence design: share of true defects and change of the inputs per week (results/p3_drift.json)
           np_threshold  design: threshold as a quantile of the true-defect scores (schematic, no data)
 """
 import json
@@ -272,6 +273,39 @@ def brf_principle():
     fig.savefig(OUT / "brf_principle.png", dpi=200); plt.close(fig)
 
 
+def drift_evidence():
+    """Data fact for the drift slide: p(y) and p(X) both change from week to week (whole data set)."""
+    d = json.load(open("results/p3_drift.json"))
+    w = np.array(d["weeks"]); share = np.array(d["share_pct"])
+    au = np.array([np.nan if a is None else a for a in d["auroc_vs_weeks_1_4"]], dtype=float)
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(9, 4.6), sharex=True, gridspec_kw={"height_ratios": [1.15, 1], "hspace": 0.32})
+    a1.bar(w, share, color=BLUE, width=0.72)
+    mean = 100 * sum(d["true_defects"]) / sum(d["rows"])
+    a1.axhline(mean, color=GREY, lw=1.2, ls=(0, (4, 3)))
+    a1.text(0.45, mean + 0.25, f"all weeks: {mean:.2f} %", fontsize=12, color=GREY, va="bottom")
+    for i in (int(share.argmin()), int(share.argmax())):
+        low = share[i] < mean
+        a1.text(w[i] + (0 if low else 0.36), mean + 0.2 if low else share[i] + 0.15, f"{share[i]:.2f} %",
+                ha="center" if low else "right", va="bottom", fontsize=12, color=NAVY)
+    a1.set_ylim(0, share.max() * 1.22); a1.set_yticks([0, 2, 4, 6])
+    a1.set_ylabel("True defects\n(% of joints)", fontsize=12.5)
+    a1.set_title("The class share changes: p(y)", fontsize=14, color=NAVY, loc="left", fontweight="bold")
+    a2.axvspan(0.5, 4.5, color=LGREY, alpha=0.35, lw=0)
+    a2.text(2.5, 0.75, "reference:\nweeks 1–4", ha="center", va="center", fontsize=12, color=GREY, linespacing=1.15)
+    a2.axhline(0.5, color=GREY, lw=1.2, ls=(0, (4, 3)))
+    a2.text(19.45, 0.53, "0.5 = no change", ha="right", va="bottom", fontsize=12, color=GREY)
+    a2.plot(w, au, color=BLUE, lw=2, marker="o", ms=6)
+    a2.set_ylim(0.4, 1.06); a2.set_yticks([0.5, 0.75, 1.0])
+    a2.set_ylabel("AUROC, week\nvs. weeks 1–4", fontsize=12.5)
+    a2.set_title("The inputs change: p(X)", fontsize=14, color=NAVY, loc="left", fontweight="bold")
+    a2.set_xticks(w); a2.set_xlim(0.4, 19.6); a2.set_xlabel("Production week", fontsize=12.5)
+    for a in (a1, a2):
+        a.tick_params(labelsize=12)
+    fig.subplots_adjust(left=0.115, right=0.985, top=0.93, bottom=0.13)
+    OUT.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT / "drift_evidence.png", dpi=200); plt.close(fig)
+
+
 def np_threshold():
     """Schematic, no data: the threshold t is the q-quantile of the scores of the true defects."""
     from scipy.stats import beta
@@ -302,6 +336,6 @@ def np_threshold():
 
 
 if __name__ == "__main__":
-    for f in [target7, dev_days, dev_periods, dev_retrain, dev_q, raw_missed, gini, model_choice, brf_principle, np_threshold]:
+    for f in [target7, dev_days, dev_periods, dev_retrain, dev_q, raw_missed, gini, model_choice, brf_principle, drift_evidence, np_threshold]:
         f()
         print("docs/img/slides/" + f.__name__ + ".png")
