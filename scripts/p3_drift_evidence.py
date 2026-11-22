@@ -4,6 +4,7 @@
 
 Per week (7 calendar days from the first day):
   share_pct            true defects in % of the flagged joints            -> does p(y) change?
+  inspection_type_share_pct  share of the rows of each inspection type           -> does p(X) change? (simple view)
   auroc_vs_weeks_1_4   AUROC of a random forest that separates the rows of the week from the rows of
                        weeks 1-4, from the inputs only (no class); 0.5 = same distribution  -> does p(X) change?
 Concept drift is a change of p(X, y) over time [12, Sect. 2.1, Eq. 2].
@@ -31,6 +32,8 @@ for w in range(1, week.max() + 1):
     out["weeks"].append(w); out["rows"].append(int(len(i))); out["true_defects"].append(int(y[i].sum())); out["share_pct"].append(round(100 * y[i].mean(), 3))
     out["auroc_vs_weeks_1_4"].append(None if w <= 4 else round(auc(ref, i), 3))
 out["auroc_weeks_1_4_random_halves"] = round(base, 3)
-out["note"] = "week = 7 calendar days from the first day; AUROC of a random forest (200 trees, 3-fold CV, up to 6,000 rows per side, inputs only, no class) that separates the rows of a week from the rows of weeks 1-4; 0.5 = same input distribution"
+t = (100 * pd.crosstab(week, df["inspection_type"].to_numpy(), normalize="index")).round(1)
+out["inspection_type_share_pct"] = {str(c): [float(v) for v in t[c]] for c in t.columns}
+out["note"] = "week = 7 calendar days from the first day; AUROC of a random forest (200 trees, 3-fold CV, up to 6,000 rows per side, inputs only, no class) that separates the rows of a week from the rows of weeks 1-4; 0.5 = same input distribution; inspection_type_share_pct: share of the rows of each inspection type per week"
 json.dump(out, open("results/p3_drift.json", "w"), indent=1)
 print(json.dumps(out))

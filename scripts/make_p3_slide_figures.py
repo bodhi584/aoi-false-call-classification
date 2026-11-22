@@ -274,10 +274,12 @@ def brf_principle():
 
 
 def drift_evidence():
-    """Data fact for the drift slide: p(y) and p(X) both change from week to week (whole data set)."""
+    """Data fact for the drift slide: p(y) and p(X) both change from week to week (whole data set).
+
+    Top: share of true defects. Bottom: share of the joints of inspection types 2 and 3.
+    """
     d = json.load(open("results/p3_drift.json"))
     w = np.array(d["weeks"]); share = np.array(d["share_pct"])
-    au = np.array([np.nan if a is None else a for a in d["auroc_vs_weeks_1_4"]], dtype=float)
     fig, (a1, a2) = plt.subplots(2, 1, figsize=(9, 4.6), sharex=True, gridspec_kw={"height_ratios": [1.15, 1], "hspace": 0.32})
     a1.bar(w, share, color=BLUE, width=0.72)
     mean = 100 * sum(d["true_defects"]) / sum(d["rows"])
@@ -290,13 +292,14 @@ def drift_evidence():
     a1.set_ylim(0, share.max() * 1.22); a1.set_yticks([0, 2, 4, 6])
     a1.set_ylabel("True defects\n(% of joints)", fontsize=12.5)
     a1.set_title("The class share changes: p(y)", fontsize=14, color=NAVY, loc="left", fontweight="bold")
-    a2.axvspan(0.5, 4.5, color=LGREY, alpha=0.35, lw=0)
-    a2.text(2.5, 0.75, "reference:\nweeks 1–4", ha="center", va="center", fontsize=12, color=GREY, linespacing=1.15)
-    a2.axhline(0.5, color=GREY, lw=1.2, ls=(0, (4, 3)))
-    a2.text(19.45, 0.53, "0.5 = no change", ha="right", va="bottom", fontsize=12, color=GREY)
-    a2.plot(w, au, color=BLUE, lw=2, marker="o", ms=6)
-    a2.set_ylim(0.4, 1.06); a2.set_yticks([0.5, 0.75, 1.0])
-    a2.set_ylabel("AUROC, week\nvs. weeks 1–4", fontsize=12.5)
+    ORANGE = "#C96A12"
+    for k, col, dy in (("2", BLUE, 6), ("3", ORANGE, 6)):
+        v = np.array(d["inspection_type_share_pct"][k])
+        a2.plot(w, v, color=col, lw=2, marker="o", ms=5.5)
+        i = int(v.argmax())
+        a2.text(w[i], v[i] + dy, f"inspection type {k}", ha="center", va="bottom", fontsize=12, color=NAVY)
+    a2.set_ylim(0, 92); a2.set_yticks([0, 25, 50, 75])
+    a2.set_ylabel("Share of the\njoints (%)", fontsize=12.5)
     a2.set_title("The inputs change: p(X)", fontsize=14, color=NAVY, loc="left", fontweight="bold")
     a2.set_xticks(w); a2.set_xlim(0.4, 19.6); a2.set_xlabel("Production week", fontsize=12.5)
     for a in (a1, a2):
