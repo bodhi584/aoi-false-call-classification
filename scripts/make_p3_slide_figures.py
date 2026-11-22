@@ -199,27 +199,28 @@ def gini():
 def model_choice():
     """Diagram, no data: the three choices that lead from the data fact to the random forest."""
     from matplotlib.patches import FancyBboxPatch
-    fig, ax = plt.subplots(figsize=(9, 4.9))
-    ax.set_xlim(-0.25, 9.15); ax.set_ylim(-0.05, 5.0); ax.axis("off")
-    rows = [(4.05, "1  Linear or non-linear?", [("linear model", "no single measurement is\nlinearly related: |r| ≤ 0.18", 0), ("non-linear model", "", 1)]),
-            (2.45, "2  Which non-linear model?", [("neural network", "not robust to\nuninformative features [8]", 0), ("tree-based model", "", 1)]),
-            (0.85, "3  Which tree-based model?", [("single tree", "unstable,\noverfits [L5]", 0), ("boosting", "less robust to\nlabel noise [10]", 0), ("random forest", "", 1)])]
-    w, h, xr = 2.05, 0.56, 6.75
-    for y, q, opts in rows:
-        ax.text(0.05, y + 0.62, q, fontsize=15, color=NAVY, fontweight="bold", va="center")
-        xs = [xr - (len(opts) - 1 - i) * (w + 0.25) for i in range(len(opts))]
-        for x, (name, why, ok) in zip(xs, opts):
+    fig, ax = plt.subplots(figsize=(9, 4.6))
+    ax.set_xlim(0, 9); ax.set_ylim(0, 4.6); ax.axis("off")
+    rows = [(3.95, "1", "Linear or\nnon-linear?", [None, ("linear model", "no single measurement is\nlinearly related: |r| ≤ 0.18", 0), ("non-linear model", "", 1)]),
+            (2.45, "2", "Which non-linear\nmodel?", [None, ("neural network", "not robust to\nuninformative features [8]", 0), ("tree-based model", "", 1)]),
+            (0.95, "3", "Which tree-based\nmodel?", [("single tree", "unstable,\noverfits [L5]", 0), ("boosting", "less robust to\nlabel noise [10]", 0), ("random forest", "", 1)])]
+    w, h, xs = 2.05, 0.62, [2.35, 4.6, 6.85]
+    for y, n, q, opts in rows:
+        ax.text(0.05, y, n, fontsize=22, color=BLUE, fontweight="bold", va="center")
+        ax.text(0.42, y, q, fontsize=15.5, color=NAVY, fontweight="bold", va="center", linespacing=1.15)
+        for x, o in zip(xs, opts):
+            if o is None:
+                continue
+            name, why, ok = o
             ax.add_patch(FancyBboxPatch((x, y - h / 2), w, h, boxstyle="round,pad=0.02,rounding_size=0.12", lw=1.8,
                                         fc=BLUE if ok else BG, ec=BLUE if ok else LGREY))
-            ax.text(x + w / 2, y, name, ha="center", va="center", fontsize=15, color="white" if ok else GREY,
+            ax.text(x + w / 2, y, name, ha="center", va="center", fontsize=16, color="white" if ok else GREY,
                     fontweight="bold" if ok else "normal")
             if not ok:
-                d = 0.062 * len(name) + 0.05
-                ax.plot([x + w / 2 - d, x + w / 2 + d], [y - 0.01, y - 0.01], color=GREY, lw=1.2)
-                ax.text(x + w / 2, y - h / 2 - 0.10, why, ha="center", va="top", fontsize=12, color=GREY, linespacing=1.15)
+                ax.text(x + w / 2, y - h / 2 - 0.10, why, ha="center", va="top", fontsize=12.5, color=GREY, linespacing=1.15)
         if y > 1:
-            ax.annotate("", xy=(xr + w / 2, y - 1.6 + 1.0), xytext=(xr + w / 2, y - h / 2 - 0.06),
-                        arrowprops={"arrowstyle": "-|>", "color": BLUE, "lw": 2})
+            ax.annotate("", xy=(xs[2] + w / 2, y - 1.5 + h / 2 + 0.08), xytext=(xs[2] + w / 2, y - h / 2 - 0.08),
+                        arrowprops={"arrowstyle": "-|>", "color": BLUE, "lw": 2.2, "mutation_scale": 18})
     fig.subplots_adjust(0, 0, 1, 1)
     OUT.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT / "model_choice.png", dpi=200); plt.close(fig)
