@@ -13,6 +13,7 @@ Charts:   target7       objective: target region of [7] and the 5 slices of [7]
           dev_q         output: threshold q vs. the CV threshold of [7]
           raw_missed    output: every run, missed per seed and period
           gini          system: Gini of the first split of tree 1
+          np_threshold  design: threshold as a quantile of the true-defect scores (schematic, no data)
 """
 import json
 from pathlib import Path
@@ -194,7 +195,36 @@ def gini():
     save(fig, "gini.png")
 
 
+def np_threshold():
+    """Schematic, no data: the threshold t is the q-quantile of the scores of the true defects."""
+    from scipy.stats import beta
+    q = 0.01
+    td, fc = beta(6, 2.2), beta(1.6, 6)                      # illustrative shapes only
+    t = td.ppf(q)
+    x = np.linspace(0, 1, 600)
+    fig, ax = plt.subplots(figsize=(9, 4.2))
+    ax.fill_between(x, fc.pdf(x), where=x <= t, color=BLUE, alpha=0.22, lw=0)
+    ax.fill_between(x, td.pdf(x), where=x <= t, color=RED, alpha=0.85, lw=0)
+    ax.plot(x, fc.pdf(x), color=BLUE, lw=2.5)
+    ax.plot(x, td.pdf(x), color=RED, lw=2.5)
+    top = 5.0
+    ax.plot([t, t], [0, top * 0.88], color=NAVY, lw=2, ls=(0, (5, 3)))
+    ax.text(t, top * 0.90, "threshold t", ha="center", va="bottom", fontsize=16, color=NAVY, fontweight="bold")
+    ax.text(t - 0.02, top * 0.78, "s(x) < t: release", ha="right", fontsize=14, color=GREY)
+    ax.text(t + 0.02, top * 0.78, "s(x) ≥ t: operator checks", ha="left", fontsize=14, color=GREY)
+    ax.text(0.045, 1.0, "false calls", ha="left", fontsize=15, color=NAVY)
+    ax.text(0.80, 1.0, "true defects", ha="center", fontsize=15, color=NAVY)
+    ax.annotate("share q of the true defects\nis released (missed)", xy=(t - 0.03, 0.04), xytext=(0.38, 2.75), fontsize=14, color=NAVY,
+                ha="left", va="center", arrowprops={"arrowstyle": "-|>", "color": NAVY, "lw": 1.5})
+    ax.set_xlim(0, 1); ax.set_ylim(0, top)
+    ax.set_yticks([]); ax.set_ylabel("Number of joints", fontsize=15)
+    ax.set_xticks([0, 0.5, 1]); ax.set_xticklabels(["0", "0.5", "1"])
+    ax.set_xlabel("Score s(x) = share of trees voting “true defect”", fontsize=15)
+    ax.text(1.0, top, "Schematic, not data", ha="right", va="top", fontsize=13, color=GREY, style="italic")
+    save(fig, "np_threshold.png")
+
+
 if __name__ == "__main__":
-    for f in [target7, dev_days, dev_periods, dev_retrain, dev_q, raw_missed, gini]:
+    for f in [target7, dev_days, dev_periods, dev_retrain, dev_q, raw_missed, gini, np_threshold]:
         f()
         print("docs/img/slides/" + f.__name__ + ".png")
