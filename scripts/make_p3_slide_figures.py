@@ -14,6 +14,7 @@ Charts:   target7       objective: target region of [7] and the 5 slices of [7]
           raw_missed    output: every run, missed per seed and period
           gini          system: Gini of the first split of tree 1
           model_choice  design: three steps from the data fact to the random forest (diagram, no data)
+          brf_principle design: how the balanced random forest samples and votes (diagram, no data)
           np_threshold  design: threshold as a quantile of the true-defect scores (schematic, no data)
 """
 import json
@@ -226,6 +227,51 @@ def model_choice():
     fig.savefig(OUT / "model_choice.png", dpi=200); plt.close(fig)
 
 
+def brf_principle():
+    """Diagram, no data: balanced samples per tree and the vote of the forest [10, Sect. 2.2]."""
+    from matplotlib.patches import Circle, FancyBboxPatch
+    fig, ax = plt.subplots(figsize=(9, 4.6))
+    ax.set_xlim(0, 9); ax.set_ylim(0, 4.6); ax.axis("off")
+    arrow = {"arrowstyle": "-|>", "color": GREY, "lw": 1.6, "mutation_scale": 14}
+    # 1 training data: a long bar of false calls, a thin slice of true defects
+    ax.text(0.95, 4.32, "Training data", ha="center", fontsize=15, color=NAVY, fontweight="bold")
+    ax.add_patch(Rectangle((0.45, 0.35), 1.0, 3.1, fc=BLUE, ec="none"))
+    ax.add_patch(Rectangle((0.45, 3.49), 1.0, 0.14, fc=RED, ec="none"))
+    ax.text(0.95, 1.9, "false calls: about 99 %", ha="center", va="center", fontsize=13.5, color="white", rotation=90)
+    ax.text(0.95, 3.86, "true defects: about 1 %", ha="center", va="center", fontsize=12, color=NAVY)
+    # 2 one balanced sample per tree
+    ax.text(3.55, 4.32, "One sample per tree", ha="center", fontsize=15, color=NAVY, fontweight="bold")
+    ys = [3.45, 2.45, 0.95]; names = ["1", "2", "T"]
+    for y, n in zip(ys, names):
+        ax.add_patch(Rectangle((2.75, y - 0.2), 0.8, 0.4, fc=RED, ec="none"))
+        ax.add_patch(Rectangle((3.57, y - 0.2), 0.8, 0.4, fc=BLUE, ec="none"))
+        ax.text(3.15, y, "n", ha="center", va="center", fontsize=14, color="white", fontweight="bold")
+        ax.text(3.97, y, "n", ha="center", va="center", fontsize=14, color="white", fontweight="bold")
+        ax.annotate("", xy=(2.68, y), xytext=(1.55, 2.3 + (y - 2.3) * 0.35), arrowprops=arrow)
+        # 3 the tree grown on this sample
+        x0 = 5.55
+        for dx, dy in [(-0.32, -0.3), (0.32, -0.3)]:
+            ax.plot([x0, x0 + dx], [y + 0.18, y + 0.18 + dy], color=GREY, lw=1.6, zorder=1)
+            ax.add_patch(Circle((x0 + dx, y + 0.18 + dy), 0.09, fc=BG, ec=GREY, lw=1.6, zorder=2))
+        ax.add_patch(Circle((x0, y + 0.18), 0.09, fc=BG, ec=GREY, lw=1.6, zorder=2))
+        ax.text(x0, y - 0.38, f"tree {n}", ha="center", va="center", fontsize=12.5, color=GREY)
+        ax.annotate("", xy=(5.05, y), xytext=(4.45, y), arrowprops=arrow)
+        ax.annotate("", xy=(6.95, 2.3 + (y - 2.3) * 0.25), xytext=(6.1, y), arrowprops=arrow)
+    ax.plot([3.55] * 3, [1.55, 1.72, 1.89], ls="none", marker="o", ms=3.5, color=GREY)
+    ax.plot([5.55] * 3, [1.55, 1.72, 1.89], ls="none", marker="o", ms=3.5, color=GREY)
+    ax.text(3.55, 0.30, "n true defects (bootstrap)\n+ n false calls (random draw)", ha="center", va="center", fontsize=12.5,
+            color=NAVY, linespacing=1.15)
+    ax.text(5.55, 4.32, "T trees", ha="center", fontsize=15, color=NAVY, fontweight="bold")
+    # 4 the vote
+    ax.text(7.95, 4.32, "Vote", ha="center", fontsize=15, color=NAVY, fontweight="bold")
+    ax.add_patch(FancyBboxPatch((7.05, 1.55), 1.8, 1.5, boxstyle="round,pad=0.02,rounding_size=0.12", lw=1.8, fc=BLUE, ec=BLUE))
+    ax.text(7.95, 2.3, "score s(x) =\nshare of trees\nvoting\n“true defect”", ha="center", va="center", fontsize=13.5, color="white",
+            fontweight="bold", linespacing=1.2)
+    fig.subplots_adjust(0, 0, 1, 1)
+    OUT.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT / "brf_principle.png", dpi=200); plt.close(fig)
+
+
 def np_threshold():
     """Schematic, no data: the threshold t is the q-quantile of the scores of the true defects."""
     from scipy.stats import beta
@@ -256,6 +302,6 @@ def np_threshold():
 
 
 if __name__ == "__main__":
-    for f in [target7, dev_days, dev_periods, dev_retrain, dev_q, raw_missed, gini, model_choice, np_threshold]:
+    for f in [target7, dev_days, dev_periods, dev_retrain, dev_q, raw_missed, gini, model_choice, brf_principle, np_threshold]:
         f()
         print("docs/img/slides/" + f.__name__ + ".png")
