@@ -1,12 +1,12 @@
-"""P3: the method of [7] and our two features, on the development data (production days 1-63) only.
+"""P3: the method of [7] and our two features, on the development data (production days 1-64) only.
 
     python scripts/p3_pipeline.py run      all settings x 10 seeds -> results/p3_results.json (resumable)
     python scripts/p3_pipeline.py report   table results/p3_summary.md and figures docs/img/p3_*.png
     python scripts/p3_pipeline.py check    re-run seed 1 of three settings and compare with the stored results
 
-Data:     first half of data/dataset.csv = days 1-63 (220,137 rows), the half [7] uses for development.
-          The later half (days 64-101) is cut off in dev_split() and kept for the final test in P4.
-Split:    train on days 1-22, evaluate on days 23-63 in 5 periods of equal size, in time order.
+Data:     first half of data/dataset.csv = days 1-64 (220,137 rows), the half [7] uses for development.
+          The later half (rest of day 64 to day 101) is cut off in dev_split() and kept for the final test in P4.
+Split:    train on days 1-22, evaluate on days 23-64 in 5 periods of equal size, in time order.
 Settings: once      method of [7]: train once, cross-validation (CV) threshold at 99 % recall
           period, weekly, 3days, daily   feature 1: retrain on all rows known so far, CV threshold each time
           q0 ... q2 feature 2: retrain weekly, threshold = q-quantile of past true-defect scores
@@ -35,7 +35,7 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from replicate_pfab2025 import cv_threshold, fit, load
 
 MODEL = "BRFC"        # balanced random forest, as in [7]
-TRAIN_DAYS = 22       # training part: production days 1-22; evaluation part: days 23-63
+TRAIN_DAYS = 22       # training part: production days 1-22; evaluation part: days 23-64
 SEEDS = 10            # the 10 runs [7] logged, each with its own seed and hyper-parameters
 RESULTS = Path("results/p3_results.json")
 # setting -> (retraining interval: None = never, "period" = before each period, or calendar days; q or None)
@@ -58,10 +58,10 @@ def production_day(days):
 
 
 def dev_split(X, y, days, train_days):
-    """Keep only the first half of the rows (days 1-63) and find the first row after production day
+    """Keep only the first half of the rows (days 1-64) and find the first row after production day
     `train_days`. Rows of the later half are cut off here, so no later step can use them (test V1)."""
     half = int(len(y) * 0.5)                               # first half by rows, as in [7]
-    X, y, days = X[:half], y[:half], days[:half]           # days 64-101 are dropped
+    X, y, days = X[:half], y[:half], days[:half]           # rest of day 64 to day 101 dropped
     h = int(np.searchsorted(production_day(days), train_days + 1))   # first row of day 23
     return X, y, days, h
 
@@ -96,7 +96,7 @@ def run(p, seed, X, y, days, h, setting):
     """One run: returns, for each of the 5 evaluation periods, the share of missed true defects and of
     released false calls. p = hyper-parameters [7] logged for this seed (one row of data/runs.csv)."""
     step, q = SETTINGS[setting]                            # retraining interval and q of this setting
-    n = len(y)                                             # rows of days 1-63 (the later half is already cut off)
+    n = len(y)                                             # rows of days 1-64 (the later half is already cut off)
     score = np.zeros(n)                                    # model score of every evaluation row
     thr = np.zeros(n)                                      # threshold in force for every evaluation row
 
@@ -144,9 +144,9 @@ def run(p, seed, X, y, days, h, setting):
 
 
 def data():
-    """Days 1-63 only, and the first row of the evaluation part (day 23)."""
+    """Days 1-64 only, and the first row of the evaluation part (day 23)."""
     X, y = load("data/dataset.csv")                        # all 440,274 rows in time order
-    return dev_split(X, y, load_days(), TRAIN_DAYS)        # cut off days 64-101; h = first row of day 23
+    return dev_split(X, y, load_days(), TRAIN_DAYS)        # cut off the later half; h = first row of day 23
 
 
 def seed_params():
@@ -198,7 +198,7 @@ def report():
         m, r = tb
         lines.append(f"| {NAMES[s]} | {len(m)} | {m.mean():.2f} % | {m.mean(0).max():.2f} % | {r.mean():.1f} % | "
                      f"{int((m.max(1) <= 1).sum())} / {len(m)} |")
-    text = ("# P3 results on the development data\n\nDays 1-63 only: train on days 1-22, evaluate on days 23-63 in "
+    text = ("# P3 results on the development data\n\nDays 1-64 only: train on days 1-22, evaluate on days 23-64 in "
             "5 periods (time order). Missed = released true defects / all true defects; released = released false "
             "calls / all false calls; mean over the 5 periods and the seeds; worst period = highest period mean. "
             "Made by `python scripts/p3_pipeline.py report` from `results/p3_results.json`.\n\n" + "\n".join(lines) + "\n")
@@ -215,7 +215,7 @@ def figures(res):
     plt.rcParams.update({"font.size": 13, "axes.spines.top": False, "axes.spines.right": False})
     out = Path("docs/img")
 
-    # 1 true defects per production day, days 1-63
+    # 1 true defects per production day, days 1-64
     d = pd.read_csv("data/dataset.csv", usecols=["class"])
     half = len(d) // 2
     g = pd.Series(d["class"].values[:half]).groupby(production_day(load_days()[:half])).sum()
@@ -223,7 +223,7 @@ def figures(res):
     ax.bar(g.index, g.values, color=[LGREY if x <= TRAIN_DAYS else BLUE for x in g.index])
     ax.axvline(TRAIN_DAYS + 0.5, color=GREY, ls="--")
     ax.set_xlabel("Production day"); ax.set_ylabel("True defects per day")
-    ax.set_title("Training days 1-22 (grey), evaluation days 23-63 (blue)", fontsize=12)
+    ax.set_title("Training days 1-22 (grey), evaluation days 23-64 (blue)", fontsize=12)
     fig.tight_layout(); fig.savefig(out / "p3_days.png", dpi=150); plt.close(fig)
 
     # 2 missed per period
@@ -232,7 +232,7 @@ def figures(res):
                         ("+ threshold q = 0", "q0", GREEN)]:
         ax.plot(range(1, 6), table(s, res)[0].mean(0), marker="o", color=c, lw=2.5, label=label)
     ax.axhline(1, color=RED, ls="--"); ax.set_xticks(range(1, 6), [f"P{i}" for i in range(1, 6)])
-    ax.set_ylabel("Missed true defects (%)"); ax.set_xlabel("Evaluation period (days 23-63), mean of the seeds")
+    ax.set_ylabel("Missed true defects (%)"); ax.set_xlabel("Evaluation period (days 23-64), mean of the seeds")
     ax.legend(frameon=False); fig.tight_layout(); fig.savefig(out / "p3_periods.png", dpi=150); plt.close(fig)
 
     # 3 retraining intervals

@@ -1,4 +1,4 @@
-"""P3 (scripts/p3_pipeline.py): only days 1-63, split in time order, retraining on earlier rows, new threshold."""
+"""P3 (scripts/p3_pipeline.py): only days 1-64, split in time order, retraining on earlier rows, new threshold."""
 import numpy as np
 
 from p3_pipeline import SETTINGS, dev_split, past_threshold, periods, production_day, retrain_starts

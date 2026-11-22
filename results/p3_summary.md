@@ -1,6 +1,6 @@
 # P3 results on the development data
 
-Days 1-63 only: train on days 1-22, evaluate on days 23-63 in 5 periods (time order). Missed = released true defects / all true defects; released = released false calls / all false calls; mean over the 5 periods and the seeds; worst period = highest period mean. Made by `python scripts/p3_pipeline.py report` from `results/p3_results.json`.
+Days 1-64 only: train on days 1-22, evaluate on days 23-64 in 5 periods (time order). Missed = released true defects / all true defects; released = released false calls / all false calls; mean over the 5 periods and the seeds; worst period = highest period mean. Made by `python scripts/p3_pipeline.py report` from `results/p3_results.json`.
 
 | Setting (BRF) | Seeds | Missed, mean | Missed, worst period | Released | Seeds with every period ≤ 1 % |
 |---|---|---|---|---|---|

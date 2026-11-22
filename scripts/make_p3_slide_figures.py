@@ -7,7 +7,7 @@ Inputs:   results/p3_results.json        all settings x 10 seeds x 5 periods (fr
           data/dataset.csv               true defects per production day
           Table IV of [7]                slip and volume reduction of the BRF of [7] (numbers typed in below)
 Charts:   target7       objective: target region of [7] and the 5 slices of [7]
-          dev_days      input: true defects per production day, days 1-63
+          dev_days      input: true defects per production day, days 1-64
           dev_periods   output: missed per period, [7] vs. + feature 1 vs. + feature 2
           dev_retrain   output: retraining schedules
           dev_q         output: threshold q vs. the CV threshold of [7]
@@ -69,14 +69,14 @@ def dev_days():
     d = pd.read_csv("data/dataset.csv", usecols=["timestamp", "class"])
     day = pd.to_datetime(d.timestamp).dt.date
     di = day.map({x: i + 1 for i, x in enumerate(sorted(day.unique()))}).values   # production day 1, 2, ...
-    h = len(d) // 2                                                                 # days 1-63
+    h = len(d) // 2                                                                 # days 1-64
     g = pd.DataFrame({"d": di[:h], "y": d["class"].values[:h]}).groupby("d").y.agg(["sum", "count"])
     fig, ax = plt.subplots(figsize=(11.5, 5.0))
     col = [RED if v >= 200 else (LGREY if x <= 22 else BLUE) for x, v in zip(g.index, g["sum"])]
     ax.bar(g.index, g["sum"], color=col, width=0.8)
     ax.axvline(22.5, color=GREY, ls="--", lw=1.5)
     ax.text(11, 290, "Train\ndays 1–22", ha="center", color=GREY, fontsize=16)
-    ax.text(50, 290, "Evaluation slices, days 23–63\n5 slices in time order", ha="center", color=BLUE, fontsize=16)
+    ax.text(50, 290, "Evaluation slices, days 23–64\n5 slices in time order", ha="center", color=BLUE, fontsize=16)
     for x in g.index[g["sum"] >= 200]:
         ax.text(x + {24: -0.3, 29: -1.6, 31: 1.8}[x], g["sum"][x] + 6, f"day {x}: {g['sum'][x]}",
                 ha={24: "center", 29: "right", 31: "left"}[x], color=RED, fontsize=13)
@@ -98,7 +98,7 @@ def dev_periods():
     ax.axhline(1, color=RED, ls="--", lw=2); ax.text(6.6, 0.8, "1 % limit", color=RED, fontsize=15, va="top")
     ax.set_xticks(p, [f"P{i}" for i in p]); ax.set_xlim(0.8, 7.6); ax.set_ylim(-1.8, 19)
     ax.set_yticks([0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5]); ax.axhline(0, color=GREY, lw=0.8)
-    ax.set_ylabel("Missed true defects (%)"); ax.set_xlabel("Evaluation period (days 23–63, time order), mean of 10 seeds")
+    ax.set_ylabel("Missed true defects (%)"); ax.set_xlabel("Evaluation period (days 23–64, time order), mean of 10 seeds")
     save(fig, "dev_periods.png")
 
 

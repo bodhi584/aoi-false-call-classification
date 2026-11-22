@@ -56,7 +56,7 @@ Supervised binary classifier (random forest, balanced random forest, as in [7]) 
 
 ![Missed true defects per period](docs/img/p3_periods.png)
 
-On the development data (production days 1–63; train on days 1–22, evaluate on days 23–63 in 5 periods), weekly retraining lowers the missed true defects of the method of [7] from 10.7 % to 2.1 %; the new threshold lowers them further at the cost of release. Details: [`docs/p3.md`](docs/p3.md). Days 64–101 are kept for the final test in P4.
+On the development data (production days 1–64; train on days 1–22, evaluate on days 23–64 in 5 periods), weekly retraining lowers the missed true defects of the method of [7] from 10.7 % to 2.1 %; the new threshold lowers them further at the cost of release. Details: [`docs/p3.md`](docs/p3.md). Days 64–101 are kept for the final test in P4.
 
 ## Test plan
 
