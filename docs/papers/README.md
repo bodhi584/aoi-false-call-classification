@@ -26,3 +26,5 @@ Numbers are the reference numbers of `docs/literature_report.pdf` (18 sources); 
 | 20 | Chow 1970, IEEE Trans. Information Theory | [https://doi.org/10.1109/TIT.1970.1054406](https://doi.org/10.1109/TIT.1970.1054406) |
 | 21 | Breiman 2001, Machine Learning (same as 9) | [21_breiman_2001_authorcopy.pdf](21_breiman_2001_authorcopy.pdf) · [https://doi.org/10.1023/A:1010933404324](https://doi.org/10.1023/A:1010933404324) |
 | 22 | Laney 2002, Quality Engineering | [https://doi.org/10.1081/QEN-120003555](https://doi.org/10.1081/QEN-120003555) |
+| 23 | Guyon & Elisseeff 2003, Journal of Machine Learning Research 3, 1157–1182 | [https://www.jmlr.org/papers/v3/guyon03a.html](https://www.jmlr.org/papers/v3/guyon03a.html) |
+| 24 | Lundberg & Lee 2017, NeurIPS 30 (SHAP) | [https://arxiv.org/abs/1705.07874](https://arxiv.org/abs/1705.07874) |
