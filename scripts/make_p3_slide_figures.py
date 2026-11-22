@@ -310,11 +310,12 @@ def drift_evidence():
 
 
 def np_threshold():
-    """Schematic, no data: the threshold t is the q-quantile of the scores of the true defects."""
+    """Schematic, no data: the threshold t is an order statistic of the scores of left-out true defects [14, Alg. 1]."""
     from scipy.stats import beta
-    q = 0.01
     td, fc = beta(6, 2.2), beta(1.6, 6)                      # illustrative shapes only
-    t = td.ppf(q)
+    rng = np.random.default_rng(3)
+    left_out = np.sort(td.rvs(60, random_state=rng))         # scores of left-out true defects (illustration)
+    t = left_out[0]
     x = np.linspace(0, 1, 600)
     fig, ax = plt.subplots(figsize=(9, 4.2))
     ax.fill_between(x, fc.pdf(x), where=x <= t, color=BLUE, alpha=0.22, lw=0)
@@ -322,20 +323,25 @@ def np_threshold():
     ax.plot(x, fc.pdf(x), color=BLUE, lw=2.5)
     ax.plot(x, td.pdf(x), color=RED, lw=2.5)
     top = 5.0
+    ax.plot(left_out, np.full(60, -0.22), ls="none", marker="|", ms=11, mew=1.4, color=RED, clip_on=False)
+    ax.plot([t], [-0.22], ls="none", marker="|", ms=17, mew=3, color=NAVY, clip_on=False)
     ax.plot([t, t], [0, top * 0.88], color=NAVY, lw=2, ls=(0, (5, 3)))
     ax.text(t, top * 0.90, "threshold t", ha="center", va="bottom", fontsize=16, color=NAVY, fontweight="bold")
     ax.text(t - 0.02, top * 0.78, "s(x) < t: release", ha="right", fontsize=14, color=GREY)
     ax.text(t + 0.02, top * 0.78, "s(x) ≥ t: operator checks", ha="left", fontsize=14, color=GREY)
     ax.text(0.045, 1.0, "false calls", ha="left", fontsize=15, color=NAVY)
     ax.text(0.80, 1.0, "true defects", ha="center", fontsize=15, color=NAVY)
-    ax.annotate("share q of the true defects\nis released (missed)", xy=(t - 0.03, 0.04), xytext=(0.38, 2.75), fontsize=14, color=NAVY,
-                ha="left", va="center", arrowprops={"arrowstyle": "-|>", "color": NAVY, "lw": 1.5})
+    ax.annotate("released true defects:\nat most α, with probability ≥ 1 − δ", xy=(t - 0.02, 0.03), xytext=(0.47, 3.3), fontsize=14,
+                color=NAVY, ha="left", va="center", arrowprops={"arrowstyle": "-|>", "color": NAVY, "lw": 1.5})
+    ax.text(0.70, -0.66, "ticks: scores of left-out true defects; t is the r*-th lowest", ha="center", va="center", fontsize=12.5, color=NAVY)
     ax.set_xlim(0, 1); ax.set_ylim(0, top)
     ax.set_yticks([]); ax.set_ylabel("Number of joints", fontsize=15)
-    ax.set_xticks([0, 0.5, 1]); ax.set_xticklabels(["0", "0.5", "1"])
-    ax.set_xlabel("Score s(x) = share of trees voting “true defect”", fontsize=15)
+    ax.set_xticks([0, 1]); ax.set_xticklabels(["0", "1"]); ax.tick_params(axis="x", pad=14)
+    ax.text(0.5, -1.25, "Score s(x) = share of trees voting “true defect”", ha="center", va="center", fontsize=14, color=NAVY)
     ax.text(1.0, top, "Schematic, not data", ha="right", va="top", fontsize=13, color=GREY, style="italic")
-    save(fig, "np_threshold.png")
+    fig.subplots_adjust(left=0.06, right=0.985, top=0.97, bottom=0.26)
+    OUT.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT / "np_threshold.png", dpi=200); plt.close(fig)
 
 
 if __name__ == "__main__":
