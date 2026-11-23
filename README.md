@@ -22,8 +22,7 @@ Yu Han · Meron Hagos · Alejandro Rivas
 - **Input:** 440,274 AOI-flagged solder joints from one Siemens line in time order, each with 70 measurements, 5 categories and the label from manual inspection.
 - **System:** A balanced random forest classifier with two additions: periodic retraining, so that the model follows the drift of the production data, and a Neyman–Pearson threshold for the 1 % limit.
 - **Output:** For every later period, the share of missed true defects (at most 1 %, hard limit) and the share of false calls released (at least 40 %, as high as possible).
-- **Factors:** We vary the threshold method, the retraining schedule, the training window and the model; drift, label errors and the random seed act as noise.
-- **Limitations:** The results come from one line over 132 days with anonymised data, and released joints receive a label only through a small random audit.
+- **Limitations:** The data come from one line over 132 days with anonymised data, and released joints receive a label only through a small random audit.
 
 Numbers in brackets refer to the report. [7] = Pfab & Rothering (2025), our core paper.
 
@@ -52,16 +51,35 @@ Supervised binary classifier (balanced random forest, as in [7]) with two additi
 | Balanced random forest | 0.7 % / 1.5 % | 7.5 % / 7.5 % |
 | Random forest | 0.7 % / 1.9 % | 11.3 % / 9.1 % |
 
-## P3: design derived from the data and the literature
+## P3: theoretical framework, methodology and model design
+
+The six points of the P3 guideline, with the slide that covers each ([slides](docs/slides_p3.pdf)).
+
+**Methodology (slide 3).** CRISP-DM, the standard process model for data mining projects [24]: business understanding, data understanding, data preparation, modeling, evaluation, deployment. P3 covers the first four phases as a design.
+
+**Data and inputs (slide 4).** 440,274 AOI-flagged solder joints from one Siemens line [4]. Input: 75 features (5 categories, 70 measurements). Output: the class, 0 = false call, 1 = true defect, set by a person at the manual station.
+
+**Theoretical framework, algorithms and why they were chosen (slides 5 to 9).** Every choice starts from a fact in the data.
 
 | Data fact / requirement | Theory | Design choice |
 |---|---|---|
-| Weak linear relations: highest \|r\| of a measurement with the class is 0.18 | non-linear models [8], [10] | random forest |
+| Weak linear relations: the highest \|r\| of a measurement with the class is 0.18 | non-linear models [8], [10] | random forest |
 | Rare class: 1.05 % true defects | balanced or weighted random forest [10] | balanced random forest |
 | Drift over time: true defects per week 0.08–6.65 % | concept drift adaptation [12] | periodic retraining (addition to [7]) |
-| Hard limit: missed ≤ 1 % | Neyman–Pearson classification [14] | Neyman–Pearson threshold (addition to [7]) |
+| Hard limit: missed ≤ 1 % in every period | Neyman–Pearson classification [14] | Neyman–Pearson threshold (addition to [7]) |
 
-Methodology: CRISP-DM. The slides give the reasons, the system, the assumptions and the challenges. The detailed model and the experimental design follow on 8 December, the results on 22 December.
+**System architecture (slide 10).** Decision path: AOI alarm → input coding → balanced random forest (score) → threshold → release or operator check. Adaptation loop: the operator's labels go into a history; on a fixed schedule the forest is retrained and the threshold is set again. A small random audit gives labels for released joints.
+
+**Assumptions and challenges (slide 11).**
+
+| Design choice | Works only if (assumption) | But in our case (challenge) |
+|---|---|---|
+| Random forest | the labels are mostly correct, and the features carry non-linear information | the label error rate is unknown and may change over time [4]; non-linear information is not shown yet |
+| Balanced random forest | there are enough true defects to learn from | true defects are few: 1.05 %, 18 to 1,283 per week |
+| Periodic retraining | the most recent data are the most informative [12]; labels are back before the next retraining | the speed of drift is unknown; drift of p(y\|X) is not shown yet; released joints are labelled by audit only |
+| Neyman–Pearson threshold | the true defects are independent and identically distributed [14]; at least 299 of them | the class itself drifts: inspection type 1 is 8.5–78 % of the weekly true defects |
+
+The detailed model and the experimental design follow on 8 December, the results on 22 December.
 
 ## Test plan (P2)
 
