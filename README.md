@@ -1,6 +1,6 @@
 # Binary Classification of AOI Alarms into True Defects and False Calls
 
-Second check of AOI results with supervised machine learning (Siemens production data)
+Second check of AOI alarms with supervised machine learning (Siemens production data)
 Case Study *Intelligent Systems in Production* · THD · Team 1 · Prof. Dr.-Ing. Hamidreza Heidari
 Yu Han · Meron Hagos · Alejandro Rivas
 
@@ -17,32 +17,22 @@ Yu Han · Meron Hagos · Alejandro Rivas
 
 ## Project at a glance
 
-- **Project:** We test whether a better decision threshold and retraining keep a machine-learning second check of AOI alarms at or below 1 % missed true defects on later production periods, while it still releases at least 40 % of the false calls.
-- **Motivation:** A published second check already saves 40–78 % of the manual checks on later production periods, but it misses 5–15 % of the true defects, so it cannot be used in production.
-- **Input:** 440,274 AOI-flagged solder joints from one Siemens line in time order, each with 70 measurements, 5 categories and the label from manual inspection.
-- **System:** A balanced random forest classifier with two additions: periodic retraining, so that the model follows the drift of the production data, and a Neyman–Pearson threshold for the 1 % limit.
-- **Output:** For every later period, the share of missed true defects (at most 1 %, hard limit) and the share of false calls released (at least 40 %, as high as possible).
-- **Limitations:** The data come from one line over 132 days with anonymised data, and released joints receive a label only through a small random audit.
+- **Problem:** The AOI flags solder joints, and a person checks every alarm. About 99 % of the alarms are false calls [4].
+- **Goal:** Release as many false calls as possible, and miss at most 1 % of the true defects in every period. A period holds at least 299 true defects, so that 1 % can be measured.
+- **Baseline:** The balanced random forest of Pfab & Rothering [7]. On later data it misses 5.3–9.4 % of the true defects [7, Table IV]; our reproduction in P2 shows the same.
+- **Input:** 440,274 AOI-flagged solder joints from one Siemens line in time order, each with 75 features (5 categories, 70 measurements) and the label from manual inspection [4].
+- **Design (P3):** a balanced random forest with two additions: periodic retraining against the drift of the data, and a Neyman–Pearson threshold for the 1 % limit.
+- **Limits:** one production line over 132 days, anonymised data, labels with an unknown error rate; released joints are labelled only through a small random audit.
 
-Numbers in brackets refer to the report. [7] = Pfab & Rothering (2025), our core paper.
+Numbers in brackets refer to the references of the P3 slides (slide 13); the papers are in [`docs/papers`](docs/papers). [7] = Pfab & Rothering (2025), our baseline.
 
 ## The problem
 
-![What a second check has reached so far](docs/img/benefit_pfab2025.png)
+![Goal and baseline](docs/img/slides/target7.png)
 
-About 99 % of AOI alarms are false calls, and people check every one. A second check with machine learning releases enough false calls on almost all periods (≥ 40 %), but on later production periods it misses 5–15 % of the true defects instead of at most 1 % (D, E). Only the test set from the training period is inside the target zone (B, C).
+The model of [7] releases enough false calls (≥ 40 %), but on all five later evaluation slices it misses 5.3–9.4 % of the true defects instead of at most 1 % [7, Sect. VI, Table IV].
 
-## Objective
-
-> On every later production period: **missed true defects ≤ 1 %** (hard quality limit) and **false calls released ≥ 40 %**, as many as possible. Expected saving: between 40 % and the 80–90 % reached on the test set. (Report, Section 2.4)
-
-## System
-
-![System: classifier with two adaptation strategies](docs/img/system_diagram.png)
-
-Supervised binary classifier (balanced random forest, as in [7]) with two additions: **periodic retraining** as concept drift adaptation [12] and a **Neyman–Pearson threshold** [14]. The diagram is from the P2 report (Section 2.3); the current system is on slide 10 of the P3 slides.
-
-## Baseline: our code shows the same problem as [7]
+## Baseline (P2): our code shows the same problem as [7]
 
 ![Baseline](docs/img/reproduction_pfab2025.png)
 
