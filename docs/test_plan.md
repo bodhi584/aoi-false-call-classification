@@ -60,12 +60,7 @@ Status: **exists** = the test is in the repository. Unit tests run on every push
 | R1 | Same split as [7] | Split made-up data with a seed | First half 80/20 stratified; second half 5 periods in time order; no row in two parts | exists (`tests/test_core.py`) |
 | R2 | Threshold keeps 99 % recall on its own data | 5-fold threshold on made-up scores | Recall ≥ 99 % in each fold | exists (`tests/test_core.py`) |
 | R3 | Threshold belongs to the final model (corrected) | Fit the final model, then set the threshold | Threshold is computed from the final model, not from the last tuning step | exists (`tests/test_core.py`) |
-| R4 | Retraining only uses earlier data | `retrain_starts()` for per period, 7, 3 and 1 days | Each model is trained on rows before its interval; intervals cover the evaluation part | exists (`tests/test_dev.py`) |
 | R5 | Baseline reproduces [7] | Compare `results/replication_pfab2025.json` with the run logs of [7] | Same pattern; balanced RF on later periods 7.5 % in both (done); open gaps listed in section 5 | exists (manual) |
-| V1 | P3 development data are the first half only | `dev_split()` on made-up rows | No row of the later half is returned | exists (`tests/test_dev.py`) |
-| V2 | Training part ends with the chosen day | `dev_split()` with 22 training days | Last training row on day 22, first evaluation row on day 23, time order kept | exists (`tests/test_dev.py`) |
-| V3 | Production days skip days without production | `production_day()` with a gap | Days are counted 1, 2, 3 without the gap | exists (`tests/test_dev.py`) |
-| M6 | New threshold is the q-quantile of past true-defect scores | `past_threshold()` on made-up scores | At most a share q lies below t; q = 0 gives the lowest score | exists (`tests/test_dev.py`) |
 
 ## 5. Responses and checks
 
@@ -77,7 +72,7 @@ Status: **exists** = the test is in the repository. Unit tests run on every push
 | K4 | Every number has a source | Compare each number in the report with a file in `results/` | No number without a file | manual check at each milestone |
 | K5 | The limits are written down | Read the README and the report | They name: one production line, 132 days, labels that may be wrong, anonymised data, non-commercial licence, a line that changes over time | manual check at each milestone |
 
-Open gaps of the baseline (checked in P3): random forest on later periods 9.1 % (ours) vs. 11.3 % ([7]); test set 1.5–1.9 % (ours) vs. 0.7 % ([7]).
+Open gaps of the baseline: random forest on later periods 9.1 % (ours) vs. 11.3 % ([7]); test set 1.5–1.9 % (ours) vs. 0.7 % ([7]).
 
 If a setting does not reach the reference lines, we report what works, what does not, and why. That is a result, not a failed test. The test is that we measure it correctly.
 
