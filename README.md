@@ -10,7 +10,7 @@ Yu Han · Meron Hagos · Alejandro Rivas
 |---|---|---|
 | **P1** · 20 Oct (revised 4 Nov) | proposal, tech stack, MVP | [one-page proposal](docs/proposal.pdf) ([Word](docs/proposal.docx)) · [slides](docs/slides_p1.pdf) |
 | **P2** · 3 Nov | core code + baseline simulation; test plan + report | [report](docs/literature_report.pdf) · [slides](docs/slides_p2.pdf) · [test plan](docs/test_plan.md) · [core code](scripts/replicate_pfab2025.py) · [baseline result](results/replication_pfab2025.json) · [data understanding](notebooks/data_understanding.ipynb) |
-| **P3** · 24 Nov | theoretical framework, methodology, model design | [slides (Google Slides, current version)](https://docs.google.com/presentation/d/1fc6YqLswQVtB1T5kG8M6m11M_FwTKe3LpQccWNHI1P0/edit?usp=sharing) ([PDF](docs/slides_p3.pdf), [PowerPoint with speaker notes](docs/slides_p3.pptx), export of 23 Nov) · [cited papers, cited passages marked](docs/papers) · [figures](docs/img/slides) · data facts: [drift](results/p3_drift.json), [correlation](results/p3_feature_relevance.json) |
+| **P3** · 24 Nov | theoretical framework, methodology, model design | [slides (Google Slides, current version)](https://docs.google.com/presentation/d/1fc6YqLswQVtB1T5kG8M6m11M_FwTKe3LpQccWNHI1P0/edit?usp=sharing) ([PDF](docs/slides_p3.pdf), export of 24 Nov) · [cited papers, cited passages marked](docs/papers) · [figures](docs/img/slides) · data facts: [drift](results/p3_drift.json), [correlation](results/p3_feature_relevance.json) |
 | **P4** · 8 Dec | detailed modelling, algorithm development, implementation; experimental design | planned |
 | **P5** · 22 Dec | results, evaluation, discussion | planned |
 | **Final** · 12 Jan | final presentation and report | planned |
