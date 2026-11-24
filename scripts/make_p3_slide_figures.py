@@ -209,7 +209,18 @@ def np_formula():
         fig.savefig(OUT / "np_formula.png", dpi=200, transparent=True, bbox_inches="tight", pad_inches=0.03); plt.close(fig)
 
 
+def np_min_sample():
+    """Minimum number of true defects for the rule of [14, Alg. 1]: with k = 1 the sum is (1 - alpha)^m <= delta."""
+    tex = (r"$k=1:\;\; (1-\alpha)^{m} \leq \delta \;\;\Rightarrow\;\; m \,\geq\, \frac{\ln \delta}{\ln(1-\alpha)}"
+           r" = \frac{\ln 0.05}{\ln 0.99} = 298.1 \;\;\Rightarrow\;\; m \geq 299$")
+    with plt.rc_context({"mathtext.fontset": "cm"}):
+        fig = plt.figure(figsize=(9.4, 1.2))
+        fig.text(0.5, 0.5, tex, ha="center", va="center", fontsize=23, color=NAVY)
+        OUT.mkdir(parents=True, exist_ok=True)
+        fig.savefig(OUT / "np_min_sample.png", dpi=200, transparent=True, bbox_inches="tight", pad_inches=0.03); plt.close(fig)
+
+
 if __name__ == "__main__":
-    for f in [target7, model_choice, brf_principle, drift_evidence, np_threshold, np_formula]:
+    for f in [target7, model_choice, brf_principle, drift_evidence, np_threshold, np_formula, np_min_sample]:
         f()
         print("docs/img/slides/" + f.__name__ + ".png")
