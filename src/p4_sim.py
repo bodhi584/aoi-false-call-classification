@@ -117,7 +117,7 @@ def group_thresholds(model, X, y_idx_td, groups, cal_day, m, cap, rule):
 
 
 def simulate(X, y, cal_day, n_dev, *, start_day, interval, window, m, rule, audit, seed, cap=None,
-             groups=None, n_end=None, forest=None):
+             groups=None, n_end=None, forest=None, first_row=0, out_rel=None):
     """Rolling run on the development half. Returns one record per check window.
 
     start_day: calendar day of T0 (first deployment day)
@@ -129,19 +129,21 @@ def simulate(X, y, cal_day, n_dev, *, start_day, interval, window, m, rule, audi
     groups:    group label per row (e.g. inspection type): one threshold per group; None = one for all
     n_end:     last row + 1 that is simulated (default n_dev); history before start_day is always labelled
     forest:    forest parameters F1-F4 that differ from the defaults (dict)
+    first_row: rows before it are labelled history and are never checked (final test: first_row = n_dev)
+    out_rel:   optional bool array (one entry per row) that receives the release decision of every checked row
     audit:     share of released joints that the operator still labels (random audit)
     """
     rng = np.random.default_rng(seed)
     n_dev = n_end or n_dev                        # rows that take part (development half by default)
     idx = np.arange(n_dev)
-    known = cal_day[:n_dev] < start_day           # before T0 every label is known
+    known = (cal_day[:n_dev] < start_day) | (idx < first_row)   # before T0 every label is known
     step = interval or 7                          # without retraining, report in 7-day windows
     last = cal_day[n_dev - 1]
     records, model, t, skipped = [], None, None, False
     T = start_day
     while T <= last:
         if not records or interval is not None:                   # (re)train at T
-            hist = idx[(cal_day[:n_dev] < T) & known]              # labelled history before T
+            hist = idx[((cal_day[:n_dev] < T) | (idx < first_row)) & known]   # labelled history before T
             td = hist[y[hist] == 1]
             # threshold set = latest m labelled true defects (only for the rules that need one)
             thr_set = (capped_latest(td, cal_day, m, cap) if rule in ("np", "plain") and groups is None
@@ -169,7 +171,7 @@ def simulate(X, y, cal_day, n_dev, *, start_day, interval, window, m, rule, audi
                 t = cv_threshold(X[train], y[train], seed)
             else:
                 t = 0.5                                            # classical: defect if s(x) >= 0.5
-        chk = idx[(cal_day[:n_dev] >= T) & (cal_day[:n_dev] < T + step)]
+        chk = idx[(cal_day[:n_dev] >= T) & (cal_day[:n_dev] < T + step) & (idx >= first_row)]
         if len(chk):
             if model is None:
                 rel = np.zeros(len(chk), bool)
@@ -178,6 +180,8 @@ def simulate(X, y, cal_day, n_dev, *, start_day, interval, window, m, rule, audi
                 tt = np.array([t.get(g, -np.inf) for g in groups[chk]]) if isinstance(t, dict) else t
                 rel = sc < tt
             yc = y[chk]
+            if out_rel is not None:
+                out_rel[chk] = rel
             records.append({"T": int(T), "td": int(yc.sum()), "fc": int((yc == 0).sum()),
                             "missed": int((rel & (yc == 1)).sum()), "released": int((rel & (yc == 0)).sum()),
                             "t": ({str(k): float(v) for k, v in t.items()} if isinstance(t, dict) else float(t)), "train_td": n_train_td, "kept_old_model": bool(skipped)})
