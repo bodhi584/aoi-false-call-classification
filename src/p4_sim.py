@@ -18,6 +18,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 CATEGORICAL = ["meta_feat1", "meta_feat2", "meta_feat3", "meta_feat4", "inspection_type"]
 ALPHA, DELTA = 0.01, 0.05          # at most 1 % of true defects released, with 95 % confidence
+N_NUM = 70                         # measurement columns come first in X; the rest are one-hot
 MIN_TRAIN_TD = 50                  # fewer true defects in the training window: keep the old model
 
 
