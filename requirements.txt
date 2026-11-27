@@ -1,7 +1,8 @@
 numpy>=1.26
 pandas>=2.1
-scikit-learn>=1.4
-imbalanced-learn>=0.12
+scipy>=1.11
+scikit-learn==1.9.1
+imbalanced-learn==0.14.2  # BRF defaults F1-F4 depend on this version
 matplotlib>=3.8
 shap
 seaborn

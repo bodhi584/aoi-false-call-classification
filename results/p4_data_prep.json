@@ -1,0 +1,59 @@
+{
+  "rows": 440274,
+  "columns": 77,
+  "measurements": 70,
+  "categorical": 5,
+  "missing_values": 0,
+  "constant_measurements": [
+    "inspection_feat13",
+    "inspection_feat16",
+    "inspection_feat21",
+    "inspection_feat71",
+    "inspection_feat72",
+    "inspection_feat78"
+  ],
+  "categories_per_feature": {
+    "meta_feat1": 75,
+    "meta_feat2": 5,
+    "meta_feat3": 2,
+    "meta_feat4": 49,
+    "inspection_type": 5
+  },
+  "inputs_after_one_hot": 206,
+  "meta_feat1_codes_only_in_test_half": 7,
+  "duplicate_rows": 8752,
+  "development_rows": 220137,
+  "development_true_defects": 1749,
+  "per_inspection_type": {
+    "0": {
+      "rows": 97053,
+      "true_defects": 318,
+      "true_defect_pct": 0.33,
+      "features_available": 44
+    },
+    "1": {
+      "rows": 57673,
+      "true_defects": 1578,
+      "true_defect_pct": 2.74,
+      "features_available": 52
+    },
+    "2": {
+      "rows": 128174,
+      "true_defects": 1346,
+      "true_defect_pct": 1.05,
+      "features_available": 65
+    },
+    "3": {
+      "rows": 151931,
+      "true_defects": 1281,
+      "true_defect_pct": 0.84,
+      "features_available": 65
+    },
+    "4": {
+      "rows": 5443,
+      "true_defects": 99,
+      "true_defect_pct": 1.82,
+      "features_available": 21
+    }
+  }
+}
