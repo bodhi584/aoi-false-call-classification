@@ -1,0 +1,2673 @@
+{
+ "system": {
+  "interval": 14,
+  "m": 500,
+  "audit": 0.1
+ },
+ "forest": {
+  "n_estimators": 300,
+  "max_features": "sqrt",
+  "min_samples_leaf": 5,
+  "sampling_strategy": "all"
+ },
+ "improve": {
+  "cap": 30,
+  "burst": 3
+ },
+ "spc": {
+  "mode": "day",
+  "q": 0.99
+ },
+ "start_day": 84,
+ "first_row": 220137,
+ "slices": [
+  [
+   220137,
+   264164
+  ],
+  [
+   264164,
+   308191
+  ],
+  [
+   308191,
+   352219
+  ],
+  [
+   352219,
+   396246
+  ],
+  [
+   396246,
+   440274
+  ]
+ ],
+ "ref7_brfc2": {
+  "missed": [
+   7.3,
+   5.3,
+   8.6,
+   9.4,
+   9.3
+  ],
+  "released": [
+   67.5,
+   48.7,
+   65.3,
+   78.0,
+   41.5
+  ]
+ },
+ "runs": [
+  {
+   "seed": 0,
+   "days": [
+    {
+     "T": 84,
+     "td": 3,
+     "fc": 6482,
+     "missed": 0,
+     "released": 0,
+     "t": 0.0856552841243005,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 85,
+     "td": 14,
+     "fc": 3499,
+     "missed": 0,
+     "released": 2009,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 87,
+     "td": 24,
+     "fc": 684,
+     "missed": 0,
+     "released": 121,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 88,
+     "td": 41,
+     "fc": 2470,
+     "missed": 2,
+     "released": 568,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 89,
+     "td": 12,
+     "fc": 10124,
+     "missed": 0,
+     "released": 3990,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 90,
+     "td": 4,
+     "fc": 7243,
+     "missed": 0,
+     "released": 4021,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 91,
+     "td": 34,
+     "fc": 2959,
+     "missed": 0,
+     "released": 582,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 92,
+     "td": 2,
+     "fc": 2016,
+     "missed": 0,
+     "released": 374,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 94,
+     "td": 1,
+     "fc": 612,
+     "missed": 0,
+     "released": 112,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 95,
+     "td": 8,
+     "fc": 2310,
+     "missed": 0,
+     "released": 982,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 96,
+     "td": 9,
+     "fc": 2265,
+     "missed": 0,
+     "released": 379,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 97,
+     "td": 0,
+     "fc": 7203,
+     "missed": 0,
+     "released": 601,
+     "t": 0.0856552841243005,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 98,
+     "td": 14,
+     "fc": 22614,
+     "missed": 0,
+     "released": 1913,
+     "t": 0.1006736925379215,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 99,
+     "td": 16,
+     "fc": 11830,
+     "missed": 0,
+     "released": 5962,
+     "t": 0.1006736925379215,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 100,
+     "td": 4,
+     "fc": 706,
+     "missed": 0,
+     "released": 0,
+     "t": 0.1006736925379215,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 102,
+     "td": 0,
+     "fc": 165,
+     "missed": 0,
+     "released": 0,
+     "t": 0.1006736925379215,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 103,
+     "td": 5,
+     "fc": 4345,
+     "missed": 0,
+     "released": 1677,
+     "t": 0.1006736925379215,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 104,
+     "td": 1,
+     "fc": 9791,
+     "missed": 0,
+     "released": 6484,
+     "t": 0.1006736925379215,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 105,
+     "td": 213,
+     "fc": 5203,
+     "missed": 1,
+     "released": 1254,
+     "t": 0.1006736925379215,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 106,
+     "td": 1,
+     "fc": 7235,
+     "missed": 0,
+     "released": 412,
+     "t": 0.08804453513496241,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 107,
+     "td": 0,
+     "fc": 61,
+     "missed": 0,
+     "released": 6,
+     "t": 0.08804453513496241,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 108,
+     "td": 4,
+     "fc": 1031,
+     "missed": 0,
+     "released": 636,
+     "t": 0.08804453513496241,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 109,
+     "td": 10,
+     "fc": 14398,
+     "missed": 0,
+     "released": 7611,
+     "t": 0.08804453513496241,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 110,
+     "td": 32,
+     "fc": 2266,
+     "missed": 0,
+     "released": 190,
+     "t": 0.08804453513496241,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 111,
+     "td": 8,
+     "fc": 398,
+     "missed": 0,
+     "released": 1,
+     "t": 0.08804453513496241,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 112,
+     "td": 88,
+     "fc": 3906,
+     "missed": 0,
+     "released": 230,
+     "t": 0.07835741256024965,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 113,
+     "td": 49,
+     "fc": 707,
+     "missed": 0,
+     "released": 29,
+     "t": 0.06432287570371226,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 116,
+     "td": 47,
+     "fc": 8248,
+     "missed": 3,
+     "released": 3481,
+     "t": 0.06432287570371226,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 117,
+     "td": 73,
+     "fc": 8682,
+     "missed": 2,
+     "released": 1325,
+     "t": 0.06432287570371226,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 118,
+     "td": 21,
+     "fc": 5486,
+     "missed": 0,
+     "released": 2157,
+     "t": 0.06432287570371226,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 119,
+     "td": 696,
+     "fc": 10984,
+     "missed": 18,
+     "released": 4392,
+     "t": 0.06432287570371226,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 120,
+     "td": 23,
+     "fc": 1236,
+     "missed": 0,
+     "released": 243,
+     "t": 0.05831626821090009,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 123,
+     "td": 17,
+     "fc": 3351,
+     "missed": 1,
+     "released": 1152,
+     "t": 0.05831626821090009,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 124,
+     "td": 30,
+     "fc": 10470,
+     "missed": 0,
+     "released": 588,
+     "t": 0.05831626821090009,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 125,
+     "td": 86,
+     "fc": 18267,
+     "missed": 0,
+     "released": 318,
+     "t": 0.05831626821090009,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 126,
+     "td": 637,
+     "fc": 4403,
+     "missed": 3,
+     "released": 852,
+     "t": 0.03195823336807225,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 127,
+     "td": 641,
+     "fc": 12411,
+     "missed": 5,
+     "released": 268,
+     "t": 0.02257277397861923,
+     "retrain": "burst",
+     "trigger": "burst"
+    },
+    {
+     "T": 132,
+     "td": 5,
+     "fc": 1203,
+     "missed": 0,
+     "released": 76,
+     "t": 0.03416248805542912,
+     "retrain": "burst",
+     "trigger": null
+    }
+   ],
+   "periods": [
+    {
+     "td": 405,
+     "fc": 102521,
+     "missed": 3,
+     "released": 31029,
+     "missed_pct": 0.7407407407407407,
+     "released_pct": 30.265994284097893,
+     "recall": 0.9925925925925926,
+     "precision": 0.0055915653601135,
+     "f1": 0.011120485760522275
+    },
+    {
+     "td": 312,
+     "fc": 46932,
+     "missed": 5,
+     "released": 13921,
+     "missed_pct": 1.6025641025641026,
+     "released_pct": 29.662064263189293,
+     "recall": 0.9839743589743589,
+     "precision": 0.009214238549732877,
+     "f1": 0.018257508177222718
+    },
+    {
+     "td": 717,
+     "fc": 16470,
+     "missed": 18,
+     "released": 6549,
+     "missed_pct": 2.510460251046025,
+     "released_pct": 39.7632058287796,
+     "recall": 0.9748953974895398,
+     "precision": 0.06581920903954802,
+     "f1": 0.1233130457793067
+    },
+    {
+     "td": 793,
+     "fc": 37727,
+     "missed": 4,
+     "released": 3153,
+     "missed_pct": 0.5044136191677175,
+     "released_pct": 8.357409812601055,
+     "recall": 0.9949558638083228,
+     "precision": 0.02231145547606255,
+     "f1": 0.04364420843013608
+    },
+    {
+     "td": 646,
+     "fc": 13614,
+     "missed": 5,
+     "released": 344,
+     "missed_pct": 0.7739938080495357,
+     "released_pct": 2.5268106361098868,
+     "recall": 0.9922600619195047,
+     "precision": 0.046078642800661346,
+     "f1": 0.08806759634540083
+    }
+   ],
+   "slices": [
+    {
+     "td": 152,
+     "fc": 43875,
+     "tp": 150,
+     "fn": 2,
+     "fp": 30549,
+     "tn": 13326,
+     "recall": 0.9868421052631579,
+     "precision": 0.00488615264340858,
+     "f1": 0.009724158049982173,
+     "missed_pct": 1.3157894736842106,
+     "released_pct": 30.37264957264957
+    },
+    {
+     "td": 39,
+     "fc": 43988,
+     "tp": 39,
+     "fn": 0,
+     "fp": 33971,
+     "tn": 10017,
+     "recall": 1.0,
+     "precision": 0.0011467215524845634,
+     "f1": 0.00229081617668654,
+     "missed_pct": 0.0,
+     "released_pct": 22.772119669000638
+    },
+    {
+     "td": 357,
+     "fc": 43671,
+     "tp": 356,
+     "fn": 1,
+     "fp": 26902,
+     "tn": 16769,
+     "recall": 0.9971988795518207,
+     "precision": 0.013060385941741874,
+     "f1": 0.025783088900959622,
+     "missed_pct": 0.2801120448179272,
+     "released_pct": 38.3984795401983
+    },
+    {
+     "td": 956,
+     "fc": 43071,
+     "tp": 932,
+     "fn": 24,
+     "fp": 29860,
+     "tn": 13211,
+     "recall": 0.9748953974895398,
+     "precision": 0.03026760197453884,
+     "f1": 0.05871235983369031,
+     "missed_pct": 2.510460251046025,
+     "released_pct": 30.672610341064754
+    },
+    {
+     "td": 1369,
+     "fc": 42659,
+     "tp": 1361,
+     "fn": 8,
+     "fp": 40986,
+     "tn": 1673,
+     "recall": 0.9941563184806428,
+     "precision": 0.03213923064207618,
+     "f1": 0.06226553207063776,
+     "missed_pct": 0.5843681519357194,
+     "released_pct": 3.9217984481586536
+    }
+   ],
+   "total": {
+    "td": 2873,
+    "fc": 217264,
+    "tp": 2838,
+    "fn": 35,
+    "fp": 162268,
+    "tn": 54996,
+    "recall": 0.9878176122520014,
+    "precision": 0.017188957397066128,
+    "f1": 0.03378993802796778,
+    "missed_pct": 1.2182387747998609,
+    "released_pct": 25.31298328301053
+   }
+  },
+  {
+   "seed": 1,
+   "days": [
+    {
+     "T": 84,
+     "td": 3,
+     "fc": 6482,
+     "missed": 0,
+     "released": 0,
+     "t": 0.09182622306519228,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 85,
+     "td": 14,
+     "fc": 3499,
+     "missed": 0,
+     "released": 2044,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 87,
+     "td": 24,
+     "fc": 684,
+     "missed": 0,
+     "released": 132,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 88,
+     "td": 41,
+     "fc": 2470,
+     "missed": 3,
+     "released": 681,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 89,
+     "td": 12,
+     "fc": 10124,
+     "missed": 0,
+     "released": 4855,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 90,
+     "td": 4,
+     "fc": 7243,
+     "missed": 0,
+     "released": 4124,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 91,
+     "td": 34,
+     "fc": 2959,
+     "missed": 0,
+     "released": 717,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 92,
+     "td": 2,
+     "fc": 2016,
+     "missed": 0,
+     "released": 470,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 94,
+     "td": 1,
+     "fc": 612,
+     "missed": 0,
+     "released": 113,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 95,
+     "td": 8,
+     "fc": 2310,
+     "missed": 0,
+     "released": 985,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 96,
+     "td": 9,
+     "fc": 2265,
+     "missed": 0,
+     "released": 465,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 97,
+     "td": 0,
+     "fc": 7203,
+     "missed": 0,
+     "released": 555,
+     "t": 0.09182622306519228,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 98,
+     "td": 14,
+     "fc": 22614,
+     "missed": 0,
+     "released": 1845,
+     "t": 0.09140263506017937,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 99,
+     "td": 16,
+     "fc": 11830,
+     "missed": 0,
+     "released": 5786,
+     "t": 0.09140263506017937,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 100,
+     "td": 4,
+     "fc": 706,
+     "missed": 0,
+     "released": 0,
+     "t": 0.09140263506017937,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 102,
+     "td": 0,
+     "fc": 165,
+     "missed": 0,
+     "released": 0,
+     "t": 0.09140263506017937,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 103,
+     "td": 5,
+     "fc": 4345,
+     "missed": 0,
+     "released": 1901,
+     "t": 0.09140263506017937,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 104,
+     "td": 1,
+     "fc": 9791,
+     "missed": 0,
+     "released": 6330,
+     "t": 0.09140263506017937,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 105,
+     "td": 213,
+     "fc": 5203,
+     "missed": 0,
+     "released": 797,
+     "t": 0.09140263506017937,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 106,
+     "td": 1,
+     "fc": 7235,
+     "missed": 0,
+     "released": 46,
+     "t": 0.06421673891759962,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 107,
+     "td": 0,
+     "fc": 61,
+     "missed": 0,
+     "released": 0,
+     "t": 0.06421673891759962,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 108,
+     "td": 4,
+     "fc": 1031,
+     "missed": 0,
+     "released": 521,
+     "t": 0.06421673891759962,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 109,
+     "td": 10,
+     "fc": 14398,
+     "missed": 0,
+     "released": 5831,
+     "t": 0.06421673891759962,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 110,
+     "td": 32,
+     "fc": 2266,
+     "missed": 0,
+     "released": 138,
+     "t": 0.06421673891759962,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 111,
+     "td": 8,
+     "fc": 398,
+     "missed": 0,
+     "released": 0,
+     "t": 0.06421673891759962,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 112,
+     "td": 88,
+     "fc": 3906,
+     "missed": 0,
+     "released": 139,
+     "t": 0.06459218275326283,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 113,
+     "td": 49,
+     "fc": 707,
+     "missed": 0,
+     "released": 35,
+     "t": 0.07244330379755072,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 116,
+     "td": 47,
+     "fc": 8248,
+     "missed": 2,
+     "released": 4028,
+     "t": 0.07244330379755072,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 117,
+     "td": 73,
+     "fc": 8682,
+     "missed": 2,
+     "released": 1668,
+     "t": 0.07244330379755072,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 118,
+     "td": 21,
+     "fc": 5486,
+     "missed": 0,
+     "released": 2297,
+     "t": 0.07244330379755072,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 119,
+     "td": 696,
+     "fc": 10984,
+     "missed": 27,
+     "released": 5552,
+     "t": 0.07244330379755072,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 120,
+     "td": 23,
+     "fc": 1236,
+     "missed": 0,
+     "released": 11,
+     "t": 0.03565619126201756,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 123,
+     "td": 17,
+     "fc": 3351,
+     "missed": 0,
+     "released": 674,
+     "t": 0.03565619126201756,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 124,
+     "td": 30,
+     "fc": 10470,
+     "missed": 0,
+     "released": 183,
+     "t": 0.03565619126201756,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 125,
+     "td": 86,
+     "fc": 18267,
+     "missed": 0,
+     "released": 23,
+     "t": 0.03565619126201756,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 126,
+     "td": 637,
+     "fc": 4403,
+     "missed": 1,
+     "released": 469,
+     "t": 0.014760999376037117,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 127,
+     "td": 641,
+     "fc": 12411,
+     "missed": 5,
+     "released": 266,
+     "t": 0.02124488996139636,
+     "retrain": "burst",
+     "trigger": "burst"
+    },
+    {
+     "T": 132,
+     "td": 5,
+     "fc": 1203,
+     "missed": 0,
+     "released": 36,
+     "t": 0.018943425487751908,
+     "retrain": "burst",
+     "trigger": null
+    }
+   ],
+   "periods": [
+    {
+     "td": 405,
+     "fc": 102521,
+     "missed": 3,
+     "released": 31800,
+     "missed_pct": 0.7407407407407407,
+     "released_pct": 31.018035329347157,
+     "recall": 0.9925925925925926,
+     "precision": 0.005652180026151878,
+     "f1": 0.011240353428028186
+    },
+    {
+     "td": 312,
+     "fc": 46932,
+     "missed": 4,
+     "released": 12406,
+     "missed_pct": 1.2820512820512822,
+     "released_pct": 26.43398960197733,
+     "recall": 0.9871794871794872,
+     "precision": 0.008841936039501636,
+     "f1": 0.017526887839298923
+    },
+    {
+     "td": 717,
+     "fc": 16470,
+     "missed": 27,
+     "released": 7849,
+     "missed_pct": 3.7656903765690375,
+     "released_pct": 47.65634486945962,
+     "recall": 0.9623430962343096,
+     "precision": 0.07410589625174525,
+     "f1": 0.13761467889908255
+    },
+    {
+     "td": 793,
+     "fc": 37727,
+     "missed": 1,
+     "released": 1360,
+     "missed_pct": 0.12610340479192939,
+     "released_pct": 3.6048453362313464,
+     "recall": 0.9987389659520807,
+     "precision": 0.02131381361177642,
+     "f1": 0.04173693086003373
+    },
+    {
+     "td": 646,
+     "fc": 13614,
+     "missed": 5,
+     "released": 302,
+     "missed_pct": 0.7739938080495357,
+     "released_pct": 2.2183046863522846,
+     "recall": 0.9922600619195047,
+     "precision": 0.04593994123127643,
+     "f1": 0.08781423385163367
+    }
+   ],
+   "slices": [
+    {
+     "td": 152,
+     "fc": 43875,
+     "tp": 149,
+     "fn": 3,
+     "fp": 29100,
+     "tn": 14775,
+     "recall": 0.9802631578947368,
+     "precision": 0.0050941912544018595,
+     "f1": 0.010135709669739123,
+     "missed_pct": 1.9736842105263157,
+     "released_pct": 33.675213675213676
+    },
+    {
+     "td": 39,
+     "fc": 43988,
+     "tp": 39,
+     "fn": 0,
+     "fp": 34040,
+     "tn": 9948,
+     "recall": 1.0,
+     "precision": 0.0011443997769887615,
+     "f1": 0.0022861832463802103,
+     "missed_pct": 0.0,
+     "released_pct": 22.61525870692007
+    },
+    {
+     "td": 357,
+     "fc": 43671,
+     "tp": 357,
+     "fn": 0,
+     "fp": 29922,
+     "tn": 13749,
+     "recall": 1.0,
+     "precision": 0.011790349747349648,
+     "f1": 0.023305914610262435,
+     "missed_pct": 0.0,
+     "released_pct": 31.483135261386273
+    },
+    {
+     "td": 956,
+     "fc": 43071,
+     "tp": 925,
+     "fn": 31,
+     "fp": 28632,
+     "tn": 14439,
+     "recall": 0.9675732217573222,
+     "precision": 0.03129546300368779,
+     "f1": 0.06062989545439648,
+     "missed_pct": 3.2426778242677825,
+     "released_pct": 33.523716653897054
+    },
+    {
+     "td": 1369,
+     "fc": 42659,
+     "tp": 1363,
+     "fn": 6,
+     "fp": 41853,
+     "tn": 806,
+     "recall": 0.9956172388604821,
+     "precision": 0.031539244724176234,
+     "f1": 0.061141639564876095,
+     "missed_pct": 0.4382761139517896,
+     "released_pct": 1.8894020019222204
+    }
+   ],
+   "total": {
+    "td": 2873,
+    "fc": 217264,
+    "tp": 2833,
+    "fn": 40,
+    "fp": 163547,
+    "tn": 53717,
+    "recall": 0.9860772711451444,
+    "precision": 0.017027286933525666,
+    "f1": 0.03347651149462639,
+    "missed_pct": 1.3922728854855553,
+    "released_pct": 24.72429854923043
+   }
+  },
+  {
+   "seed": 2,
+   "days": [
+    {
+     "T": 84,
+     "td": 3,
+     "fc": 6482,
+     "missed": 0,
+     "released": 0,
+     "t": 0.08623244981651886,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 85,
+     "td": 14,
+     "fc": 3499,
+     "missed": 0,
+     "released": 2008,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 87,
+     "td": 24,
+     "fc": 684,
+     "missed": 0,
+     "released": 125,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 88,
+     "td": 41,
+     "fc": 2470,
+     "missed": 3,
+     "released": 569,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 89,
+     "td": 12,
+     "fc": 10124,
+     "missed": 0,
+     "released": 3240,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 90,
+     "td": 4,
+     "fc": 7243,
+     "missed": 0,
+     "released": 4139,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 91,
+     "td": 34,
+     "fc": 2959,
+     "missed": 0,
+     "released": 292,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 92,
+     "td": 2,
+     "fc": 2016,
+     "missed": 0,
+     "released": 191,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 94,
+     "td": 1,
+     "fc": 612,
+     "missed": 0,
+     "released": 111,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 95,
+     "td": 8,
+     "fc": 2310,
+     "missed": 0,
+     "released": 980,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 96,
+     "td": 9,
+     "fc": 2265,
+     "missed": 1,
+     "released": 387,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 97,
+     "td": 0,
+     "fc": 7203,
+     "missed": 0,
+     "released": 450,
+     "t": 0.08623244981651886,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 98,
+     "td": 14,
+     "fc": 22614,
+     "missed": 0,
+     "released": 1771,
+     "t": 0.07931866321373325,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 99,
+     "td": 16,
+     "fc": 11830,
+     "missed": 0,
+     "released": 5422,
+     "t": 0.07931866321373325,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 100,
+     "td": 4,
+     "fc": 706,
+     "missed": 0,
+     "released": 0,
+     "t": 0.07931866321373325,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 102,
+     "td": 0,
+     "fc": 165,
+     "missed": 0,
+     "released": 0,
+     "t": 0.07931866321373325,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 103,
+     "td": 5,
+     "fc": 4345,
+     "missed": 0,
+     "released": 1355,
+     "t": 0.07931866321373325,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 104,
+     "td": 1,
+     "fc": 9791,
+     "missed": 0,
+     "released": 5406,
+     "t": 0.07931866321373325,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 105,
+     "td": 213,
+     "fc": 5203,
+     "missed": 0,
+     "released": 761,
+     "t": 0.07931866321373325,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 106,
+     "td": 1,
+     "fc": 7235,
+     "missed": 0,
+     "released": 58,
+     "t": 0.0764408505168199,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 107,
+     "td": 0,
+     "fc": 61,
+     "missed": 0,
+     "released": 0,
+     "t": 0.0764408505168199,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 108,
+     "td": 4,
+     "fc": 1031,
+     "missed": 0,
+     "released": 547,
+     "t": 0.0764408505168199,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 109,
+     "td": 10,
+     "fc": 14398,
+     "missed": 0,
+     "released": 6626,
+     "t": 0.0764408505168199,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 110,
+     "td": 32,
+     "fc": 2266,
+     "missed": 0,
+     "released": 153,
+     "t": 0.0764408505168199,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 111,
+     "td": 8,
+     "fc": 398,
+     "missed": 0,
+     "released": 0,
+     "t": 0.0764408505168199,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 112,
+     "td": 88,
+     "fc": 3906,
+     "missed": 0,
+     "released": 271,
+     "t": 0.08151817317753161,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 113,
+     "td": 49,
+     "fc": 707,
+     "missed": 0,
+     "released": 22,
+     "t": 0.05262912369725805,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 116,
+     "td": 47,
+     "fc": 8248,
+     "missed": 1,
+     "released": 2952,
+     "t": 0.05262912369725805,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 117,
+     "td": 73,
+     "fc": 8682,
+     "missed": 2,
+     "released": 957,
+     "t": 0.05262912369725805,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 118,
+     "td": 21,
+     "fc": 5486,
+     "missed": 0,
+     "released": 1843,
+     "t": 0.05262912369725805,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 119,
+     "td": 696,
+     "fc": 10984,
+     "missed": 14,
+     "released": 3603,
+     "t": 0.05262912369725805,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 120,
+     "td": 23,
+     "fc": 1236,
+     "missed": 0,
+     "released": 271,
+     "t": 0.05123004060508775,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 123,
+     "td": 17,
+     "fc": 3351,
+     "missed": 1,
+     "released": 1076,
+     "t": 0.05123004060508775,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 124,
+     "td": 30,
+     "fc": 10470,
+     "missed": 0,
+     "released": 529,
+     "t": 0.05123004060508775,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 125,
+     "td": 86,
+     "fc": 18267,
+     "missed": 0,
+     "released": 149,
+     "t": 0.05123004060508775,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 126,
+     "td": 637,
+     "fc": 4403,
+     "missed": 3,
+     "released": 868,
+     "t": 0.035881213882856165,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 127,
+     "td": 641,
+     "fc": 12411,
+     "missed": 8,
+     "released": 826,
+     "t": 0.03239569068266888,
+     "retrain": "burst",
+     "trigger": "burst"
+    },
+    {
+     "T": 132,
+     "td": 5,
+     "fc": 1203,
+     "missed": 0,
+     "released": 244,
+     "t": 0.048232733791855706,
+     "retrain": "burst",
+     "trigger": null
+    }
+   ],
+   "periods": [
+    {
+     "td": 405,
+     "fc": 102521,
+     "missed": 4,
+     "released": 27207,
+     "missed_pct": 0.9876543209876543,
+     "released_pct": 26.53797758508013,
+     "recall": 0.9901234567901235,
+     "precision": 0.005296176451165555,
+     "f1": 0.010535995796111404
+    },
+    {
+     "td": 312,
+     "fc": 46932,
+     "missed": 3,
+     "released": 11586,
+     "missed_pct": 0.9615384615384616,
+     "released_pct": 24.686780874456662,
+     "recall": 0.9903846153846154,
+     "precision": 0.008666386201093815,
+     "f1": 0.01718241721578113
+    },
+    {
+     "td": 717,
+     "fc": 16470,
+     "missed": 14,
+     "released": 5446,
+     "missed_pct": 1.9525801952580195,
+     "released_pct": 33.066180935033394,
+     "recall": 0.9804741980474198,
+     "precision": 0.059947130553423725,
+     "f1": 0.11298617807778849
+    },
+    {
+     "td": 793,
+     "fc": 37727,
+     "missed": 4,
+     "released": 2893,
+     "missed_pct": 0.5044136191677175,
+     "released_pct": 7.668248204203886,
+     "recall": 0.9949558638083228,
+     "precision": 0.02214861185189344,
+     "f1": 0.04333260105448154
+    },
+    {
+     "td": 646,
+     "fc": 13614,
+     "missed": 8,
+     "released": 1070,
+     "missed_pct": 1.238390092879257,
+     "released_pct": 7.859556339062729,
+     "recall": 0.9876160990712074,
+     "precision": 0.04839933242300106,
+     "f1": 0.09227654035290714
+    }
+   ],
+   "slices": [
+    {
+     "td": 152,
+     "fc": 43875,
+     "tp": 148,
+     "fn": 4,
+     "fp": 31678,
+     "tn": 12197,
+     "recall": 0.9736842105263158,
+     "precision": 0.004650285929742978,
+     "f1": 0.00925636375007818,
+     "missed_pct": 2.6315789473684212,
+     "released_pct": 27.799430199430198
+    },
+    {
+     "td": 39,
+     "fc": 43988,
+     "tp": 39,
+     "fn": 0,
+     "fp": 35107,
+     "tn": 8881,
+     "recall": 1.0,
+     "precision": 0.0011096568599556138,
+     "f1": 0.0022168537729145943,
+     "missed_pct": 0.0,
+     "released_pct": 20.189597162862597
+    },
+    {
+     "td": 357,
+     "fc": 43671,
+     "tp": 357,
+     "fn": 0,
+     "fp": 29890,
+     "tn": 13781,
+     "recall": 1.0,
+     "precision": 0.011802823420504514,
+     "f1": 0.023330283623055812,
+     "missed_pct": 0.0,
+     "released_pct": 31.556410432552497
+    },
+    {
+     "td": 956,
+     "fc": 43071,
+     "tp": 938,
+     "fn": 18,
+     "fp": 31908,
+     "tn": 11163,
+     "recall": 0.9811715481171548,
+     "precision": 0.02855751080801315,
+     "f1": 0.05549967457546891,
+     "missed_pct": 1.8828451882845187,
+     "released_pct": 25.917670822595248
+    },
+    {
+     "td": 1369,
+     "fc": 42659,
+     "tp": 1358,
+     "fn": 11,
+     "fp": 40479,
+     "tn": 2180,
+     "recall": 0.9919649379108838,
+     "precision": 0.03245930635561823,
+     "f1": 0.06286163958709437,
+     "missed_pct": 0.8035062089116143,
+     "released_pct": 5.110293255819405
+    }
+   ],
+   "total": {
+    "td": 2873,
+    "fc": 217264,
+    "tp": 2840,
+    "fn": 33,
+    "fp": 169062,
+    "tn": 48202,
+    "recall": 0.9885137486947442,
+    "precision": 0.01652104105827739,
+    "f1": 0.032498927192104135,
+    "missed_pct": 1.148625130525583,
+    "released_pct": 22.185912070108255
+   }
+  },
+  {
+   "seed": 3,
+   "days": [
+    {
+     "T": 84,
+     "td": 3,
+     "fc": 6482,
+     "missed": 0,
+     "released": 0,
+     "t": 0.07490768569731508,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 85,
+     "td": 14,
+     "fc": 3499,
+     "missed": 0,
+     "released": 2013,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 87,
+     "td": 24,
+     "fc": 684,
+     "missed": 0,
+     "released": 111,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 88,
+     "td": 41,
+     "fc": 2470,
+     "missed": 1,
+     "released": 494,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 89,
+     "td": 12,
+     "fc": 10124,
+     "missed": 0,
+     "released": 2958,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 90,
+     "td": 4,
+     "fc": 7243,
+     "missed": 0,
+     "released": 3867,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 91,
+     "td": 34,
+     "fc": 2959,
+     "missed": 0,
+     "released": 210,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 92,
+     "td": 2,
+     "fc": 2016,
+     "missed": 0,
+     "released": 139,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 94,
+     "td": 1,
+     "fc": 612,
+     "missed": 0,
+     "released": 81,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 95,
+     "td": 8,
+     "fc": 2310,
+     "missed": 0,
+     "released": 933,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 96,
+     "td": 9,
+     "fc": 2265,
+     "missed": 0,
+     "released": 329,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 97,
+     "td": 0,
+     "fc": 7203,
+     "missed": 0,
+     "released": 332,
+     "t": 0.07490768569731508,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 98,
+     "td": 14,
+     "fc": 22614,
+     "missed": 0,
+     "released": 1697,
+     "t": 0.07089016718350125,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 99,
+     "td": 16,
+     "fc": 11830,
+     "missed": 0,
+     "released": 5306,
+     "t": 0.07089016718350125,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 100,
+     "td": 4,
+     "fc": 706,
+     "missed": 0,
+     "released": 0,
+     "t": 0.07089016718350125,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 102,
+     "td": 0,
+     "fc": 165,
+     "missed": 0,
+     "released": 0,
+     "t": 0.07089016718350125,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 103,
+     "td": 5,
+     "fc": 4345,
+     "missed": 0,
+     "released": 919,
+     "t": 0.07089016718350125,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 104,
+     "td": 1,
+     "fc": 9791,
+     "missed": 0,
+     "released": 4340,
+     "t": 0.07089016718350125,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 105,
+     "td": 213,
+     "fc": 5203,
+     "missed": 0,
+     "released": 240,
+     "t": 0.07089016718350125,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 106,
+     "td": 1,
+     "fc": 7235,
+     "missed": 0,
+     "released": 29,
+     "t": 0.05958879105101088,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 107,
+     "td": 0,
+     "fc": 61,
+     "missed": 0,
+     "released": 0,
+     "t": 0.05958879105101088,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 108,
+     "td": 4,
+     "fc": 1031,
+     "missed": 0,
+     "released": 478,
+     "t": 0.05958879105101088,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 109,
+     "td": 10,
+     "fc": 14398,
+     "missed": 0,
+     "released": 5301,
+     "t": 0.05958879105101088,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 110,
+     "td": 32,
+     "fc": 2266,
+     "missed": 0,
+     "released": 135,
+     "t": 0.05958879105101088,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 111,
+     "td": 8,
+     "fc": 398,
+     "missed": 0,
+     "released": 0,
+     "t": 0.05958879105101088,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 112,
+     "td": 88,
+     "fc": 3906,
+     "missed": 0,
+     "released": 120,
+     "t": 0.05306624110158021,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 113,
+     "td": 49,
+     "fc": 707,
+     "missed": 0,
+     "released": 25,
+     "t": 0.05928062310525114,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 116,
+     "td": 47,
+     "fc": 8248,
+     "missed": 2,
+     "released": 3432,
+     "t": 0.05928062310525114,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 117,
+     "td": 73,
+     "fc": 8682,
+     "missed": 2,
+     "released": 1449,
+     "t": 0.05928062310525114,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 118,
+     "td": 21,
+     "fc": 5486,
+     "missed": 0,
+     "released": 2256,
+     "t": 0.05928062310525114,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 119,
+     "td": 696,
+     "fc": 10984,
+     "missed": 20,
+     "released": 4469,
+     "t": 0.05928062310525114,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 120,
+     "td": 23,
+     "fc": 1236,
+     "missed": 0,
+     "released": 2,
+     "t": 0.01786454277903399,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 123,
+     "td": 17,
+     "fc": 3351,
+     "missed": 0,
+     "released": 605,
+     "t": 0.01786454277903399,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 124,
+     "td": 30,
+     "fc": 10470,
+     "missed": 0,
+     "released": 66,
+     "t": 0.01786454277903399,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 125,
+     "td": 86,
+     "fc": 18267,
+     "missed": 0,
+     "released": 0,
+     "t": 0.01786454277903399,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 126,
+     "td": 637,
+     "fc": 4403,
+     "missed": 1,
+     "released": 526,
+     "t": 0.016964400731763262,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 127,
+     "td": 641,
+     "fc": 12411,
+     "missed": 5,
+     "released": 374,
+     "t": 0.026165809733278332,
+     "retrain": "burst",
+     "trigger": "burst"
+    },
+    {
+     "T": 132,
+     "td": 5,
+     "fc": 1203,
+     "missed": 0,
+     "released": 39,
+     "t": 0.024553150002858386,
+     "retrain": "burst",
+     "trigger": null
+    }
+   ],
+   "periods": [
+    {
+     "td": 405,
+     "fc": 102521,
+     "missed": 1,
+     "released": 23969,
+     "missed_pct": 0.24691358024691357,
+     "released_pct": 23.379600277016415,
+     "recall": 0.9975308641975309,
+     "precision": 0.0051167738993870004,
+     "f1": 0.01018132332001865
+    },
+    {
+     "td": 312,
+     "fc": 46932,
+     "missed": 4,
+     "released": 10969,
+     "missed_pct": 1.2820512820512822,
+     "released_pct": 23.37211284411489,
+     "recall": 0.9871794871794872,
+     "precision": 0.00849163243362466,
+     "f1": 0.0168384222179701
+    },
+    {
+     "td": 717,
+     "fc": 16470,
+     "missed": 20,
+     "released": 6725,
+     "missed_pct": 2.789400278940028,
+     "released_pct": 40.83181542197936,
+     "recall": 0.9721059972105998,
+     "precision": 0.0667496648151695,
+     "f1": 0.12492158795591003
+    },
+    {
+     "td": 793,
+     "fc": 37727,
+     "missed": 1,
+     "released": 1199,
+     "missed_pct": 0.12610340479192939,
+     "released_pct": 3.178095263339253,
+     "recall": 0.9987389659520807,
+     "precision": 0.02122186495176849,
+     "f1": 0.04156062235982473
+    },
+    {
+     "td": 646,
+     "fc": 13614,
+     "missed": 5,
+     "released": 413,
+     "missed_pct": 0.7739938080495357,
+     "released_pct": 3.033641839283091,
+     "recall": 0.9922600619195047,
+     "precision": 0.046308336945528106,
+     "f1": 0.08848702374378797
+    }
+   ],
+   "slices": [
+    {
+     "td": 152,
+     "fc": 43875,
+     "tp": 151,
+     "fn": 1,
+     "fp": 32633,
+     "tn": 11242,
+     "recall": 0.993421052631579,
+     "precision": 0.004605905319668131,
+     "f1": 0.009169298032547972,
+     "missed_pct": 0.6578947368421053,
+     "released_pct": 25.622792022792023
+    },
+    {
+     "td": 39,
+     "fc": 43988,
+     "tp": 39,
+     "fn": 0,
+     "fp": 35803,
+     "tn": 8185,
+     "recall": 1.0,
+     "precision": 0.0010881089224931645,
+     "f1": 0.002173852456731975,
+     "missed_pct": 0.0,
+     "released_pct": 18.607347458397744
+    },
+    {
+     "td": 357,
+     "fc": 43671,
+     "tp": 357,
+     "fn": 0,
+     "fp": 33069,
+     "tn": 10602,
+     "recall": 1.0,
+     "precision": 0.01068030874169808,
+     "f1": 0.021134890329455643,
+     "missed_pct": 0.0,
+     "released_pct": 24.276980147008313
+    },
+    {
+     "td": 956,
+     "fc": 43071,
+     "tp": 932,
+     "fn": 24,
+     "fp": 30765,
+     "tn": 12306,
+     "recall": 0.9748953974895398,
+     "precision": 0.02940341357226236,
+     "f1": 0.05708510703457569,
+     "missed_pct": 2.510460251046025,
+     "released_pct": 28.571428571428573
+    },
+    {
+     "td": 1369,
+     "fc": 42659,
+     "tp": 1363,
+     "fn": 6,
+     "fp": 41719,
+     "tn": 940,
+     "recall": 0.9956172388604821,
+     "precision": 0.031637342741748294,
+     "f1": 0.0613259544217228,
+     "missed_pct": 0.4382761139517896,
+     "released_pct": 2.203520945169835
+    }
+   ],
+   "total": {
+    "td": 2873,
+    "fc": 217264,
+    "tp": 2842,
+    "fn": 31,
+    "fp": 173989,
+    "tn": 43275,
+    "recall": 0.989209885137487,
+    "precision": 0.01607184260678275,
+    "f1": 0.031629791212215645,
+    "missed_pct": 1.0790114862513052,
+    "released_pct": 19.91816407688342
+   }
+  },
+  {
+   "seed": 4,
+   "days": [
+    {
+     "T": 84,
+     "td": 3,
+     "fc": 6482,
+     "missed": 0,
+     "released": 0,
+     "t": 0.09090660439563339,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 85,
+     "td": 14,
+     "fc": 3499,
+     "missed": 0,
+     "released": 2050,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 87,
+     "td": 24,
+     "fc": 684,
+     "missed": 0,
+     "released": 129,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 88,
+     "td": 41,
+     "fc": 2470,
+     "missed": 3,
+     "released": 593,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 89,
+     "td": 12,
+     "fc": 10124,
+     "missed": 0,
+     "released": 4135,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 90,
+     "td": 4,
+     "fc": 7243,
+     "missed": 0,
+     "released": 4166,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 91,
+     "td": 34,
+     "fc": 2959,
+     "missed": 0,
+     "released": 278,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 92,
+     "td": 2,
+     "fc": 2016,
+     "missed": 0,
+     "released": 200,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 94,
+     "td": 1,
+     "fc": 612,
+     "missed": 0,
+     "released": 107,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 95,
+     "td": 8,
+     "fc": 2310,
+     "missed": 0,
+     "released": 980,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 96,
+     "td": 9,
+     "fc": 2265,
+     "missed": 1,
+     "released": 402,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 97,
+     "td": 0,
+     "fc": 7203,
+     "missed": 0,
+     "released": 520,
+     "t": 0.09090660439563339,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 98,
+     "td": 14,
+     "fc": 22614,
+     "missed": 0,
+     "released": 1762,
+     "t": 0.07477785817553381,
+     "retrain": "schedule",
+     "trigger": null
+    },
+    {
+     "T": 99,
+     "td": 16,
+     "fc": 11830,
+     "missed": 0,
+     "released": 5387,
+     "t": 0.07477785817553381,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 100,
+     "td": 4,
+     "fc": 706,
+     "missed": 0,
+     "released": 0,
+     "t": 0.07477785817553381,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 102,
+     "td": 0,
+     "fc": 165,
+     "missed": 0,
+     "released": 0,
+     "t": 0.07477785817553381,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 103,
+     "td": 5,
+     "fc": 4345,
+     "missed": 0,
+     "released": 1154,
+     "t": 0.07477785817553381,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 104,
+     "td": 1,
+     "fc": 9791,
+     "missed": 0,
+     "released": 4374,
+     "t": 0.07477785817553381,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 105,
+     "td": 213,
+     "fc": 5203,
+     "missed": 0,
+     "released": 286,
+     "t": 0.07477785817553381,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 106,
+     "td": 1,
+     "fc": 7235,
+     "missed": 0,
+     "released": 281,
+     "t": 0.08844539806249288,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 107,
+     "td": 0,
+     "fc": 61,
+     "missed": 0,
+     "released": 3,
+     "t": 0.08844539806249288,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 108,
+     "td": 4,
+     "fc": 1031,
+     "missed": 0,
+     "released": 751,
+     "t": 0.08844539806249288,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 109,
+     "td": 10,
+     "fc": 14398,
+     "missed": 0,
+     "released": 7453,
+     "t": 0.08844539806249288,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 110,
+     "td": 32,
+     "fc": 2266,
+     "missed": 0,
+     "released": 174,
+     "t": 0.08844539806249288,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 111,
+     "td": 8,
+     "fc": 398,
+     "missed": 0,
+     "released": 4,
+     "t": 0.08844539806249288,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 112,
+     "td": 88,
+     "fc": 3906,
+     "missed": 0,
+     "released": 147,
+     "t": 0.0804965741831526,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 113,
+     "td": 49,
+     "fc": 707,
+     "missed": 0,
+     "released": 30,
+     "t": 0.07053836351426652,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 116,
+     "td": 47,
+     "fc": 8248,
+     "missed": 2,
+     "released": 3695,
+     "t": 0.07053836351426652,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 117,
+     "td": 73,
+     "fc": 8682,
+     "missed": 2,
+     "released": 1505,
+     "t": 0.07053836351426652,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 118,
+     "td": 21,
+     "fc": 5486,
+     "missed": 0,
+     "released": 2435,
+     "t": 0.07053836351426652,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 119,
+     "td": 696,
+     "fc": 10984,
+     "missed": 16,
+     "released": 4807,
+     "t": 0.07053836351426652,
+     "retrain": null,
+     "trigger": "burst"
+    },
+    {
+     "T": 120,
+     "td": 23,
+     "fc": 1236,
+     "missed": 0,
+     "released": 153,
+     "t": 0.04371801261987207,
+     "retrain": "burst",
+     "trigger": null
+    },
+    {
+     "T": 123,
+     "td": 17,
+     "fc": 3351,
+     "missed": 0,
+     "released": 813,
+     "t": 0.04371801261987207,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 124,
+     "td": 30,
+     "fc": 10470,
+     "missed": 0,
+     "released": 357,
+     "t": 0.04371801261987207,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 125,
+     "td": 86,
+     "fc": 18267,
+     "missed": 0,
+     "released": 43,
+     "t": 0.04371801261987207,
+     "retrain": null,
+     "trigger": null
+    },
+    {
+     "T": 126,
+     "td": 637,
+     "fc": 4403,
+     "missed": 3,
+     "released": 638,
+     "t": 0.024167899867084574,
+     "retrain": "schedule",
+     "trigger": "burst"
+    },
+    {
+     "T": 127,
+     "td": 641,
+     "fc": 12411,
+     "missed": 6,
+     "released": 329,
+     "t": 0.02306074457298654,
+     "retrain": "burst",
+     "trigger": "burst"
+    },
+    {
+     "T": 132,
+     "td": 5,
+     "fc": 1203,
+     "missed": 0,
+     "released": 54,
+     "t": 0.023074818677271135,
+     "retrain": "burst",
+     "trigger": null
+    }
+   ],
+   "periods": [
+    {
+     "td": 405,
+     "fc": 102521,
+     "missed": 4,
+     "released": 26523,
+     "missed_pct": 0.9876543209876543,
+     "released_pct": 25.87079720252436,
+     "recall": 0.9901234567901235,
+     "precision": 0.005248759800520949,
+     "f1": 0.01044216447060049
+    },
+    {
+     "td": 312,
+     "fc": 46932,
+     "missed": 4,
+     "released": 14043,
+     "missed_pct": 1.2820512820512822,
+     "released_pct": 29.92201482996676,
+     "recall": 0.9871794871794872,
+     "precision": 0.009277946802421905,
+     "f1": 0.018383120952579907
+    },
+    {
+     "td": 717,
+     "fc": 16470,
+     "missed": 16,
+     "released": 7242,
+     "missed_pct": 2.2315202231520224,
+     "released_pct": 43.970856102003644,
+     "recall": 0.9776847977684798,
+     "precision": 0.0706012690099708,
+     "f1": 0.13169265451812887
+    },
+    {
+     "td": 793,
+     "fc": 37727,
+     "missed": 3,
+     "released": 2004,
+     "missed_pct": 0.37831021437578816,
+     "released_pct": 5.311845627799719,
+     "recall": 0.9962168978562421,
+     "precision": 0.02163612959767754,
+     "f1": 0.04235243660537179
+    },
+    {
+     "td": 646,
+     "fc": 13614,
+     "missed": 6,
+     "released": 383,
+     "missed_pct": 0.9287925696594427,
+     "released_pct": 2.813280446599089,
+     "recall": 0.9907120743034056,
+     "precision": 0.04613942758272655,
+     "f1": 0.08817248742853205
+    }
+   ],
+   "slices": [
+    {
+     "td": 152,
+     "fc": 43875,
+     "tp": 148,
+     "fn": 4,
+     "fp": 30667,
+     "tn": 13208,
+     "recall": 0.9736842105263158,
+     "precision": 0.004802855752068798,
+     "f1": 0.009558562340556076,
+     "missed_pct": 2.6315789473684212,
+     "released_pct": 30.103703703703705
+    },
+    {
+     "td": 39,
+     "fc": 43988,
+     "tp": 39,
+     "fn": 0,
+     "fp": 35296,
+     "tn": 8692,
+     "recall": 1.0,
+     "precision": 0.0011037215225696902,
+     "f1": 0.0022050093288856223,
+     "missed_pct": 0.0,
+     "released_pct": 19.759934527598435
+    },
+    {
+     "td": 357,
+     "fc": 43671,
+     "tp": 357,
+     "fn": 0,
+     "fp": 30238,
+     "tn": 13433,
+     "recall": 1.0,
+     "precision": 0.011668573296290244,
+     "f1": 0.0230679762212458,
+     "missed_pct": 0.0,
+     "released_pct": 30.75954294611985
+    },
+    {
+     "td": 956,
+     "fc": 43071,
+     "tp": 936,
+     "fn": 20,
+     "fp": 29301,
+     "tn": 13770,
+     "recall": 0.9790794979079498,
+     "precision": 0.030955451929754935,
+     "f1": 0.06001346455935626,
+     "missed_pct": 2.092050209205021,
+     "released_pct": 31.970467367834505
+    },
+    {
+     "td": 1369,
+     "fc": 42659,
+     "tp": 1360,
+     "fn": 9,
+     "fp": 41567,
+     "tn": 1092,
+     "recall": 0.9934258582907232,
+     "precision": 0.03168169217508794,
+     "f1": 0.06140509301065559,
+     "missed_pct": 0.6574141709276844,
+     "released_pct": 2.559834970346234
+    }
+   ],
+   "total": {
+    "td": 2873,
+    "fc": 217264,
+    "tp": 2840,
+    "fn": 33,
+    "fp": 167069,
+    "tn": 50195,
+    "recall": 0.9885137486947442,
+    "precision": 0.016714829702958643,
+    "f1": 0.03287379472398745,
+    "missed_pct": 1.148625130525583,
+    "released_pct": 23.103229251049413
+   }
+  }
+ ]
+}
