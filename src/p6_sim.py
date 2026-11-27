@@ -9,6 +9,7 @@ so the system can react to what the labels of the day show:
   - pause: after a trigger, release nothing for `pause` production days
   - cap: at most `cap` threshold-set true defects from one calendar day
   - unseen: a joint with a category code that never occurred in the training data is never released
+  - alarm: bool per row from an SPC chart on the AOI calls (src/p6_spc.py); a joint in alarm is never released
   - intraday: safety switch within the day: once the operator has confirmed `intraday` true defects today,
     nothing more is released for the rest of the day (assumes operator labels come back in line, in row order)
 Only labels that exist in production are used: every joint sent to the operator, plus the audited share
@@ -21,7 +22,7 @@ from p4_sim import MIN_TRAIN_TD, N_NUM, capped_latest, make_forest, threshold
 
 def simulate_daily(X, y, cal_day, n_dev, *, start_day, interval, m, audit, seed, forest=None,
                    burst=None, burst_min=20, audit_trigger=False, pause=0, cap=None, unseen=False,
-                   intraday=None, first_row=0, n_end=None, out_rel=None):
+                   intraday=None, alarm=None, first_row=0, n_end=None, out_rel=None):
     rng = np.random.default_rng(seed)
     n = n_end or n_dev
     idx = np.arange(n)
@@ -57,6 +58,8 @@ def simulate_daily(X, y, cal_day, n_dev, *, start_day, interval, m, audit, seed,
             rel = model.predict_proba(X[chk])[:, 1] < t
             if unseen:
                 rel &= ~((X[chk][:, N_NUM:] > 0) & ~seen).any(1)
+            if alarm is not None:                            # SPC alarm on the AOI call stream: send to operator
+                rel &= ~alarm[chk]
             if intraday:                                     # confirmed true defects before each joint today
                 confirmed = np.cumsum((~rel) & (y[chk] == 1)) - ((~rel) & (y[chk] == 1))
                 stop = np.flatnonzero(confirmed >= intraday)
