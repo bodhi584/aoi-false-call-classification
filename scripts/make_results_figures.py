@@ -68,6 +68,23 @@ def forest_tuning():
     save(fig, "docs/img/p4/forest_tuning.png")
 
 
+def model_comparison():
+    res = by_setting(load("p4_dev_models.json")["runs"], lambda r: r["model"])
+    names = sorted(res, key=lambda k: (res[k][0] > 1, -res[k][1]))
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 5.4), sharey=True)
+    yy = np.arange(len(names))[::-1]
+    rel = [res[k][1] for k in names]; mm = [res[k][0] for k in names]
+    col = [GREEN if k == "BRF (frozen)" else (BLUE if res[k][0] <= 1 else GRAY) for k in names]
+    a1.barh(yy, rel, color=col, height=0.6); a1.set_yticks(yy, names); a1.set_xlabel("False calls released (%)")
+    a2.barh(yy, mm, color=[RED if m > 1 else NAVY for m in mm], height=0.6); a2.axvline(1, color=RED, ls="--", lw=1.5)
+    a2.set_xscale("symlog", linthresh=1); a2.set_xlabel("Worst period: true defects missed (%, log scale above 1)")
+    for ax, v in ((a1, rel), (a2, mm)):
+        for i, x in zip(yy, v):
+            ax.text(x, i, f" {x:.2f}", va="center", fontsize=10)
+    fig.suptitle("Model comparison on the development half (same system, 5 seeds): only BRF passes 1 %")
+    save(fig, "docs/img/p4/model_comparison.png")
+
+
 def system_m_audit():
     res = by_setting(load("p4_dev_system2.json")["runs"],
                      lambda r: (r["setting"]["interval"], r["setting"]["m"], r["setting"]["audit"]))
@@ -144,4 +161,4 @@ def second_evaluation():
 
 
 if __name__ == "__main__":
-    forest_tuning(); system_m_audit(); final_test_windows(); dev_ideas(); second_evaluation()
+    forest_tuning(); model_comparison(); system_m_audit(); final_test_windows(); dev_ideas(); second_evaluation()

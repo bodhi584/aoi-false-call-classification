@@ -60,7 +60,11 @@ def plain_rank(m, alpha=ALPHA):
 def threshold(scores_td, rule):
     """t from the scores of the threshold set; release if s(x) < t."""
     s = np.sort(scores_td)
-    k = np_rank(len(s)) if rule == "np" else plain_rank(len(s))
+    if rule.startswith("np"):                       # "np" = 95 % confidence; "np90", "np99" for other confidences
+        delta = DELTA if rule == "np" else 1 - int(rule[2:]) / 100
+        k = np_rank(len(s), delta=delta)
+    else:
+        k = plain_rank(len(s))
     return -np.inf if k == 0 else float(s[k - 1])   # -inf: release nothing
 
 
@@ -71,9 +75,48 @@ FOREST_DEFAULTS = {"n_estimators": 100, "max_features": "sqrt", "min_samples_lea
 def make_forest(seed, forest=None):
     """BRF, F1-F4 = library defaults of imbalanced-learn 0.14 (P3 slide 10) unless given; fixed seed.
     F1 n_estimators, F2 max_features, F3 min_samples_leaf, F4 sampling_strategy ("all" = 1:1;
-    a number r = true defects : false calls after under-sampling, e.g. 0.5 = twice as many false calls)."""
-    kw = FOREST_DEFAULTS | (forest or {})
-    return BalancedRandomForestClassifier(random_state=seed, n_jobs=-1, **kw)
+    a number r = true defects : false calls after under-sampling, e.g. 0.5 = twice as many false calls).
+    Model comparison (P4 exp 7): forest["model"] in {"brf" (default), "rf", "xgb", "logreg", "mlp"};
+    the other keys are passed to that model."""
+    f = dict(forest or {})
+    kind = f.pop("model", "brf")
+    if kind == "brf":
+        return BalancedRandomForestClassifier(random_state=seed, n_jobs=-1, **(FOREST_DEFAULTS | f))
+    if kind == "rf":                                   # class_weight="balanced_subsample" = weighted RF (WRF)
+        from sklearn.ensemble import RandomForestClassifier
+        return RandomForestClassifier(random_state=seed, n_jobs=-1, **f)
+    if kind == "xgb":
+        return _XGB(seed, **f)
+    if kind == "logreg":
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import StandardScaler
+        return make_pipeline(StandardScaler(), LogisticRegression(class_weight="balanced", max_iter=2000, **f))
+    if kind == "mlp":                                  # neural network on a 1:1 under-sample (no class weights in sklearn MLP)
+        from imblearn.pipeline import make_pipeline as imb_pipeline
+        from imblearn.under_sampling import RandomUnderSampler
+        from sklearn.neural_network import MLPClassifier
+        from sklearn.preprocessing import StandardScaler
+        return imb_pipeline(StandardScaler(), RandomUnderSampler(random_state=seed),
+                            MLPClassifier(random_state=seed, max_iter=300, early_stopping=True, **f))
+    raise ValueError(kind)
+
+
+class _XGB:
+    """XGBoost; scale_pos_weight="balanced" = false calls / true defects of the training data."""
+
+    def __init__(self, seed, scale_pos_weight="balanced", **kw):
+        self.seed, self.spw, self.kw = seed, scale_pos_weight, kw
+
+    def fit(self, X, y):
+        from xgboost import XGBClassifier
+        spw = (y == 0).sum() / max((y == 1).sum(), 1) if self.spw == "balanced" else self.spw
+        self.m = XGBClassifier(random_state=self.seed, n_jobs=-1, tree_method="hist", scale_pos_weight=spw, **self.kw)
+        self.m.fit(X, y)
+        return self
+
+    def predict_proba(self, X):
+        return self.m.predict_proba(X)
 
 
 def cv_threshold(X, y, seed, recall=0.99):
@@ -147,7 +190,7 @@ def simulate(X, y, cal_day, n_dev, *, start_day, interval, window, m, rule, audi
             hist = idx[((cal_day[:n_dev] < T) | (idx < first_row)) & known]   # labelled history before T
             td = hist[y[hist] == 1]
             # threshold set = latest m labelled true defects (only for the rules that need one)
-            thr_set = (capped_latest(td, cal_day, m, cap) if rule in ("np", "plain") and groups is None
+            thr_set = (capped_latest(td, cal_day, m, cap) if (rule.startswith("np") or rule == "plain") and groups is None
                        else td[:0])
             if groups is not None:                                 # per group: leave out each group's latest m
                 thr_set = np.concatenate([capped_latest(td[groups[td] == g], cal_day, m, cap)
@@ -166,7 +209,7 @@ def simulate(X, y, cal_day, n_dev, *, start_day, interval, window, m, rule, audi
                 pass
             elif groups is not None:
                 t = group_thresholds(model, X, td, groups, cal_day, m, cap, rule)
-            elif rule in ("np", "plain"):
+            elif (rule.startswith("np") or rule == "plain"):
                 t = threshold(model.predict_proba(X[thr_set])[:, 1], rule)
             elif rule == "cv":
                 t = cv_threshold(X[train], y[train], seed)

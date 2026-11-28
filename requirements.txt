@@ -6,3 +6,4 @@ imbalanced-learn==0.14.2  # BRF defaults F1-F4 depend on this version
 matplotlib>=3.8
 shap
 seaborn
+xgboost==3.4.1

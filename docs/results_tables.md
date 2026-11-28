@@ -192,6 +192,25 @@ Source: results/p4_dev_system2.json
 | NP, every 14 d, all history, m 750, audit 10 % | 3.35 | no | 3.29 | 2.87–3.72 | 0.84 | 5 |
 | NP, every 14 d, all history, m 750, audit 5 % | 2.79 | no | 3.24 | 2.59–3.74 | 0.58 | 5 |
 
+### P4-9 Experiment 7 (added 28 Nov, after the final test): model choice and confidence S4, same system
+
+Every 14 d, all history, m 500, audit 10 %, NP 95 % unless stated; only the model changes. WRF = RF with class_weight balanced_subsample. NP 90 % gives the same rank k = 2 as 95 % for m = 500 (identical to the frozen model). Development half only; does not change the final-test result. Source: results/p4_dev_models.json
+
+| setting | worst missed % | passes ≤ 1 % | released % (mean) | released % (min–max seeds) | missed % (mean of periods) | seeds |
+|---|---|---|---|---|---|---|
+| **BRF (frozen)** | 0.92 | yes | 8.12 | 5.99–12.54 | 0.63 | 5 |
+| BRF, NP 99 % | 0.74 | yes | 3.70 | 2.93–4.23 | 0.07 | 5 |
+| RF, 300 trees, leaf 1 | 0.00 | yes | 0.00 | 0.00–0.00 | 0.00 | 5 |
+| WRF, 300 trees, leaf 1 | 0.00 | yes | 0.00 | 0.00–0.00 | 0.00 | 5 |
+| XGBoost, no weights | 13.82 | no | 10.05 | 8.10–11.62 | 7.08 | 5 |
+| RF, 300 trees, leaf 5 | 3.23 | no | 9.60 | 7.51–13.88 | 0.72 | 5 |
+| WRF, 300 trees, leaf 5 | 1.84 | no | 9.20 | 8.24–10.79 | 0.56 | 5 |
+| XGBoost, balanced weights | 20.05 | no | 7.08 | 2.33–11.85 | 10.21 | 5 |
+| Neural network 64 | 32.03 | no | 3.48 | 1.33–7.96 | 4.27 | 5 |
+| Neural network 128-64 | 30.65 | no | 2.87 | 0.45–8.43 | 5.46 | 5 |
+| Logistic regression | 3.23 | no | 2.37 | 2.36–2.39 | 1.61 | 5 |
+| Logistic regression, C 0.1 | 2.30 | no | 0.76 | 0.73–0.79 | 1.15 | 5 |
+
 ### P4-7 Feature importance (permutation, drop in average precision; one-hot groups permuted together)
 
 Fit on the first 80 % of the development half, measured on the last 20 % (44,028 rows, 326 true defects); average precision of the model 0.241. Source: results/p4_feature_importance.json

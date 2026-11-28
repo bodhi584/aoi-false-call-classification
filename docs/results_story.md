@@ -20,6 +20,7 @@ This document is the team's single base for P4 (8 Dec), P5 (22 Dec) and the fina
 | S4 confidence | 95 % (δ = 5 %) | P3 design |
 | S5 audit share | 10 % | [P4-6] |
 | F1–F4 forest | 300 trees, max_features sqrt, min leaf 5, 1:1 sampling | [P4-4] |
+| model | balanced random forest: the only model of 12 settings (RF, weighted RF, XGBoost, logistic regression, neural network) that holds 1 % | [P4-9] |
 
 **What it achieved on the test half** (data days 64–101, frozen model, run once, 5 seeds) **[P5-1], [P5-2], [C1]:**
 
@@ -108,6 +109,22 @@ That is about **1,300 false calls fewer to check per production day** and about 
 | Periodic retraining | drift (AUROC 0.974; weekly defect share 0.08–6.65 %) | the most recent data are the most informative; a BRF is a batch model, so we retrain instead of updating incrementally | [12, Sect. 3.1.1, 3.3.1] |
 | Neyman–Pearson threshold | the limit is a bound on one class, not a cost | NP controls P(release \| true defect) ≤ α with probability ≥ 1 − δ; it is defined inside the true-defect class, so p(y) drift does not break it | [14] |
 
+**Evidence for every P3 choice.** Each design choice was first derived from theory (P3) and then tested against alternatives on our own development data:
+
+| P3 choice | alternatives tested on our data | result | table |
+|---|---|---|---|
+| model: BRF | RF, weighted RF, XGBoost, logistic regression, neural network (12 settings) | only BRF holds 1 % | [P4-9] |
+| forest parameters F1–F4 | 24 combinations | 300 trees, sqrt, leaf 5, 1:1 | [P4-4] |
+| threshold: Neyman–Pearson | 0.5 cut, [7] cross-validated, plain 1 % quantile, day cap, per type | only NP has a guarantee; plain and [7] fail | [P4-2], [P4-3] |
+| confidence S4 = 95 % | 90 %, 99 % | 90 % identical; 99 % halves the release | [P4-9] |
+| retraining S1 | train once, every 7 d, every 14 d | 14 d | [P4-1], [P4-5], [P4-6] |
+| training window S2 | all history, last 28 d | all history | [P4-1], [P4-5] |
+| threshold-set size S3 | m = 299, 500, 750, 1000 | 500 | [P4-1], [P4-6] |
+| audit share S5 | 5, 10, 20, 100 % | 10 % | [P4-1], [P4-6] |
+| periodic vs triggered retraining | burst trigger, audit trigger, SPC switch | triggers help on development data, not on test | [P6-1], [P6E-1] |
+| retraining instead of incremental learning | not tested | theory only: a BRF is a batch model [12, Sect. 3.3.1] | — |
+| methodology CRISP-DM | not applicable | process standard | — |
+
 **Parameters.**
 - **Forest F1–F4:** number of trees, max_features, min_samples_leaf, sampling ratio.
 - **System S1–S5:** retraining interval, training window, threshold-set size m, confidence, audit share.
@@ -132,6 +149,7 @@ Using the worst case, not the mean, is deliberate: the limit is a guarantee, not
 | Exp 4 | which forest parameters (F1–F4) on the chosen system? | [P4-4] |
 | Exp 5 | is the system still the best with the tuned forest? | [P4-5] |
 | Exp 6 | m and audit share with the tuned forest | [P4-6] |
+| Exp 7 | is BRF the right model, and is 95 % the right confidence? (added after the final test, development half only) | [P4-9] |
 
 ---
 
@@ -204,7 +222,32 @@ The choice from Exp 1 still holds.
 
 ![m and audit](img/p4/system_m_audit.png)
 
-### 5.7 Feature importance (lecturer question 1) [P4-7], [P4-8]
+### 5.7 Experiment 7: model choice and confidence [P4-9]
+
+Same system as the frozen model; only the model changes. Each model gets its library defaults and one variant. This experiment was added on 28 Nov, after the final test, to check the P3 model choice on our own data. It uses the development half only and does not change the final result.
+
+| model | worst missed % | passes | released % (mean, min–max) |
+|---|---|---|---|
+| **BRF (frozen)** | **0.92** | **yes** | **8.12** (5.99–12.54) |
+| BRF, NP 99 % | 0.74 | yes | 3.70 (2.93–4.23) |
+| RF / weighted RF, leaf 1 | 0.00 | yes | 0.00 (releases nothing) |
+| RF, leaf 5 | 3.23 | no | 9.60 (7.51–13.88) |
+| weighted RF, leaf 5 | 1.84 | no | 9.20 (8.24–10.79) |
+| XGBoost, no weights | 13.82 | no | 10.05 (8.10–11.62) |
+| XGBoost, balanced weights | 20.05 | no | 7.08 (2.33–11.85) |
+| neural network 64 / 128-64 | 32.03 / 30.65 | no | 3.48 / 2.87 |
+| logistic regression / C 0.1 | 3.23 / 2.30 | no | 2.37 / 0.76 |
+
+- **BRF is the only model that releases something and keeps 1 % in every period and seed.**
+- **RF and weighted RF with leaf 5 release slightly more on average (9.2–9.6 %) but break the limit in some seeds** (worst 1.84–3.23 %). BRF is more stable across seeds; a likely reason is that each of its trees sees a fresh balanced sample of the true defects.
+- **RF and weighted RF with leaf 1 release nothing.** Like BRF with leaf 1, their scores tie at 0, so the threshold is 0.
+- **XGBoost** misses 13.8–20.1 % in the first period, the burst period. We did not analyse why; one likely reason is that boosting fits the training defects closely, so defects of a new kind get very low scores. [7] also reports an unstable threshold for XGBoost.
+- **Neural networks** are unstable across seeds (worst 30–32 %) and release little. **Logistic regression** releases little and still misses 2.3–3.2 %, consistent with the weak linear relations found in P3 (highest \|r\| = 0.18).
+- **Confidence:** 90 % gives the same rank k = 2 as 95 % for m = 500, so it is identical. 99 % (k = 1) is safer but halves the release share (3.70 %). **95 % keeps the limit with twice the release.**
+
+![Model comparison](img/p4/model_comparison.png)
+
+### 5.8 Feature importance (lecturer question 1) [P4-7], [P4-8]
 
 - **Method.** Permutation importance = drop in average precision when one feature is shuffled. The one-hot columns of a categorical feature are shuffled together. Fit on the first 80 % of the development half, measured on the last 20 % (44,028 rows, 326 true defects).
 - **Overall top 5:** inspection_feat48 (0.131), inspection_feat24 (0.089), inspection_type (0.053), inspection_feat12 (0.053), inspection_feat95 (0.045).
@@ -212,14 +255,14 @@ The choice from Exp 1 still holds.
 - **Answer to "which feature relates most to defects":** inspection_feat48. Shuffling it lowers the model's average precision from 0.241 by 0.131, the largest drop of all features; inspection_feat24 is second (0.089).
 - **Why not correlation (P3)?** Correlation shows only linear relations (highest \|r\| = 0.18). Permutation importance measures what the non-linear model actually uses.
 
-### 5.8 What the features physically are (lecturer question 2)
+### 5.9 What the features physically are (lecturer question 2)
 
 - The feature names are anonymised by Siemens. The data paper [4, Sect. 2] explains that the meaning of an inspection feature depends on the inspection type: for example x/y offset, pad size, solder bridging, angle and polarity checks.
 - `mapping.json` lists which features each inspection type uses: 44 / 52 / 65 / 65 / 21 features for types 0–4.
 - meta_feat1 is the component code: a product or component ID, not a measurement.
 - So "feat48" has a physical meaning **within an inspection type**, and Siemens has not published it. We can say *which* features matter, not what they measure.
 
-### 5.9 Why Neyman–Pearson, and which other threshold methods exist (lecturer question 3)
+### 5.10 Why Neyman–Pearson, and which other threshold methods exist (lecturer question 3)
 
 - **Why NP.** The requirement is a bound ("at most 1 % of true defects released"), not a cost trade-off. NP is the classification paradigm built for exactly this: error of one class ≤ α with probability ≥ 1 − δ [14].
 - **Classical** (minimise the total error) and **cost-sensitive** methods weight the errors by the class shares, so they go out of date when p(y) drifts. They also give no probabilistic control of the 1 % [14].
@@ -363,6 +406,7 @@ Note on slice 2: with only 39 true defects, one miss is already 2.6 %, so the 1 
 - **One plant, one product mix, 101 days**; 5 seeds per setting.
 - **Few bursts for design:** 5 in the development half.
 - **The test half was evaluated twice** (P5, then P6). P5 is the result; P6 is declared as a second look.
+- **Model comparison after the test:** Experiment 7 (models, confidence) was added after the final test. It used the development half only and confirmed the frozen choice; it could not have changed the result.
 - **Periods:** the P4 selection used periods pooled from 14-day windows. The finer day-by-day cut in P6 shows that the frozen model already exceeded 1 % in one development period (2.30 %).
 - **Labels** contain errors [4, Sect. 3]; the audit labels only 10 % of the released joints.
 - **The same-day switch** assumes operator labels in real time; not verified for the plant.
@@ -382,15 +426,16 @@ Note on slice 2: with only 39 true defects, one miss is already 2.6 %, so the 1 
 
 **Design and method**
 
-1. **Why a random forest and not XGBoost or a neural network?** Tree models beat neural networks on tabular data [8]; a forest is more robust to label noise than boosting [10]. In [7], XGBoost had the best paper result (92.5 %) but missed 1.5 % with an unstable threshold.
-2. **Why balanced RF?** 1.05 % true defects. Each tree sees a balanced sample. Balanced vs weighted RF: no clear winner in accuracy [10]; BRF is cheaper to retrain.
-3. **Why Neyman–Pearson?** See 5.9: the requirement is a bound, and NP is the method with a guarantee for a bound.
+1. **Why a balanced random forest and not XGBoost, a neural network or logistic regression?** We tested all of them in the same system [P4-9]. Only BRF held 1 % in every period and seed (8.12 % released). XGBoost missed up to 20 %, neural networks up to 32 %, logistic regression 3.2 %. The literature points the same way: tree models beat neural networks on tabular data [8]; a forest is more robust to label noise than boosting [10].
+2. **Why balanced RF and not a plain or weighted RF?** Plain and weighted RF with leaf 5 released slightly more on average (9.2–9.6 %) but broke 1 % in some seeds (worst 1.84–3.23 %); with leaf 1 they released nothing [P4-9]. BRF is the stable one. It is also cheaper to retrain, since each tree uses a small balanced sample [10].
+3. **Why Neyman–Pearson?** See 5.10: the requirement is a bound, and NP is the method with a guarantee for a bound.
 4. **What is k, and why the 2nd lowest score?** For m = 500, k = 2 is the largest rank whose binomial probability of more than 1 % misses stays ≤ 5 % [D3]. The plain quantile would take rank 6 and hold the limit only about half the time [14].
 5. **Why m = 500 and not 299 or 1000?** 299 fails under bursts [P4-1]; 1000 passes but releases only 2.8 % [P4-6]; 750 fails; 500 is the passing value with the highest release.
 6. **Why 14 days and not 7?** Every 7-day setting fails with the tuned forest (worst 1.63–4.60 %) [P4-5], [P4-6]. The decision rests on this result; we did not prove the mechanism.
 7. **Why not "train once"? It released more in Exp 1.** See 5.1: drift, seed instability (0–11 %), and with the tuned forest the 14-day system releases more (8.12 %).
 8. **Why audit 10 %?** 10 % passes with the highest release; 5 % fails narrowly; 20 % releases less [P4-6].
 9. **Why the worst case and not the mean?** The 1 % is a guarantee per period, not an average. The mean would hide exactly the burst periods.
+10a. **Why 95 % confidence?** 90 % gives the same threshold for m = 500; 99 % is safe too but releases only 3.70 % instead of 8.12 % [P4-9].
 10. **Why periods of 299 true defects?** It is the smallest sample in which 1 % can be checked at 95 % confidence (0.99^299 < 5 %).
 11. **Why the same split as [7]?** For a one-to-one comparison with the baseline.
 
@@ -402,7 +447,7 @@ Note on slice 2: with only 39 true defects, one miss is already 2.6 %, so the 1 
 15. **Why is your release share below [7]'s?** [7] misses 5–9 % of true defects; we hold the safety limit first. At equal safety, [7] would release far less.
 16. **Why is the test release (22.7 %) higher than development (8.1 %)?** Most likely the longer history at the test start (1,249 vs at most 778 training true defects) [P5-4]; not tested separately.
 17. **Which feature matters most?** inspection_feat48 overall; per inspection type it differs [P4-7], [P4-8].
-18. **What do the features mean physically?** See 5.8. The meaning depends on the inspection type and is anonymised by Siemens [4, Sect. 2].
+18. **What do the features mean physically?** See 5.9. The meaning depends on the inspection type and is anonymised by Siemens [4, Sect. 2].
 19. **How many joints does this save?** About 1,300 false calls per production day; about one true defect per day is released [C1].
 
 **Honesty and validity**
@@ -426,6 +471,7 @@ python scripts/p4_run_cap.py                    # Exp 3  -> results/p4_dev_cap.j
 python scripts/p4_run_forest.py                 # Exp 4  -> results/p4_dev_forest.json
 python scripts/p4_run_confirm.py                # Exp 5  -> results/p4_dev_confirm.json
 python scripts/p4_run_system2.py                # Exp 6  -> results/p4_dev_system2.json
+python scripts/p4_run_models.py                 # Exp 7  -> results/p4_dev_models.json (needs xgboost)
 python scripts/p4_feature_importance.py         # -> results/p4_feature_importance.json
 python scripts/p5_final_test.py                 # final test (run once) -> results/p5_final_test.json
 python scripts/p6_run_ideas.py; python scripts/p6_run_ideas2.py; python scripts/p6_run_spc.py

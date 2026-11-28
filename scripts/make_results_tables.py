@@ -125,6 +125,12 @@ def p4_tables():
     table("P4-6 Experiment 6: threshold-set size m (S3) and audit share (S5) with the tuned forest", HEAD,
           rows_of(summarise(j("p4_dev_system2.json")["runs"], lambda r: sys_name(r["setting"]))),
           note="Source: results/p4_dev_system2.json")
+    table("P4-9 Experiment 7 (added 28 Nov, after the final test): model choice and confidence S4, same system", HEAD,
+          rows_of(summarise(j("p4_dev_models.json")["runs"], lambda r: r["model"]), "BRF (frozen)"),
+          note="Every 14 d, all history, m 500, audit 10 %, NP 95 % unless stated; only the model changes. WRF = RF with "
+               "class_weight balanced_subsample. NP 90 % gives the same rank k = 2 as 95 % for m = 500 (identical to "
+               "the frozen model). Development half only; does not change the final-test result. "
+               "Source: results/p4_dev_models.json")
     fi = j("p4_feature_importance.json")
     top = list(fi["all"]["importance"].items())[:10]
     table("P4-7 Feature importance (permutation, drop in average precision; one-hot groups permuted together)",
