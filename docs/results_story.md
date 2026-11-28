@@ -135,6 +135,7 @@ That is about **1,300 false calls fewer to check per production day** and about 
 | [4 m and audit](img/evidence/4_m_audit.png) | m = 500 with a 10 % audit is the best passing pair |
 | [5 Forest parameters](img/evidence/5_forest.png) | 300 trees, sqrt, leaf 5, 1:1 is the best of 24 settings |
 | [6 Triggers and switches](img/evidence/6_triggers.png) | periodic retraining alone is not enough under bursts; the switches help on development data only |
+| [8 Tuning curves](img/evidence/8_tuning_curves.png) | trees, features per split and audit peak at the chosen value; m and interval are trade-offs with the optimum at the safe boundary; min leaf 5 is an isolated passing point |
 | [7 Component monitoring](img/evidence/7_component.png) | component SPC on calls holds 1 % on development data; the component switch on defects does not; two event types (defect bursts, call floods) |
 
 **Parameters.**
@@ -241,6 +242,26 @@ The choice from Exp 1 still holds.
 - **Audit 5 %** fails narrowly (1.12 %). Fewer labels of released joints reach the training data; whether this is the cause or seed noise is not shown.
 
 ![m and audit](img/p4/system_m_audit.png)
+
+### 5.6a Experiment 9: tuning curves [P4-11]
+
+To check whether the chosen values sit at an optimum, each parameter was changed alone around the frozen model (development half, 5 seeds). **The selection is a constrained maximum**: the highest released share among the values that keep the worst period ≤ 1 %. So the optimum can be the top of a curve, or the boundary where the constraint starts to bind.
+
+![Tuning curves](img/evidence/8_tuning_curves.png)
+
+| parameter | shape of the curve | frozen value | reading |
+|---|---|---|---|
+| F1 number of trees | peak | 300 | released 6.7 → 7.3 → **8.1** → 6.7 % for 100 / 200 / **300** / 500; 50 and 100 fail. A true interior maximum |
+| F2 features per split | peak among passing values | sqrt (14) | 7 (log2) releases more but fails (3.92 %); 20 fails narrowly (1.12 %); 51 passes with 3.89 %. 14 is the best passing value |
+| S5 audit share | flat plateau with a small peak | 10 % | 7.3–8.1 % for 10–30 %; 5 % fails narrowly (1.12 %). Insensitive above 10 % |
+| S3 threshold-set size m | monotonic trade-off | 500 | smaller m releases more (300: 19.1 %) but misses 39 %; **500 is the smallest m that passes**, so the optimum is the constraint boundary |
+| S1 retraining interval | monotonic trade-off | 14 d | shorter intervals release more but 7 and 10 d fail; **14 d is the shortest interval that passes**: boundary optimum |
+| F3 min samples per leaf | noisy, only 1 and 5 pass | 5 | released rises with larger leaves, but 2, 3, 8, 12, 20, 40 all fail (1.61–5.53 %). **5 is an isolated passing point**: its neighbours fail by about 0.6 percentage points |
+
+**What this means.**
+- Trees, features per split and audit share show a **concave curve** (an inverted U, or a plateau) with the frozen value at or near the top.
+- m and the retraining interval are **trade-offs**: release and risk move together, so the best choice is the edge of the safe region, not a peak.
+- **min leaf 5 is the weakest choice.** It passes, but its neighbours fail; the worst missed share is close to 1 % everywhere and depends on single seeds. With 5 seeds this is within the noise of the selection, so the release gain from leaf 5 should be called **not robust**. This is a limitation, not a reason to change the frozen model after the test.
 
 ### 5.7 Experiment 7: model choice and confidence [P4-9]
 
@@ -514,6 +535,7 @@ Following the root-cause finding (section 7a), we tested monitoring per componen
 - **The same-day switch** assumes operator labels in real time; not verified for the plant.
 - **Feature meaning** is anonymised; we cannot name physical causes.
 - **No cost model:** operator time per joint and the cost of a missed defect are not in the data.
+- **Robustness of min leaf 5:** in the tuning curve, leaf 5 passes but its neighbours (3 and 8) fail by about 0.6 percentage points [P4-11]; the choice is not robust to small changes.
 - **Root-cause findings are associations**, not physical causes; the call-flood mechanism rests on two development days and one component, and was not checked on the test half.
 - **No new data:** the public Siemens data set is the complete 132-day recording; the component monitor cannot be validated without later production data.
 
@@ -540,6 +562,7 @@ Following the root-cause finding (section 7a), we tested monitoring per componen
 7. **Why not "train once"?** With the tuned forest, train once releases 7.28 %, every 14 days 8.12 %, both within 1 % [P4-10]. Retraining also follows the drift and learns new component codes.
 8. **Why audit 10 %?** 10 % passes with the highest release; 5 % fails narrowly; 20 % releases less [P4-6].
 9. **Why the worst case and not the mean?** The 1 % is a guarantee per period, not an average. The mean would hide exactly the burst periods.
+9a. **Did you check that the parameters are at an optimum?** Yes, with tuning curves [P4-11]: trees (300), features per split (sqrt) and audit (10 %) peak at the chosen value; m (500) and the interval (14 d) are the safe boundary of a trade-off; min leaf 5 passes but is not robust.
 10a. **Why 95 % confidence?** 90 % gives the same threshold for m = 500; 99 % is safe too but releases only 3.70 % instead of 8.12 % [P4-9].
 10. **Why periods of 299 true defects?** It is the smallest sample in which 1 % can be checked at 95 % confidence (0.99^299 < 5 %).
 11. **Why the same split as [7]?** For a one-to-one comparison with the baseline.
@@ -582,6 +605,7 @@ python scripts/p4_run_system2.py                # Exp 6  -> results/p4_dev_syste
 python scripts/p4_run_models.py                 # Exp 7  -> results/p4_dev_models.json (needs xgboost)
 python scripts/p4_run_proof.py                  # Exp 8  -> results/p4_dev_proof.json
 python scripts/p4_feature_importance.py         # -> results/p4_feature_importance.json
+python scripts/p4_run_sweep.py                  # Exp 9 tuning curves -> results/p4_dev_sweep.json
 python scripts/p4_root_cause.py                 # root-cause analysis -> results/p4_root_cause.json, docs/img/rca
 python scripts/p5_final_test.py                 # final test (run once) -> results/p5_final_test.json
 python scripts/p6_run_ideas.py; python scripts/p6_run_ideas2.py; python scripts/p6_run_spc.py

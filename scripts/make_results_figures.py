@@ -237,5 +237,75 @@ def component_figure():
                     "component today vs its 99 % quantile; cap = per component in the threshold set.")
 
 
+FROZEN = {"interval": 14, "window": None, "m": 500, "rule": "np", "audit": 0.1,
+          "n_estimators": 300, "max_features": "sqrt", "min_samples_leaf": 5, "sampling_strategy": "all"}
+
+
+def all_window_runs():
+    """Every 14-day-window run on the development half with its full parameter set."""
+    out = []
+    for f in ("p4_dev_forest.json", "p4_dev_confirm.json", "p4_dev_system2.json", "p4_dev_proof.json", "p4_dev_sweep.json"):
+        for r in load(f)["runs"]:
+            st = dict(r["setting"]); fo = st.pop("forest", None) or r.get("forest") or {}
+            fo = {k: v for k, v in fo.items() if k != "model"}
+            if "model" in (r.get("forest") or {}):
+                continue
+            prm = dict(FROZEN) | {k: st[k] for k in ("interval", "window", "m", "rule", "audit") if k in st} | fo
+            if r.get("setting", {}).get("cap") or r.get("setting", {}).get("per_type"):
+                continue
+            rel = 100 * sum(w["released"] for w in r["windows"]) / sum(w["fc"] for w in r["windows"])
+            out.append((prm, r["seed"], max(p["missed_pct"] for p in r["periods"]), rel))
+    return out
+
+
+def tuning_curves():
+    runs = all_window_runs()
+    mf = lambda v: {"sqrt": 14, "log2": 7}.get(v, int(v * 206) if isinstance(v, float) else v)  # noqa: E731
+    specs = [("min_samples_leaf", "F3 min samples per leaf", float, "log"),
+             ("n_estimators", "F1 number of trees", float, "linear"),
+             ("max_features", "F2 features per split (of 206)", mf, "log"),
+             ("m", "S3 threshold-set size m", float, "linear"),
+             ("interval", "S1 retraining interval (days)", float, "linear"),
+             ("audit", "S5 audit share (%)", lambda v: 100 * v, "linear")]
+    fig, axes = plt.subplots(4, 3, figsize=(15, 12), gridspec_kw={"height_ratios": [1.3, 1, 1.3, 1]})
+    summary = {}
+    for i, (key, label, conv, scale) in enumerate(specs):
+        top, bot = axes[2 * (i // 3), i % 3], axes[2 * (i // 3) + 1, i % 3]
+        bot.sharex(top)
+        g = defaultdict(list)
+        for prm, seed, mm, rel in runs:
+            if all(prm[k] == FROZEN[k] for k in FROZEN if k != key) and prm[key] is not None:
+                g[prm[key]].append((mm, rel))
+        xs = sorted(g, key=conv)
+        X = [conv(v) for v in xs]
+        rel_m = [np.mean([b for _, b in g[v]]) for v in xs]
+        rel_lo = [min(b for _, b in g[v]) for v in xs]; rel_hi = [max(b for _, b in g[v]) for v in xs]
+        worst = [max(a for a, _ in g[v]) for v in xs]
+        ok = [w <= 1 for w in worst]
+        top.fill_between(X, rel_lo, rel_hi, color=BLUE, alpha=0.15, lw=0)
+        top.plot(X, rel_m, color=BLUE, lw=2)
+        top.scatter(X, rel_m, s=[55 if o else 35 for o in ok], color=[BLUE if o else GRAY for o in ok], zorder=3,
+                    edgecolor="white")
+        c = X[xs.index(FROZEN[key])]
+        top.scatter([c], [rel_m[xs.index(FROZEN[key])]], marker="*", s=320, color=GREEN, zorder=4, edgecolor="white")
+        top.set_title(label, fontsize=12); top.set_ylabel("released %" if i % 3 == 0 else "")
+        bot.plot(X, worst, color=NAVY, lw=1.6)
+        bot.scatter(X, worst, color=[NAVY if o else RED for o in ok], s=30, zorder=3)
+        bot.axhline(1, color=RED, ls="--", lw=1.3); bot.set_ylabel("worst missed %" if i % 3 == 0 else "")
+        bot.set_ylim(0, max(2.5, min(max(worst) * 1.1, 6)))
+        if scale == "log":
+            top.set_xscale("log")
+        bot.set_xticks(X, [str(round(x)) for x in X]); bot.minorticks_off(); top.minorticks_off()
+        top.tick_params(labelbottom=False)
+        bot.tick_params(axis="x", labelsize=9)
+        summary[key] = [{"value": v, "released": round(r, 2), "worst_missed": round(w, 2), "passes": o}
+                        for v, r, w, o in zip(xs, rel_m, worst, ok)]
+    fig.suptitle("Tuning curves around the frozen model (development half, 5 seeds; one parameter changed at a time)\n"
+                 "blue line = mean released (band = seeds), grey point = fails 1 %; lower panel = worst period missed; "
+                 "★ = frozen value", fontsize=12)
+    save(fig, "docs/img/evidence/8_tuning_curves.png")
+    Path("results/p4_tuning_curves.json").write_text(json.dumps(summary, indent=1))
+
+
 if __name__ == "__main__":
-    forest_tuning(); evidence_figures(); component_figure(); system_m_audit(); final_test_windows(); dev_ideas(); second_evaluation()
+    forest_tuning(); evidence_figures(); component_figure(); tuning_curves(); system_m_audit(); final_test_windows(); dev_ideas(); second_evaluation()

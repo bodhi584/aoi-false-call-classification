@@ -135,6 +135,18 @@ def p4_tables():
           rows_of(summarise(j("p4_dev_proof.json")["runs"], lambda r: r["name"])),
           note="Tuned BRF, every 14 d, all history, m 500, audit 10 %, NP 95 % unless stated. Development half only. "
                "Source: results/p4_dev_proof.json")
+    tc = j("p4_tuning_curves.json")
+    rows = []
+    for k, pts in tc.items():
+        for q in pts:
+            star = q["value"] == {"min_samples_leaf": 5, "n_estimators": 300, "max_features": "sqrt", "m": 500,
+                                  "interval": 14, "audit": 0.1}[k]
+            rows.append([k, ("**" + str(q["value"]) + "**") if star else q["value"], f2(q["worst_missed"]),
+                         "yes" if q["passes"] else "no", f2(q["released"])])
+    table("P4-11 Experiment 9: tuning curves, one parameter changed at a time around the frozen model",
+          ["parameter", "value (frozen in bold)", "worst missed %", "passes ≤ 1 %", "released % (mean)"], rows,
+          note="Development half, 5 seeds. Points from experiments 4–8 are reused; new points in results/p4_dev_sweep.json. "
+               "Summary: results/p4_tuning_curves.json")
     fi = j("p4_feature_importance.json")
     top = list(fi["all"]["importance"].items())[:10]
     table("P4-7 Feature importance (permutation, drop in average precision; one-hot groups permuted together)",

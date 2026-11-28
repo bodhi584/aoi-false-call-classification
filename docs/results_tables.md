@@ -299,6 +299,47 @@ Tuned BRF, every 14 d, all history, m 500, audit 10 %, NP 95 % unless stated. De
 | threshold: [7] cross-validated | 14.29 | no | 29.25 | 28.50–30.85 | 6.31 | 5 |
 | threshold: plain 1 % quantile | 17.05 | no | 16.82 | 12.32–20.72 | 7.40 | 5 |
 
+### P4-11 Experiment 9: tuning curves, one parameter changed at a time around the frozen model
+
+Development half, 5 seeds. Points from experiments 4–8 are reused; new points in results/p4_dev_sweep.json. Summary: results/p4_tuning_curves.json
+
+| parameter | value (frozen in bold) | worst missed % | passes ≤ 1 % | released % (mean) |
+|---|---|---|---|---|
+| min_samples_leaf | 1 | 0.69 | yes | 3.85 |
+| min_samples_leaf | 2 | 1.68 | no | 7.17 |
+| min_samples_leaf | 3 | 1.61 | no | 8.13 |
+| min_samples_leaf | **5** | 0.92 | yes | 8.12 |
+| min_samples_leaf | 8 | 1.61 | no | 7.80 |
+| min_samples_leaf | 12 | 3.92 | no | 9.39 |
+| min_samples_leaf | 20 | 5.53 | no | 10.57 |
+| min_samples_leaf | 40 | 2.30 | no | 10.26 |
+| n_estimators | 50 | 6.91 | no | 7.05 |
+| n_estimators | 100 | 1.12 | no | 6.73 |
+| n_estimators | 200 | 0.74 | yes | 7.28 |
+| n_estimators | **300** | 0.92 | yes | 8.12 |
+| n_estimators | 500 | 0.74 | yes | 6.74 |
+| max_features | log2 | 3.92 | no | 10.74 |
+| max_features | **sqrt** | 0.92 | yes | 8.12 |
+| max_features | 0.1 | 1.12 | no | 8.28 |
+| max_features | 0.25 | 0.74 | yes | 3.89 |
+| max_features | 0.5 | 2.30 | no | 6.43 |
+| m | 300 | 39.17 | no | 19.10 |
+| m | 400 | 40.55 | no | 18.19 |
+| m | **500** | 0.92 | yes | 8.12 |
+| m | 600 | 1.12 | no | 7.55 |
+| m | 750 | 3.35 | no | 3.29 |
+| m | 1000 | 0.56 | yes | 2.83 |
+| interval | 7 | 2.29 | no | 8.63 |
+| interval | 10 | 1.09 | no | 7.88 |
+| interval | **14** | 0.92 | yes | 8.12 |
+| interval | 21 | 0.62 | yes | 5.90 |
+| interval | 28 | 0.41 | yes | 5.21 |
+| audit | 0.05 | 1.12 | no | 7.35 |
+| audit | **0.1** | 0.92 | yes | 8.12 |
+| audit | 0.15 | 0.92 | yes | 7.27 |
+| audit | 0.2 | 0.93 | yes | 7.43 |
+| audit | 0.3 | 0.92 | yes | 7.33 |
+
 ### P4-7 Feature importance (permutation, drop in average precision; one-hot groups permuted together)
 
 Fit on the first 80 % of the development half, measured on the last 20 % (44,028 rows, 326 true defects); average precision of the model 0.241. Source: results/p4_feature_importance.json
