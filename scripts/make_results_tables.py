@@ -131,6 +131,10 @@ def p4_tables():
                "class_weight balanced_subsample. NP 90 % gives the same rank k = 2 as 95 % for m = 500 (identical to "
                "the frozen model). Development half only; does not change the final-test result. "
                "Source: results/p4_dev_models.json")
+    table("P4-10 Experiment 8 (28 Nov): threshold rules and retraining schedules on the frozen system", HEAD,
+          rows_of(summarise(j("p4_dev_proof.json")["runs"], lambda r: r["name"])),
+          note="Tuned BRF, every 14 d, all history, m 500, audit 10 %, NP 95 % unless stated. Development half only. "
+               "Source: results/p4_dev_proof.json")
     fi = j("p4_feature_importance.json")
     top = list(fi["all"]["importance"].items())[:10]
     table("P4-7 Feature importance (permutation, drop in average precision; one-hot groups permuted together)",

@@ -119,12 +119,12 @@ class _XGB:
         return self.m.predict_proba(X)
 
 
-def cv_threshold(X, y, seed, recall=0.99):
+def cv_threshold(X, y, seed, recall=0.99, forest=None):
     """Threshold method of [7]: 5-fold stratified CV; per fold the highest t keeping recall >= 99 %; mean."""
     from sklearn.model_selection import StratifiedKFold
     ts = []
     for tr, va in StratifiedKFold(5, shuffle=True, random_state=seed).split(X, y):
-        s = make_forest(seed).fit(X[tr], y[tr]).predict_proba(X[va])[:, 1]
+        s = make_forest(seed, forest).fit(X[tr], y[tr]).predict_proba(X[va])[:, 1]
         pos = np.sort(s[y[va] == 1])[::-1]                          # true-defect scores, high to low
         ts.append(float(pos[int(np.ceil(recall * len(pos))) - 1]))  # 99 % of them stay at or above t
     return float(np.mean(ts))
@@ -212,7 +212,7 @@ def simulate(X, y, cal_day, n_dev, *, start_day, interval, window, m, rule, audi
             elif (rule.startswith("np") or rule == "plain"):
                 t = threshold(model.predict_proba(X[thr_set])[:, 1], rule)
             elif rule == "cv":
-                t = cv_threshold(X[train], y[train], seed)
+                t = cv_threshold(X[train], y[train], seed, forest=forest)
             else:
                 t = 0.5                                            # classical: defect if s(x) >= 0.5
         chk = idx[(cal_day[:n_dev] >= T) & (cal_day[:n_dev] < T + step) & (idx >= first_row)]

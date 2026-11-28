@@ -211,6 +211,18 @@ Every 14 d, all history, m 500, audit 10 %, NP 95 % unless stated; only the mode
 | Logistic regression | 3.23 | no | 2.37 | 2.36–2.39 | 1.61 | 5 |
 | Logistic regression, C 0.1 | 2.30 | no | 0.76 | 0.73–0.79 | 1.15 | 5 |
 
+### P4-10 Experiment 8 (28 Nov): threshold rules and retraining schedules on the frozen system
+
+Tuned BRF, every 14 d, all history, m 500, audit 10 %, NP 95 % unless stated. Development half only. Source: results/p4_dev_proof.json
+
+| setting | worst missed % | passes ≤ 1 % | released % (mean) | released % (min–max seeds) | missed % (mean of periods) | seeds |
+|---|---|---|---|---|---|---|
+| retraining: train once | 0.98 | yes | 7.28 | 5.88–8.52 | 0.24 | 5 |
+| retraining: every 28 d | 0.41 | yes | 5.21 | 4.63–6.00 | 0.23 | 5 |
+| threshold: 0.5 cut | 54.38 | no | 82.93 | 81.96–83.97 | 40.24 | 5 |
+| threshold: [7] cross-validated | 14.29 | no | 29.25 | 28.50–30.85 | 6.31 | 5 |
+| threshold: plain 1 % quantile | 17.05 | no | 16.82 | 12.32–20.72 | 7.40 | 5 |
+
 ### P4-7 Feature importance (permutation, drop in average precision; one-hot groups permuted together)
 
 Fit on the first 80 % of the development half, measured on the last 20 % (44,028 rows, 326 true defects); average precision of the model 0.241. Source: results/p4_feature_importance.json

@@ -115,15 +115,26 @@ That is about **1,300 false calls fewer to check per production day** and about 
 |---|---|---|---|
 | model: BRF | RF, weighted RF, XGBoost, logistic regression, neural network (12 settings) | only BRF holds 1 % | [P4-9] |
 | forest parameters F1–F4 | 24 combinations | 300 trees, sqrt, leaf 5, 1:1 | [P4-4] |
-| threshold: Neyman–Pearson | 0.5 cut, [7] cross-validated, plain 1 % quantile, day cap, per type | only NP has a guarantee; plain and [7] fail | [P4-2], [P4-3] |
+| threshold: Neyman–Pearson | 0.5 cut, [7] cross-validated, plain 1 % quantile (on the frozen system); day cap, per type | only NP holds 1 %; the others miss 14–54 % | [P4-10], [P4-2], [P4-3] |
 | confidence S4 = 95 % | 90 %, 99 % | 90 % identical; 99 % halves the release | [P4-9] |
-| retraining S1 | train once, every 7 d, every 14 d | 14 d | [P4-1], [P4-5], [P4-6] |
+| retraining S1 | train once, every 7, 14, 28 d (on the frozen system) | 14 d releases most (8.12 %); once 7.28 %, 28 d 5.21 %, 7 d fails | [P4-10], [P4-5], [P4-6] |
 | training window S2 | all history, last 28 d | all history | [P4-1], [P4-5] |
 | threshold-set size S3 | m = 299, 500, 750, 1000 | 500 | [P4-1], [P4-6] |
 | audit share S5 | 5, 10, 20, 100 % | 10 % | [P4-1], [P4-6] |
 | periodic vs triggered retraining | burst trigger, audit trigger, SPC switch | triggers help on development data, not on test | [P6-1], [P6E-1] |
 | retraining instead of incremental learning | not tested | theory only: a BRF is a batch model [12, Sect. 3.3.1] | — |
 | methodology CRISP-DM | not applicable | process standard | — |
+
+**Six evidence figures** (one per method or tool, same layout: released share left, worst-period missed right, 1 % limit in red, the chosen option in green; development half only):
+
+| figure | what it proves |
+|---|---|
+| [1 Model](img/evidence/1_model.png) | BRF is the only model that holds 1 % |
+| [2 Threshold rule](img/evidence/2_threshold.png) | only Neyman–Pearson holds 1 %; 95 % releases twice as much as 99 % |
+| [3 Retraining](img/evidence/3_retraining.png) | every 14 days with all history releases most while holding 1 % |
+| [4 m and audit](img/evidence/4_m_audit.png) | m = 500 with a 10 % audit is the best passing pair |
+| [5 Forest parameters](img/evidence/5_forest.png) | 300 trees, sqrt, leaf 5, 1:1 is the best of 24 settings |
+| [6 Triggers and switches](img/evidence/6_triggers.png) | periodic retraining alone is not enough under bursts; the switches help on development data only |
 
 **Parameters.**
 - **Forest F1–F4:** number of trees, max_features, min_samples_leaf, sampling ratio.
@@ -150,6 +161,7 @@ Using the worst case, not the mean, is deliberate: the limit is a guarantee, not
 | Exp 5 | is the system still the best with the tuned forest? | [P4-5] |
 | Exp 6 | m and audit share with the tuned forest | [P4-6] |
 | Exp 7 | is BRF the right model, and is 95 % the right confidence? (added after the final test, development half only) | [P4-9] |
+| Exp 8 | threshold rules and retraining schedules on the frozen system (added after the final test, development half only) | [P4-10] |
 
 ---
 
@@ -165,6 +177,10 @@ Using the worst case, not the mean, is deliberate: the limit is a guarantee, not
   1. The data drift (AUROC 0.974). A model trained once cannot adapt and cannot learn the 7 component codes that appear only later [D1]. Retraining is a P3 design choice that follows from the drift fact; the experiment chooses its parameters.
   2. Train once is unstable across seeds: one seed released 0 %, another 11.09 %.
   3. With the tuned forest, 14 d reaches 8.12 % [P4-4], more than train once with the default forest.
+
+**On the frozen system** [P4-10]: train once 7.28 % released (worst 0.98 %), every 28 d 5.21 % (0.41 %), every 14 d 8.12 % (0.92 %). With the tuned forest, regular retraining releases more than training once.
+
+![Retraining](img/evidence/3_retraining.png)
 
 **Why m = 299 fails.** True defects come in bursts. The first threshold set held 286 of its 299 true defects from one calendar day (day 39, one component code). The following week was dominated by another burst (day 41, a different component), which the threshold did not represent. This is the i.i.d. challenge that P3 slide 11 predicted. Figure: [`docs/img/p4/burst_threshold_set.png`](img/p4/burst_threshold_set.png).
 
@@ -184,6 +200,9 @@ Weekly retraining, all history, m = 299, audit 100 %:
 - No rule holds 1 % with m = 299 under bursts.
 - NP is the only rule with a statistical guarantee. Its failure here comes from the burst, not from the rule.
 - The day cap shows the cause: spreading the threshold set over more days brings missed down from 50 % to 1.3 %.
+- **On the frozen system** (tuned BRF, m 500, every 14 d) the comparison is clearer [P4-10]: NP 95 % holds 1 % (8.12 % released); the plain 1 % quantile misses up to 17.05 % (16.82 % released); [7]'s cross-validated threshold up to 14.29 % (29.25 %); the 0.5 cut up to 54.38 % (82.93 %). The other rules release more only because they release true defects too.
+
+![Threshold rules](img/evidence/2_threshold.png)
 
 ### 5.3 Experiment 3: day cap and per-type thresholds [P4-3]
 
@@ -245,7 +264,7 @@ Same system as the frozen model; only the model changes. Each model gets its lib
 - **Neural networks** are unstable across seeds (worst 30–32 %) and release little. **Logistic regression** releases little and still misses 2.3–3.2 %, consistent with the weak linear relations found in P3 (highest \|r\| = 0.18).
 - **Confidence:** 90 % gives the same rank k = 2 as 95 % for m = 500, so it is identical. 99 % (k = 1) is safer but halves the release share (3.70 %). **95 % keeps the limit with twice the release.**
 
-![Model comparison](img/p4/model_comparison.png)
+![Model comparison](img/evidence/1_model.png)
 
 ### 5.8 Feature importance (lecturer question 1) [P4-7], [P4-8]
 
@@ -406,7 +425,7 @@ Note on slice 2: with only 39 true defects, one miss is already 2.6 %, so the 1 
 - **One plant, one product mix, 101 days**; 5 seeds per setting.
 - **Few bursts for design:** 5 in the development half.
 - **The test half was evaluated twice** (P5, then P6). P5 is the result; P6 is declared as a second look.
-- **Model comparison after the test:** Experiment 7 (models, confidence) was added after the final test. It used the development half only and confirmed the frozen choice; it could not have changed the result.
+- **Comparisons after the test:** Experiments 7 and 8 (models, confidence, threshold rules and schedules on the frozen system) were added after the final test. It used the development half only and confirmed the frozen choice; it could not have changed the result.
 - **Periods:** the P4 selection used periods pooled from 14-day windows. The finer day-by-day cut in P6 shows that the frozen model already exceeded 1 % in one development period (2.30 %).
 - **Labels** contain errors [4, Sect. 3]; the audit labels only 10 % of the released joints.
 - **The same-day switch** assumes operator labels in real time; not verified for the plant.
@@ -432,7 +451,7 @@ Note on slice 2: with only 39 true defects, one miss is already 2.6 %, so the 1 
 4. **What is k, and why the 2nd lowest score?** For m = 500, k = 2 is the largest rank whose binomial probability of more than 1 % misses stays ≤ 5 % [D3]. The plain quantile would take rank 6 and hold the limit only about half the time [14].
 5. **Why m = 500 and not 299 or 1000?** 299 fails under bursts [P4-1]; 1000 passes but releases only 2.8 % [P4-6]; 750 fails; 500 is the passing value with the highest release.
 6. **Why 14 days and not 7?** Every 7-day setting fails with the tuned forest (worst 1.63–4.60 %) [P4-5], [P4-6]. The decision rests on this result; we did not prove the mechanism.
-7. **Why not "train once"? It released more in Exp 1.** See 5.1: drift, seed instability (0–11 %), and with the tuned forest the 14-day system releases more (8.12 %).
+7. **Why not "train once"?** With the tuned forest, train once releases 7.28 %, every 14 days 8.12 %, both within 1 % [P4-10]. Retraining also follows the drift and learns new component codes.
 8. **Why audit 10 %?** 10 % passes with the highest release; 5 % fails narrowly; 20 % releases less [P4-6].
 9. **Why the worst case and not the mean?** The 1 % is a guarantee per period, not an average. The mean would hide exactly the burst periods.
 10a. **Why 95 % confidence?** 90 % gives the same threshold for m = 500; 99 % is safe too but releases only 3.70 % instead of 8.12 % [P4-9].
@@ -472,6 +491,7 @@ python scripts/p4_run_forest.py                 # Exp 4  -> results/p4_dev_fores
 python scripts/p4_run_confirm.py                # Exp 5  -> results/p4_dev_confirm.json
 python scripts/p4_run_system2.py                # Exp 6  -> results/p4_dev_system2.json
 python scripts/p4_run_models.py                 # Exp 7  -> results/p4_dev_models.json (needs xgboost)
+python scripts/p4_run_proof.py                  # Exp 8  -> results/p4_dev_proof.json
 python scripts/p4_feature_importance.py         # -> results/p4_feature_importance.json
 python scripts/p5_final_test.py                 # final test (run once) -> results/p5_final_test.json
 python scripts/p6_run_ideas.py; python scripts/p6_run_ideas2.py; python scripts/p6_run_spc.py

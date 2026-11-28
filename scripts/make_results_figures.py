@@ -68,21 +68,83 @@ def forest_tuning():
     save(fig, "docs/img/p4/forest_tuning.png")
 
 
-def model_comparison():
-    res = by_setting(load("p4_dev_models.json")["runs"], lambda r: r["model"])
-    names = sorted(res, key=lambda k: (res[k][0] > 1, -res[k][1]))
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 5.4), sharey=True)
-    yy = np.arange(len(names))[::-1]
+def proof_bars(res, chosen, title, path, labels=None, note=None):
+    """One evidence figure: released share (left) and worst-period missed (right) per alternative, chosen in green."""
+    names = sorted(res, key=lambda k: (k != chosen, res[k][0] > 1, -res[k][1]))
+    if chosen is None:                                  # no winner shown: baseline first, then by result
+        names = sorted(res, key=lambda k: ("frozen" not in k, res[k][0] > 1, -res[k][1]))
+    lab = [labels.get(k, k) if labels else k for k in names]
     rel = [res[k][1] for k in names]; mm = [res[k][0] for k in names]
-    col = [GREEN if k == "BRF (frozen)" else (BLUE if res[k][0] <= 1 else GRAY) for k in names]
-    a1.barh(yy, rel, color=col, height=0.6); a1.set_yticks(yy, names); a1.set_xlabel("False calls released (%)")
-    a2.barh(yy, mm, color=[RED if m > 1 else NAVY for m in mm], height=0.6); a2.axvline(1, color=RED, ls="--", lw=1.5)
-    a2.set_xscale("symlog", linthresh=1); a2.set_xlabel("Worst period: true defects missed (%, log scale above 1)")
+    h = max(3.2, 0.42 * len(names) + 1.6)
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(12.5, h), sharey=True)
+    yy = np.arange(len(names))[::-1]
+    a1.barh(yy, rel, color=[GREEN if k == chosen else (BLUE if res[k][0] <= 1 else GRAY) for k in names], height=0.62)
+    a1.set_yticks(yy, lab); a1.set_xlabel("False calls released (%)  — higher is better")
+    a2.barh(yy, [max(m, 0.02) for m in mm], color=[GREEN if k == chosen else (RED if m > 1 else NAVY)
+                                                     for k, m in zip(names, mm)], height=0.62)
+    a2.axvline(1, color=RED, ls="--", lw=1.5); a2.set_xscale("symlog", linthresh=1)
+    a2.set_xlim(0, max(max(mm) * 1.6, 2))
+    a2.set_xlabel("Worst period: true defects missed (%)  — must be ≤ 1 %")
     for ax, v in ((a1, rel), (a2, mm)):
         for i, x in zip(yy, v):
-            ax.text(x, i, f" {x:.2f}", va="center", fontsize=10)
-    fig.suptitle("Model comparison on the development half (same system, 5 seeds): only BRF passes 1 %")
-    save(fig, "docs/img/p4/model_comparison.png")
+            ax.text(max(x, 0.02), i, f" {x:.2f}", va="center", fontsize=10)
+    fig.suptitle(title, fontsize=13)
+    if note:
+        fig.text(0.01, 0.005, note, fontsize=9, color=GRAY)
+    save(fig, path)
+
+
+def evidence_figures():
+    P = "docs/img/evidence/"
+    mod = by_setting(load("p4_dev_models.json")["runs"], lambda r: r["model"])
+    proof = by_setting(load("p4_dev_proof.json")["runs"], lambda r: r["name"])
+    conf = by_setting(load("p4_dev_confirm.json")["runs"],
+                      lambda r: (r["setting"]["interval"], r["setting"]["window"]))
+    # 1 model
+    proof_bars({k: v for k, v in mod.items() if k != "BRF, NP 99 %"}, "BRF (frozen)",
+               "1  Model: only the balanced random forest holds 1 % (same system, 5 seeds)", P + "1_model.png",
+               {"BRF (frozen)": "BRF (chosen)"}, "Development half (days 1–64). Every 14 d, all history, m 500, NP 95 %, audit 10 %; only the model changes.")
+    # 2 threshold rule and confidence
+    thr = {"NP 95 % (chosen)": mod["BRF (frozen)"], "NP 99 %": mod["BRF, NP 99 %"],
+           "plain 1 % quantile": proof["threshold: plain 1 % quantile"],
+           "[7] cross-validated threshold": proof["threshold: [7] cross-validated"],
+           "classical 0.5 cut": proof["threshold: 0.5 cut"]}
+    proof_bars(thr, "NP 95 % (chosen)", "2  Threshold rule: only Neyman–Pearson keeps 1 %; 95 % releases twice as much as 99 %",
+               P + "2_threshold.png", note="Frozen system and BRF. NP 90 % gives the same threshold rank (k = 2) as 95 % for m = 500, so it is identical.")
+    # 3 retraining schedule and window
+    ret = {"every 14 d, all history (chosen)": conf[(14, None)], "every 7 d, all history": conf[(7, None)],
+           "every 14 d, last 28 d": conf[(14, 28)], "every 7 d, last 28 d": conf[(7, 28)],
+           "train once": proof["retraining: train once"], "every 28 d, all history": proof["retraining: every 28 d"]}
+    proof_bars(ret, "every 14 d, all history (chosen)",
+               "3  Retraining: every 14 days with all history releases most while keeping 1 %", P + "3_retraining.png",
+               note="Frozen BRF, m 500, NP 95 %, audit 10 %.")
+    # 4 threshold-set size and audit share (14-day schedule)
+    sm = by_setting(load("p4_dev_system2.json")["runs"],
+                    lambda r: (r["setting"]["interval"], r["setting"]["m"], r["setting"]["audit"]))
+    ma = {f"m {m}, audit {int(100 * a)} %" + (" (chosen)" if (m, a) == (500, 0.1) else ""): v
+          for (iv, m, a), v in sm.items() if iv == 14}
+    proof_bars(ma, "m 500, audit 10 % (chosen)", "4  Threshold-set size m and audit share (every 14 d)",
+               P + "4_m_audit.png", note="Frozen BRF. All 9 combinations with 7-day retraining fail (worst 1.63–4.60 %).")
+    # 5 forest parameters
+    fo = by_setting(load("p4_dev_forest.json")["runs"], lambda r: tuple(sorted(r["setting"]["forest"].items())))
+    def fn(k):
+        f = dict(k); samp = "1:1" if f["sampling_strategy"] == "all" else f"ratio {f['sampling_strategy']}"
+        return f"{f['n_estimators']} trees, {f['max_features']}, leaf {f['min_samples_leaf']}, {samp}"
+    fo = {fn(k) + (" (chosen)" if fn(k) == "300 trees, sqrt, leaf 5, 1:1" else ""): v for k, v in fo.items()}
+    proof_bars(fo, "300 trees, sqrt, leaf 5, 1:1 (chosen)", "5  Forest parameters (24 settings): 300 trees, sqrt, leaf 5, 1:1",
+               P + "5_forest.png", note="Every 14 d, all history, m 500, NP 95 %, audit 10 %.")
+    # 6 periodic vs triggered retraining (day-by-day simulation)
+    ideas = {}
+    for f in ("p6_dev_ideas.json", "p6_dev_ideas2.json", "p6_dev_spc.json"):
+        ideas |= by_setting(load(f)["runs"], lambda r: r["idea"], recs="days")
+    keep = {"frozen": "periodic only (frozen model)", "burst x3": "+ burst-triggered retraining",
+            "audit trigger": "+ audit-triggered retraining", "spc day-total q99": "+ SPC switch",
+            "threshold-set cap 30/day": "+ day cap 30", "same-day switch 30": "+ same-day switch",
+            "spc day-total q99 + cap 30 + burst x3": "+ SPC + cap + burst retraining",
+            "cap 30 + switch 30 + burst x3": "+ same-day switch + cap + burst retraining"}
+    proof_bars({v: ideas[k] for k, v in keep.items()}, None,
+               "6  Periodic vs triggered retraining and switches (development half, day-by-day periods)",
+               P + "6_triggers.png", note="Finer day-by-day periods. The combinations reach 0 % here but did not hold on the test half (second evaluation: 1.20 % missed).")
 
 
 def system_m_audit():
@@ -161,4 +223,4 @@ def second_evaluation():
 
 
 if __name__ == "__main__":
-    forest_tuning(); model_comparison(); system_m_audit(); final_test_windows(); dev_ideas(); second_evaluation()
+    forest_tuning(); evidence_figures(); system_m_audit(); final_test_windows(); dev_ideas(); second_evaluation()
