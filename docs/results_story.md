@@ -499,6 +499,9 @@ Following the root-cause finding (section 7a), we tested monitoring per componen
 4. **Retraining recovers after a burst**, but only at the next retraining. A 14-day schedule plus history is the best trade-off we found; with the tuned forest, every 7-day setting failed.
 5. **Forest tuning mattered more than the system parameters.** min leaf 5 and 300 trees raised the release share from 3.1 % to 8.1 % on the development half.
 6. **Burst countermeasures tuned on the development half did not generalise.** A reliable burst signal is the open problem.
+7. **Root cause: true defects are event-driven and component-specific.** No measurement is more than weakly correlated with true defects (highest |r| = 0.179); the component code is the strongest factor (component 15: 19× the average defect rate), and 14 days hold 79.7 % of all true defects [RCA-1]–[RCA-5].
+8. **Two kinds of events.** Defect bursts (many true defects of one component) distort the threshold set; call floods (one component's AOI calls rise 62–108×, defect rate falls) hide the few true defects that are then released [P7-2].
+9. **Safety switches protect the limit but do not raise the release share.** A per-component SPC switch on AOI calls held 1 % on the development half but lowered the release share (5.28 % vs 8.12 %). Release grows with the model and the training history, not with switches.
 
 ## 10. Limitations
 
@@ -511,6 +514,8 @@ Following the root-cause finding (section 7a), we tested monitoring per componen
 - **The same-day switch** assumes operator labels in real time; not verified for the plant.
 - **Feature meaning** is anonymised; we cannot name physical causes.
 - **No cost model:** operator time per joint and the cost of a missed defect are not in the data.
+- **Root-cause findings are associations**, not physical causes; the call-flood mechanism rests on two development days and one component, and was not checked on the test half.
+- **No new data:** the public Siemens data set is the complete 132-day recording; the component monitor cannot be validated without later production data.
 
 ## 11. Future work
 
