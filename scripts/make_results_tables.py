@@ -238,6 +238,38 @@ def burst_tables():
                    for d, v in top])
 
 
+def rca_tables():
+    r = j("p4_root_cause.json")
+    m = r["measurements"]
+    sc, sw = r["strength_counts"], r["strength_counts_within_type"]
+    table("RCA-1 How strong are the associations? (64 varying measurements)",
+          ["strength (Cohen, by |r|)", "all rows", "best within one inspection type"],
+          [[k, sc.get(k, 0), sw.get(k, 0)] for k in ("strong", "moderate", "weak", "negligible")],
+          note="|r| < 0.1 negligible, 0.1–0.3 weak, 0.3–0.5 moderate, ≥ 0.5 strong. Source: results/p4_root_cause.json")
+    table("RCA-2 Top 15 measurements by |Pearson r| with the class",
+          ["feature", "Pearson r", "Spearman ρ", "single-feature AUROC", "mutual information", "r dev / test",
+           "strength", "best r within a type (type)", "model importance rank"],
+          [[d["feature"].replace("inspection_", ""), f"{d['pearson_r']:.3f}", f"{d['spearman_rho']:.3f}",
+            f"{d['auroc']:.3f}", f"{d['mutual_info']:.4f}", f"{d['r_dev']:.3f} / {d['r_test']:.3f}", d["strength"],
+            (f"{d['within_type_r']:.3f} ({d['within_type_best']})" if d["within_type_r"] is not None else ""),
+            d["perm_rank"] or ""] for d in m[:15]],
+          note="AUROC 0.5 = no separation. Model importance rank = permutation importance of the BRF [P4-7].")
+    table("RCA-3 Categorical features: Cramér's V with the class",
+          ["feature", "levels", "Cramér's V (all)", "dev / test", "strength", "top-5 levels hold % of all true defects"],
+          [[d["feature"], d["levels"], f"{d['cramers_v']:.3f}", f"{d['cramers_v_dev']:.3f} / {d['cramers_v_test']:.3f}",
+            d["strength"], d["share_of_defects_top5_levels_pct"]] for d in r["categoricals"]])
+    mf = [d for d in r["categoricals"] if d["feature"] == "meta_feat1"][0]
+    table("RCA-4 Component codes (meta_feat1) with the highest true-defect rate (≥ 500 joints)",
+          ["component code", "joints", "true defects", "true-defect rate %", "lift vs overall " + str(r["defect_rate_pct"]) + " %"],
+          [[d["level"], f"{d['joints']:,}", d["true_defects"], d["rate_pct"], d["lift"]] for d in mf["top_levels"]])
+    table("RCA-5 Burst days (≥ 60 true defects): which component and inspection type dominate",
+          ["calendar day", "half", "true defects", "components involved", "top component (share %)", "top inspection type (share %)"],
+          [[b["day"], b["half"], b["true_defects"], b["components"], f"{b['top_component']} ({b['top_component_share_pct']})",
+            f"{b['top_inspection_type']} ({b['top_type_share_pct']})"] for b in r["bursts"]],
+          note=f"{r['burst_days']} of {r['days_with_defects']} days with true defects are burst days; they hold "
+               f"{r['defects_in_burst_days']:,} of {r['true_defects']:,} true defects ({r['defects_in_burst_days_pct']} %).")
+
+
 def business_table():
     X, y, cal_day, n_dev = load("data/dataset.csv")
     days = len(np.unique(cal_day[n_dev:]))
@@ -260,6 +292,8 @@ def main():
     OUT.append(__doc__.split("\n", 2)[2])
     OUT.append("\n## Data and split")
     data_tables()
+    OUT.append("\n## Root-cause analysis (statistical associations, whole data set)")
+    rca_tables()
     OUT.append("\n## P4 model selection (development half only)")
     p4_tables()
     OUT.append("\n## P5 final test (test half, frozen model, run once)")

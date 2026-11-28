@@ -367,6 +367,55 @@ Note on slice 2: with only 39 true defects, one miss is already 2.6 %, so the 1 
 
 ---
 
+## 7a. Root-cause analysis: what is associated with true defects? [RCA-1] to [RCA-5]
+
+The feature names are anonymised, so this analysis finds **statistical associations, not physical causes**. It uses all rows and checks each association in both halves. Script: `scripts/p4_root_cause.py`, result: `results/p4_root_cause.json`.
+
+**1. No measurement is strongly associated with true defects [RCA-1], [RCA-2].**
+
+| strength (by \|r\|) | all rows | best within one inspection type |
+|---|---|---|
+| strong (≥ 0.5) | 0 | 0 |
+| moderate (0.3–0.5) | 0 | 0 |
+| weak (0.1–0.3) | 1 | 8 |
+| negligible (< 0.1) | 63 | 56 |
+
+- The strongest is inspection_feat48: r = 0.179 overall, 0.288 within inspection type 1, stable in both halves (0.202 / 0.175). It is also rank 1 in the model's permutation importance.
+- Some measurements have almost no linear correlation but carry information in a non-linear way. inspection_feat95 has r = −0.039, but the highest mutual information of all (0.045) and model rank 5; feat7 and feat2 behave similarly. This is why a non-linear tree model is needed (P3 choice 1).
+- feat88–feat99 show r ≈ 0.07–0.09 but a single-feature AUROC of only 0.508. Each of them has one value for more than 99.9 % of the joints; the other values occur only in inspection type 1 (0.3 % of its joints). Their correlation comes from these few rare joints, so it is not a general measurement effect.
+
+**2. The strongest factor is the component code (meta_feat1) [RCA-3], [RCA-4].**
+
+| feature | Cramér's V | dev / test | strength |
+|---|---|---|---|
+| meta_feat1 (component code, 75 levels) | 0.260 | 0.263 / 0.352 | weak, strongest |
+| meta_feat4 (49 levels) | 0.128 | 0.090 / 0.196 | weak |
+| inspection_type (5 levels) | 0.070 | 0.046 / 0.097 | negligible |
+| meta_feat2, meta_feat3 | 0.022, 0.013 | — | negligible |
+
+- The top 5 component codes hold 56.6 % of all true defects.
+- **Component 15**: true-defect rate 20.34 %, **19.4× the average of 1.05 %** (862 true defects in 4,238 joints).
+- **Component 3**: 9.46 % (9.0×). **Component 27**: 5.02 % (4.8×).
+- The association is stronger in the test half (V 0.352 vs 0.263): the defect mix drifts toward a few components.
+
+**3. Defects are event-driven: bursts [RCA-5].**
+- **14 of 82 days with true defects hold 79.7 % of all true defects** (3,683 of 4,622).
+- In 10 of the 14 burst days, one component code gives 40 % or more of the day's defects (up to 89.7 % on day 105).
+- **Component 15 recurs in 5 bursts across both halves** (days 74, 78, 105, 125, 126). Component 27 in days 32 and 39, component 16 in days 53 and 57.
+- Day 119 (696 true defects, the largest burst): 71.4 % from component 3.
+
+![Association strength](img/rca/association_strength.png)
+
+![Bursts by component](img/rca/bursts_by_component.png)
+
+**Root-cause conclusion.**
+- True defects are not a gradual drift of one measurement. They come in **short events concentrated on a few components**. Component 15 recurs, and components 3 and 27 are next.
+- Our hypothesis for the plant, not provable from this data: a recurring process problem on these components (for example paste printing, placement or the component lot). It should be checked by process engineers.
+- **Consequences for our system:**
+  1. The threshold set is dominated by whichever component burst last, so the i.i.d. assumption of NP breaks. This is the cause of every period above 1 % [B1].
+  2. AOI call volume is not a reliable burst signal (section 8). **Per-component monitoring of the true-defect rate** (a p-chart per component code) would be the natural next signal.
+  3. For the plant, **fixing component 15 alone** would remove 18.6 % of all true defects (862 of 4,622) and several bursts.
+
 ## 8. P6: improvement attempts (development half) and second evaluation (test half)
 
 **Ideas**, all using only information that exists in production at that moment:
@@ -434,7 +483,8 @@ Note on slice 2: with only 39 true defects, one miss is already 2.6 %, so the 1 
 
 ## 11. Future work
 
-- A same-day burst signal that does not depend on call volume: per-component SPC on measurement values, or real-time operator confirmations.
+- A same-day burst signal that does not depend on call volume: a p-chart of the true-defect rate per component code (section 7a), per-component SPC on measurement values, or real-time operator confirmations.
+- For the plant: a process investigation of component 15 (19× the average defect rate, 5 bursts) and components 3 and 27.
 - Threshold methods for shift: weighted or Mondrian conformal prediction.
 - Validation on new production data (a third, untouched period) before any deployment.
 - A cost model with plant data (operator minutes, cost of an escaped defect).
@@ -466,6 +516,8 @@ Note on slice 2: with only 39 true defects, one miss is already 2.6 %, so the 1 
 15. **Why is your release share below [7]'s?** [7] misses 5–9 % of true defects; we hold the safety limit first. At equal safety, [7] would release far less.
 16. **Why is the test release (22.7 %) higher than development (8.1 %)?** Most likely the longer history at the test start (1,249 vs at most 778 training true defects) [P5-4]; not tested separately.
 17. **Which feature matters most?** inspection_feat48 overall; per inspection type it differs [P4-7], [P4-8].
+17a. **Is there a strong correlation anywhere? What is the root cause?** No measurement is moderately or strongly correlated (63 of 64 negligible, highest |r| = 0.179) [RCA-1]. The strongest factor is the component code (Cramér's V 0.26); component 15 has 19× the average defect rate. 14 burst days hold 79.7 % of all true defects, mostly from one component each. So the defects are event-driven and component-specific (section 7a).
+17b. **Why does the model need many weak features?** Several features have almost no linear correlation but high mutual information (feat95) [RCA-2]; the forest combines many weak, non-linear signals.
 18. **What do the features mean physically?** See 5.9. The meaning depends on the inspection type and is anonymised by Siemens [4, Sect. 2].
 19. **How many joints does this save?** About 1,300 false calls per production day; about one true defect per day is released [C1].
 
@@ -493,6 +545,7 @@ python scripts/p4_run_system2.py                # Exp 6  -> results/p4_dev_syste
 python scripts/p4_run_models.py                 # Exp 7  -> results/p4_dev_models.json (needs xgboost)
 python scripts/p4_run_proof.py                  # Exp 8  -> results/p4_dev_proof.json
 python scripts/p4_feature_importance.py         # -> results/p4_feature_importance.json
+python scripts/p4_root_cause.py                 # root-cause analysis -> results/p4_root_cause.json, docs/img/rca
 python scripts/p5_final_test.py                 # final test (run once) -> results/p5_final_test.json
 python scripts/p6_run_ideas.py; python scripts/p6_run_ideas2.py; python scripts/p6_run_spc.py
 python scripts/p6_final_test.py                 # second evaluation (run once) -> results/p6_final_test.json

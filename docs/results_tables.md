@@ -42,6 +42,82 @@ Day 64 is split between the halves (row order). In the test, all development row
 | 750 | 3 | 8 |
 | 1000 | 5 | 11 |
 
+## Root-cause analysis (statistical associations, whole data set)
+
+### RCA-1 How strong are the associations? (64 varying measurements)
+
+|r| < 0.1 negligible, 0.1–0.3 weak, 0.3–0.5 moderate, ≥ 0.5 strong. Source: results/p4_root_cause.json
+
+| strength (Cohen, by |r|) | all rows | best within one inspection type |
+|---|---|---|
+| strong | 0 | 0 |
+| moderate | 0 | 0 |
+| weak | 1 | 8 |
+| negligible | 63 | 56 |
+
+### RCA-2 Top 15 measurements by |Pearson r| with the class
+
+AUROC 0.5 = no separation. Model importance rank = permutation importance of the BRF [P4-7].
+
+| feature | Pearson r | Spearman ρ | single-feature AUROC | mutual information | r dev / test | strength | best r within a type (type) | model importance rank |
+|---|---|---|---|---|---|---|---|---|
+| feat48 | 0.179 | 0.123 | 0.616 | 0.0311 | 0.202 / 0.175 | weak | 0.288 (1) | 1 |
+| feat88 | 0.088 | 0.088 | 0.508 | 0.0036 | 0.032 / 0.111 | negligible | 0.148 (1) | 51 |
+| feat97 | 0.086 | 0.088 | 0.508 | 0.0025 | 0.039 / 0.108 | negligible | 0.145 (1) | 53 |
+| feat90 | 0.075 | 0.088 | 0.508 | 0.0031 | 0.031 / 0.092 | negligible | 0.125 (1) | 52 |
+| feat98 | 0.074 | 0.088 | 0.508 | 0.0020 | 0.036 / 0.091 | negligible | 0.123 (1) | 54 |
+| feat89 | 0.073 | 0.088 | 0.508 | 0.0028 | 0.027 / 0.092 | negligible | 0.122 (1) | 38 |
+| feat99 | 0.069 | 0.088 | 0.508 | 0.0023 | 0.036 / 0.084 | negligible | 0.116 (1) | 58 |
+| feat7 | 0.063 | 0.058 | 0.610 | 0.0236 | 0.033 / 0.089 | negligible | -0.067 (1) | 6 |
+| feat2 | 0.062 | 0.063 | 0.608 | 0.0203 | 0.029 / 0.087 | negligible | 0.015 (4) | 19 |
+| feat24 | 0.057 | 0.033 | 0.571 | 0.0107 | 0.043 / 0.066 | negligible | 0.183 (1) | 2 |
+| feat8 | 0.049 | 0.036 | 0.589 | 0.0192 | 0.028 / 0.064 | negligible | -0.037 (1) | 13 |
+| feat49 | -0.040 | -0.040 | 0.425 | 0.0157 | -0.032 / -0.049 | negligible | -0.053 (0) | 30 |
+| feat95 | -0.039 | -0.041 | 0.387 | 0.0452 | -0.034 / -0.043 | negligible | -0.063 (3) | 5 |
+| feat23 | -0.031 | 0.002 | 0.506 | 0.0145 | -0.026 / -0.038 | negligible | -0.023 (0) | 11 |
+| feat65 | 0.031 | 0.025 | 0.503 | 0.0019 | 0.003 / 0.052 | negligible | 0.048 (1) | 39 |
+
+### RCA-3 Categorical features: Cramér's V with the class
+
+| feature | levels | Cramér's V (all) | dev / test | strength | top-5 levels hold % of all true defects |
+|---|---|---|---|---|---|
+| meta_feat1 | 75 | 0.260 | 0.263 / 0.352 | weak | 56.6 |
+| meta_feat4 | 49 | 0.128 | 0.090 / 0.196 | weak | 62.7 |
+| inspection_type | 5 | 0.070 | 0.046 / 0.097 | negligible | 100.0 |
+| meta_feat2 | 5 | 0.022 | 0.018 / 0.026 | negligible | 100.0 |
+| meta_feat3 | 2 | 0.013 | 0.004 / 0.025 | negligible | 100.0 |
+
+### RCA-4 Component codes (meta_feat1) with the highest true-defect rate (≥ 500 joints)
+
+| component code | joints | true defects | true-defect rate % | lift vs overall 1.05 % |
+|---|---|---|---|---|
+| 15 | 4,238 | 862 | 20.34 | 19.4 |
+| 3 | 7,011 | 663 | 9.46 | 9.0 |
+| 53 | 529 | 29 | 5.48 | 5.2 |
+| 27 | 10,127 | 508 | 5.02 | 4.8 |
+| 29 | 2,908 | 128 | 4.4 | 4.2 |
+
+### RCA-5 Burst days (≥ 60 true defects): which component and inspection type dominate
+
+14 of 82 days with true defects are burst days; they hold 3,683 of 4,622 true defects (79.7 %).
+
+| calendar day | half | true defects | components involved | top component (share %) | top inspection type (share %) |
+|---|---|---|---|---|---|
+| 32 | dev | 251 | 18 | 27 (48.2) | 3 (36.7) |
+| 39 | dev | 286 | 8 | 27 (86.0) | 2 (47.2) |
+| 41 | dev | 269 | 15 | 2 (52.4) | 3 (66.9) |
+| 53 | dev | 68 | 6 | 16 (54.4) | 2 (51.5) |
+| 57 | dev | 164 | 6 | 16 (59.8) | 2 (53.7) |
+| 74 | dev | 98 | 9 | 15 (34.7) | 1 (58.2) |
+| 78 | dev | 113 | 7 | 15 (45.1) | 1 (83.2) |
+| 105 | test | 213 | 9 | 15 (89.7) | 1 (92.5) |
+| 112 | test | 88 | 13 | 18 (52.3) | 4 (75.0) |
+| 117 | test | 73 | 12 | 4 (41.1) | 2 (46.6) |
+| 119 | test | 696 | 22 | 3 (71.4) | 2 (49.0) |
+| 125 | test | 86 | 11 | 15 (33.7) | 1 (41.9) |
+| 126 | test | 637 | 23 | 15 (37.7) | 1 (59.8) |
+| 127 | test | 641 | 21 | 4 (19.3) | 1 (35.6) |
+
 ## P4 model selection (development half only)
 
 ### P4-1 Experiment 1: system parameters S1–S3, S5 (default forest), 40 settings × 5 seeds
