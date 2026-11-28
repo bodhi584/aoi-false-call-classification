@@ -10,6 +10,12 @@ so the system can react to what the labels of the day show:
   - cap: at most `cap` threshold-set true defects from one calendar day
   - unseen: a joint with a category code that never occurred in the training data is never released
   - alarm: bool per row from an SPC chart on the AOI calls (src/p6_spc.py); a joint in alarm is never released
+  - comp, comp_switch: per-component p-chart within the day. For each component code, the operator-confirmed true
+    defects today are compared with n * p + k * sqrt(n * p * (1 - p)) (k = comp_switch), where n = joints of that
+    component sent to the operator so far today and p = its true-defect rate among labelled joints of the previous
+    14 production days. Once a component is above the limit (and has >= comp_min confirmed true defects today),
+    no joint of that component is released for the rest of the day. Other components are not affected.
+  - comp_cap: at most comp_cap threshold-set true defects from one component code
   - intraday: safety switch within the day: once the operator has confirmed `intraday` true defects today,
     nothing more is released for the rest of the day (assumes operator labels come back in line, in row order)
 Only labels that exist in production are used: every joint sent to the operator, plus the audited share
@@ -22,7 +28,8 @@ from p4_sim import MIN_TRAIN_TD, N_NUM, capped_latest, make_forest, threshold
 
 def simulate_daily(X, y, cal_day, n_dev, *, start_day, interval, m, audit, seed, forest=None,
                    burst=None, burst_min=20, audit_trigger=False, pause=0, cap=None, unseen=False,
-                   intraday=None, alarm=None, first_row=0, n_end=None, out_rel=None):
+                   intraday=None, alarm=None, comp=None, comp_switch=None, comp_min=5,
+                   comp_cap=None, first_row=0, n_end=None, out_rel=None):
     rng = np.random.default_rng(seed)
     n = n_end or n_dev
     idx = np.arange(n)
@@ -30,7 +37,7 @@ def simulate_daily(X, y, cal_day, n_dev, *, start_day, interval, m, audit, seed,
     known = (cd < start_day) | (idx < first_row)
     days = np.unique(cd[(cd >= start_day) & (idx >= first_row)])
     model, t, seen, next_sched, pending, pause_left = None, -np.inf, None, start_day, None, 0
-    daily_td, records = [], []
+    daily_td, records, prod_days = [], [], []
     for d in days:
         # ---- morning: retrain if scheduled or triggered yesterday
         why = None
@@ -43,7 +50,7 @@ def simulate_daily(X, y, cal_day, n_dev, *, start_day, interval, m, audit, seed,
         if why:
             hist = idx[((cd < d) | (idx < first_row)) & known]
             td = hist[y[hist] == 1]
-            thr_set = capped_latest(td, cal_day, m, cap)
+            thr_set = capped_latest(td, cal_day, m, cap) if comp_cap is None else comp_capped_latest(td, comp, m, comp_cap)
             train = np.setdiff1d(hist, thr_set)
             if int(y[train].sum()) >= MIN_TRAIN_TD:
                 model = make_forest(seed, forest).fit(X[train], y[train])
@@ -60,6 +67,8 @@ def simulate_daily(X, y, cal_day, n_dev, *, start_day, interval, m, audit, seed,
                 rel &= ~((X[chk][:, N_NUM:] > 0) & ~seen).any(1)
             if alarm is not None:                            # SPC alarm on the AOI call stream: send to operator
                 rel &= ~alarm[chk]
+            if comp_switch is not None:
+                rel = component_switch(rel, chk, y, comp, known, cd, prod_days[-14:], comp_switch, comp_min)
             if intraday:                                     # confirmed true defects before each joint today
                 confirmed = np.cumsum((~rel) & (y[chk] == 1)) - ((~rel) & (y[chk] == 1))
                 stop = np.flatnonzero(confirmed >= intraday)
@@ -85,7 +94,46 @@ def simulate_daily(X, y, cal_day, n_dev, *, start_day, interval, m, audit, seed,
             pending = trig
             pause_left = pause
         daily_td.append(td_today)
+        prod_days.append(d)
         records.append({"T": int(d), "td": int(yc.sum()), "fc": int((yc == 0).sum()),
                         "missed": int((rel & (yc == 1)).sum()), "released": int((rel & (yc == 0)).sum()),
                         "t": float(t), "retrain": why, "trigger": trig})
     return records
+
+
+def comp_capped_latest(td_idx, comp, m, cap):
+    """Latest m true defects, but at most cap from one component code (keeps the threshold set diverse)."""
+    out, per = [], {}
+    for i in td_idx[::-1]:
+        c = comp[i]
+        if per.get(c, 0) < cap:
+            out.append(i); per[c] = per.get(c, 0) + 1
+            if len(out) == m:
+                break
+    return np.sort(np.array(out, dtype=int))
+
+
+def component_switch(rel, chk, y, comp, known, cd, past_days, k, min_td):
+    """Per-component p-chart, joint by joint in time order; returns the new release decisions."""
+    rel = rel.copy()
+    lab = known & np.isin(cd, past_days) if len(past_days) else known & (cd < cd[chk[0]])
+    ncomp = int(comp.max()) + 1
+    n_lab = np.bincount(comp[:len(cd)][lab], minlength=ncomp)
+    n_td = np.bincount(comp[:len(cd)][lab & (y[:len(cd)] == 1)], minlength=ncomp)
+    p_all = n_td.sum() / max(n_lab.sum(), 1)
+    p = np.where(n_lab >= 50, n_td / np.maximum(n_lab, 1), p_all)          # few labels: use the overall rate
+    p = np.clip(p, 1e-4, 0.999)
+    sent, conf, stopped = np.zeros(ncomp), np.zeros(ncomp), np.zeros(ncomp, bool)
+    cc, yy = comp[chk], y[chk]
+    for j in range(len(chk)):
+        c = cc[j]
+        if stopped[c]:
+            rel[j] = False
+        if not rel[j]:                                     # sent to the operator: label known at once
+            sent[c] += 1
+            if yy[j] == 1:
+                conf[c] += 1
+                ucl = sent[c] * p[c] + k * np.sqrt(sent[c] * p[c] * (1 - p[c]))
+                if conf[c] >= min_td and conf[c] > ucl:
+                    stopped[c] = True
+    return rel

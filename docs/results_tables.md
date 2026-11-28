@@ -435,6 +435,39 @@ Periods pooled from daily records (finer than the 14-day windows of P4, so the f
 | 4 | 793 | 0.33 | 0.50 | 5.62 |
 | 5 | 646 | 0.90 | 1.24 | 3.69 |
 
+## P7 component-code monitoring (development half only)
+
+### P7-1 Component-code monitoring (development half, day-by-day periods, 5 seeds)
+
+Same yardstick as [P6-1] (frozen model 2.30 %). Global SPC + day cap 30 + burst retraining reached 0.00 % / 9.70 % there. Source: results/p7_dev_component.json
+
+| setting | worst missed % | passes ≤ 1 % | released % (mean) | released % (min–max seeds) | missed % (mean of periods) | seeds |
+|---|---|---|---|---|---|---|
+| component SPC + burst retraining | 0.99 | yes | 7.69 | 7.02–9.19 | 0.22 | 5 |
+| component SPC + day cap 30 + burst retraining | 0.00 | yes | 7.40 | 6.64–7.95 | 0.00 | 5 |
+| component SPC on calls (label-free) | 0.99 | yes | 5.28 | 4.63–5.91 | 0.22 | 5 |
+| component SPC q95 (label-free) | 0.99 | yes | 5.15 | 4.58–5.72 | 0.22 | 5 |
+| component SPC + day cap 30 | 0.00 | yes | 3.02 | 2.79–3.22 | 0.00 | 5 |
+| component switch 3σ + burst retraining | 2.63 | no | 10.30 | 8.39–13.13 | 0.68 | 5 |
+| component switch 3σ + component cap 100 + burst retraining | 1.32 | no | 9.13 | 7.30–14.25 | 0.55 | 5 |
+| frozen | 2.30 | no | 8.12 | 5.99–12.54 | 0.68 | 5 |
+| component switch 5σ, ≥ 5 | 2.63 | no | 7.79 | 7.22–8.38 | 0.79 | 5 |
+| component switch 3σ, ≥ 5 | 2.63 | no | 7.68 | 7.14–8.15 | 0.79 | 5 |
+| component switch 3σ, ≥ 3 | 2.63 | no | 7.27 | 5.90–8.51 | 0.72 | 5 |
+| component cap 100 | 1.97 | no | 4.55 | 3.05–8.91 | 0.66 | 5 |
+| component switch 3σ + component cap 100 | 1.32 | no | 3.60 | 2.95–4.45 | 0.62 | 5 |
+| component cap 50 | 3.64 | no | 3.17 | 2.50–4.12 | 1.31 | 5 |
+
+### P7-2 Call floods on development days where the frozen model missed defects
+
+Development half only. Diagnosed run (seed 1, component switch 3σ): all 8 misses, on days 48 and 57, were joints of component 2.
+
+| calendar day | component with most calls | its calls that day | its median calls (previous 20 days) | ratio | true defects among them | true-defect rate % |
+|---|---|---|---|---|---|---|
+| 41 | 24 | 2,316 | 146 | 16× | 0 | 0.00 |
+| 48 | 2 | 1,616 | 26 | 62× | 6 | 0.37 |
+| 57 | 2 | 10,591 | 98 | 108× | 10 | 0.09 |
+
 ### C1 What the system does on the test half (counts, mean of 5 seeds)
 
 Test half: 38 production days (calendar days with data). Operator time per joint is not in the data, so no hours are given.

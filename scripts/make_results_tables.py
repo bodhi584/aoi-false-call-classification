@@ -270,6 +270,28 @@ def rca_tables():
                f"{r['defects_in_burst_days']:,} of {r['true_defects']:,} true defects ({r['defects_in_burst_days_pct']} %).")
 
 
+def component_tables():
+    table("P7-1 Component-code monitoring (development half, day-by-day periods, 5 seeds)", HEAD,
+          rows_of(summarise(j("p7_dev_component.json")["runs"], lambda r: r["idea"], recs="days")),
+          note="Same yardstick as [P6-1] (frozen model 2.30 %). Global SPC + day cap 30 + burst retraining reached "
+               "0.00 % / 9.70 % there. Source: results/p7_dev_component.json")
+    import pandas as pd
+    X, y, cal_day, n_dev = load("data/dataset.csv")
+    comp = pd.read_csv("data/dataset.csv", usecols=["meta_feat1"])["meta_feat1"].to_numpy()[:n_dev]
+    df = pd.DataFrame({"d": cal_day[:n_dev], "comp": comp, "y": y[:n_dev]})
+    g = df.groupby(["d", "comp"]).agg(calls=("y", "size"), td=("y", "sum")).reset_index()
+    rows = []
+    for d in (41, 48, 57):
+        r = g[g.d == d].sort_values("calls", ascending=False).iloc[0]
+        past = g[(g.comp == r.comp) & (g.d < d) & (g.d >= d - 20)].calls.median()
+        rows.append([d, int(r.comp), f"{int(r.calls):,}", f"{past:.0f}", f"{r.calls / past:.0f}×", int(r.td),
+                     f"{100 * r.td / r.calls:.2f}"])
+    table("P7-2 Call floods on development days where the frozen model missed defects",
+          ["calendar day", "component with most calls", "its calls that day", "its median calls (previous 20 days)",
+           "ratio", "true defects among them", "true-defect rate %"], rows,
+          note="Development half only. Diagnosed run (seed 1, component switch 3σ): all 8 misses, on days 48 and 57, were joints of component 2.")
+
+
 def business_table():
     X, y, cal_day, n_dev = load("data/dataset.csv")
     days = len(np.unique(cal_day[n_dev:]))
@@ -302,6 +324,8 @@ def main():
     OUT.append("\n## P6 improvement attempts (development half) and second evaluation (test half, run once)")
     p6_tables()
     eval_tables("p6_final_test.json", "P6E")
+    OUT.append("\n## P7 component-code monitoring (development half only)")
+    component_tables()
     business_table()
     OUT.append("\n## Bursts (descriptive)")
     burst_tables()

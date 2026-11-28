@@ -76,7 +76,8 @@ def proof_bars(res, chosen, title, path, labels=None, note=None):
     lab = [labels.get(k, k) if labels else k for k in names]
     rel = [res[k][1] for k in names]; mm = [res[k][0] for k in names]
     h = max(3.2, 0.42 * len(names) + 1.6)
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(12.5, h), sharey=True)
+    w = 12.5 + max(0, max(len(x) for x in lab) - 32) * 0.11
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(w, h), sharey=True)
     yy = np.arange(len(names))[::-1]
     a1.barh(yy, rel, color=[GREEN if k == chosen else (BLUE if res[k][0] <= 1 else GRAY) for k in names], height=0.62)
     a1.set_yticks(yy, lab); a1.set_xlabel("False calls released (%)  — higher is better")
@@ -222,5 +223,19 @@ def second_evaluation():
     save(fig, "docs/img/p6/second_evaluation.png")
 
 
+def component_figure():
+    res = by_setting(load("p7_dev_component.json")["runs"], lambda r: r["idea"], recs="days")
+    g = {}
+    for f in ("p6_dev_ideas.json", "p6_dev_spc.json"):
+        g |= by_setting(load(f)["runs"], lambda r: r["idea"], recs="days")
+    res["global SPC on calls (P6)"] = g["spc day-total q99"]
+    res["global SPC + day cap 30 + burst retraining (P6)"] = g["spc day-total q99 + cap 30 + burst x3"]
+    res["frozen model"] = res.pop("frozen")
+    proof_bars(res, None, "7  Component-code monitoring (development half, day-by-day periods)",
+               "docs/img/evidence/7_component.png",
+               note="Component switch = same-day p-chart of confirmed true defects per component; component SPC = AOI calls of one "
+                    "component today vs its 99 % quantile; cap = per component in the threshold set.")
+
+
 if __name__ == "__main__":
-    forest_tuning(); evidence_figures(); system_m_audit(); final_test_windows(); dev_ideas(); second_evaluation()
+    forest_tuning(); evidence_figures(); component_figure(); system_m_audit(); final_test_windows(); dev_ideas(); second_evaluation()

@@ -135,6 +135,7 @@ That is about **1,300 false calls fewer to check per production day** and about 
 | [4 m and audit](img/evidence/4_m_audit.png) | m = 500 with a 10 % audit is the best passing pair |
 | [5 Forest parameters](img/evidence/5_forest.png) | 300 trees, sqrt, leaf 5, 1:1 is the best of 24 settings |
 | [6 Triggers and switches](img/evidence/6_triggers.png) | periodic retraining alone is not enough under bursts; the switches help on development data only |
+| [7 Component monitoring](img/evidence/7_component.png) | component SPC on calls holds 1 % on development data; the component switch on defects does not; two event types (defect bursts, call floods) |
 
 **Parameters.**
 - **Forest F1–F4:** number of trees, max_features, min_samples_leaf, sampling ratio.
@@ -460,6 +461,36 @@ The feature names are anonymised, so this analysis finds **statistical associati
 
 ---
 
+## 8a. P7: component-code monitoring (development half only) [P7-1], [P7-2]
+
+Following the root-cause finding (section 7a), we tested monitoring per component code. The test half was **not** used: it has already been evaluated twice. Same day-by-day yardstick as P6 (frozen model 2.30 % missed, 8.12 % released).
+
+| setting | worst missed % | released % |
+|---|---|---|
+| frozen model | 2.30 | 8.12 |
+| component switch (same-day p-chart of confirmed true defects per component) | 2.63 | 7.27–7.79 |
+| component cap in the threshold set (50 or 100 per component) | 1.97–3.64 | 3.17–4.55 |
+| **component SPC on AOI calls (label-free)** | **0.99** | **5.28** |
+| component SPC + burst retraining | 0.99 | 7.69 |
+| component SPC + day cap 30 + burst retraining | 0.00 | 7.40 |
+| for comparison: global SPC + day cap 30 + burst retraining (P6) | 0.00 | 9.70 |
+
+**What we learned.**
+- **The component switch on true defects does not help.** The misses are not in the defect bursts. In the diagnosed run, all 8 misses were joints of **component 2** on days 48 and 57.
+- **On those days, component 2 produced a call flood:** 1,616 and 10,591 AOI calls against a median of 26 and 98 (62× and 108×), with a true-defect rate of only 0.37 % and 0.09 % [P7-2]. A few real defects were hidden among thousands of unusual false calls. A p-chart on true defects cannot see this, because the defect *rate* even falls.
+- **So there are two kinds of events:**
+  1. **Defect bursts:** many true defects of one component, a high defect rate (for example day 39: component 27, 86 % of 286). They distort the threshold set.
+  2. **Call floods:** the AOI calls of one component explode, with a low defect rate (day 57: component 2). Here the few real defects slip through.
+- **Component SPC on calls catches the floods** and holds 1 % on the development half (0.99 %). It does not release more than the global SPC switch (5.28 % vs 5.82 %), because 75 components give more false alarms.
+- **Best component combination:** SPC + day cap + burst retraining, 0 % missed and 7.40 % released, below the global combination (9.70 %).
+
+**Conclusion of P7.**
+- Component monitoring explains the mechanism better than the global signals, but **on the development half it does not beat the global switch**.
+- Whether it generalises better cannot be tested: the only clean test data are used up.
+- Recommended for the report as the **mechanism finding** (two event types) and as **future work**: a component-level monitor for both defect rate and call volume, validated on new production data.
+
+![Component monitoring](img/evidence/7_component.png)
+
 ## 9. Conclusions
 
 1. **Safety.** On unseen data the system misses 1.29 % of true defects, against 5.3–9.4 % for [7]: 4–14× fewer in every slice. The 1 % limit holds in 4 of 5 slices.
@@ -517,6 +548,7 @@ The feature names are anonymised, so this analysis finds **statistical associati
 16. **Why is the test release (22.7 %) higher than development (8.1 %)?** Most likely the longer history at the test start (1,249 vs at most 778 training true defects) [P5-4]; not tested separately.
 17. **Which feature matters most?** inspection_feat48 overall; per inspection type it differs [P4-7], [P4-8].
 17a. **Is there a strong correlation anywhere? What is the root cause?** No measurement is moderately or strongly correlated (63 of 64 negligible, highest |r| = 0.179) [RCA-1]. The strongest factor is the component code (Cramér's V 0.26); component 15 has 19× the average defect rate. 14 burst days hold 79.7 % of all true defects, mostly from one component each. So the defects are event-driven and component-specific (section 7a).
+17c. **Did you try monitoring per component?** Yes, on the development half [P7-1]. A p-chart on true defects per component did not help, because the misses came from call floods of one component (component 2: 108× its usual calls, defect rate 0.09 %). Component SPC on AOI calls held 1 % (0.99 %), but did not release more than the global SPC switch.
 17b. **Why does the model need many weak features?** Several features have almost no linear correlation but high mutual information (feat95) [RCA-2]; the forest combines many weak, non-linear signals.
 18. **What do the features mean physically?** See 5.9. The meaning depends on the inspection type and is anonymised by Siemens [4, Sect. 2].
 19. **How many joints does this save?** About 1,300 false calls per production day; about one true defect per day is released [C1].
@@ -549,6 +581,7 @@ python scripts/p4_root_cause.py                 # root-cause analysis -> results
 python scripts/p5_final_test.py                 # final test (run once) -> results/p5_final_test.json
 python scripts/p6_run_ideas.py; python scripts/p6_run_ideas2.py; python scripts/p6_run_spc.py
 python scripts/p6_final_test.py                 # second evaluation (run once) -> results/p6_final_test.json
+python scripts/p7_run_component.py              # component monitoring (development only) -> results/p7_dev_component.json
 python scripts/make_results_tables.py           # docs/results_tables.md
 python scripts/make_results_figures.py          # docs/img/p4, p5, p6
 python -m pytest -q
